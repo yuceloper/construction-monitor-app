@@ -28,8 +28,29 @@ class AuthService {
       final responseBody = await response.transform(utf8.decoder).join();
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final json = jsonDecode(responseBody) as Map<String, dynamic>;
-        final authResponse = AuthResponse.fromJson(json);
+        final decoded = jsonDecode(responseBody);
+
+        if (decoded is! Map<String, dynamic>) {
+          throw const AuthException('Sunucudan geçersiz bir yanıt geldi.');
+        }
+
+        if (decoded['success'] != true) {
+          final message = decoded['message']?.toString().trim();
+          throw AuthException(
+            message != null && message.isNotEmpty
+                ? message
+                : 'Giriş başarısız.',
+          );
+        }
+
+        final data = decoded['data'];
+        if (data is! Map<String, dynamic>) {
+          throw const AuthException(
+            'Sunucu kullanıcı bilgilerini döndürmedi.',
+          );
+        }
+
+        final authResponse = AuthResponse.fromJson(data);
 
         if (authResponse.accessToken.isEmpty) {
           throw const AuthException('Sunucu access token döndürmedi.');
