@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/project_summary.dart';
+import '../services/project_service.dart';
+
 class ProcessTrackingPage extends StatefulWidget {
   const ProcessTrackingPage({super.key});
 
@@ -9,121 +12,169 @@ class ProcessTrackingPage extends StatefulWidget {
 }
 
 class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
+  final _projectService = ProjectService();
+
   bool _housesExpanded = true;
   bool _shopsExpanded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<ProjectSummary> _projects = const [];
 
-  final List<_ProcessItem> _houses = const [
-    _ProcessItem(name: 'G1', progress: 20),
-    _ProcessItem(name: 'G2', progress: 25),
-    _ProcessItem(name: 'K1', progress: 35),
-    _ProcessItem(name: 'K2', progress: 25),
-    _ProcessItem(name: 'L1', progress: 40),
-    _ProcessItem(name: 'L2', progress: 20),
-    _ProcessItem(name: 'M1', progress: 80),
-    _ProcessItem(name: 'M2', progress: 20),
-    _ProcessItem(name: 'P1', progress: 50),
-    _ProcessItem(name: 'P2', progress: 50),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadProjects();
+  }
 
-  final List<_ProcessItem> _shops = const [
-    _ProcessItem(name: 'D1', progress: 30),
-    _ProcessItem(name: 'D2', progress: 65),
-  ];
+  Future<void> _loadProjects() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final projects = await _projectService.getProjects();
+
+      if (!mounted) return;
+      setState(() {
+        _projects = projects;
+      });
+    } on ProjectException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Projeler yüklenirken beklenmeyen bir hata oluştu.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-        color: Colors.white,
-        child: SafeArea(
-      child: Column(
-        children: [
-          const _PageHeader(),
-
-          const Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 14,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back_ios_new,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Süreç Takibi',
-                    style: TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w600,
+      color: Colors.white,
+      child: SafeArea(
+        child: Column(
+          children: [
+            const _PageHeader(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  children: [
+                    Icon(Icons.arrow_back_ios_new, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Süreç Takibi',
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
+            const Divider(height: 1),
+            Expanded(child: _buildContent()),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.black),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15),
+              ),
+              const SizedBox(height: 18),
+              ElevatedButton(
+                onPressed: _loadProjects,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
           ),
+        ),
+      );
+    }
 
-          const Divider(height: 1),
-
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _SectionCard(
-                  title: 'Evler',
-                  icon: Icons.home_outlined,
-                  expanded: _housesExpanded,
-                  onTap: () {
-                    setState(() {
-                      _housesExpanded = !_housesExpanded;
-                    });
-                  },
-                  child: Column(
-                    children: _houses
+    return RefreshIndicator(
+      onRefresh: _loadProjects,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          _SectionCard(
+            title: 'Evler',
+            icon: Icons.home_outlined,
+            expanded: _housesExpanded,
+            onTap: () {
+              setState(() {
+                _housesExpanded = !_housesExpanded;
+              });
+            },
+            child: _projects.isEmpty
+                ? const _EmptySection(message: 'Henüz proje bulunmuyor.')
+                : Column(
+                    children: _projects
                         .asMap()
                         .entries
                         .map(
-                        (entry) => _ProcessRow(
-                            item: entry.value,
+                          (entry) => _ProjectRow(
+                            project: entry.value,
                             index: entry.key,
-                        ),
+                          ),
                         )
                         .toList(),
                   ),
-                ),
-
-                const SizedBox(height: 18),
-
-                _SectionCard(
-                  title: 'Dükkanlar',
-                  icon: Icons.storefront_outlined,
-                  expanded: _shopsExpanded,
-                  onTap: () {
-                    setState(() {
-                      _shopsExpanded = !_shopsExpanded;
-                    });
-                  },
-                  child: Column(
-                    children: _shops
-                            .asMap()
-                            .entries
-                            .map(
-                            (entry) => _ProcessRow(
-                                item: entry.value,
-                                index: entry.key,
-                            ),
-                            )
-                            .toList(),
-                  ),
-                ),
-              ],
+          ),
+          const SizedBox(height: 18),
+          _SectionCard(
+            title: 'Dükkanlar',
+            icon: Icons.storefront_outlined,
+            expanded: _shopsExpanded,
+            onTap: () {
+              setState(() {
+                _shopsExpanded = !_shopsExpanded;
+              });
+            },
+            child: const _EmptySection(
+              message: 'Dükkan projeleri daha sonra ayrıştırılacak.',
             ),
           ),
         ],
       ),
-    )
     );
   }
 }
@@ -149,29 +200,17 @@ class _PageHeader extends StatelessWidget {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 7,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             color: const Color(0xFFE9E9E9),
             child: const Row(
               children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 26,
-                ),
+                Icon(Icons.person_outline, size: 26),
                 SizedBox(width: 7),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Deniz',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    Text(
-                      'Özdemir',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    Text('Deniz', style: TextStyle(fontSize: 12)),
+                    Text('Özdemir', style: TextStyle(fontSize: 12)),
                     Text(
                       'Konacık',
                       style: TextStyle(
@@ -220,16 +259,10 @@ class _SectionCard extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(18),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 16,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               child: Row(
                 children: [
-                  Icon(
-                    icon,
-                    size: 32,
-                  ),
+                  Icon(icon, size: 32),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
@@ -261,12 +294,12 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _ProcessRow extends StatelessWidget {
-  final _ProcessItem item;
+class _ProjectRow extends StatelessWidget {
+  final ProjectSummary project;
   final int index;
 
-  const _ProcessRow({
-    required this.item,
+  const _ProjectRow({
+    required this.project,
     required this.index,
   });
 
@@ -277,22 +310,19 @@ class _ProcessRow extends StatelessWidget {
     return InkWell(
       onTap: () {
         context.push(
-            '/process/${item.name}?progress=${item.progress}',
+          '/process/${Uri.encodeComponent(project.name)}'
+          '?progress=${project.roundedProgress}'
+          '&projectId=${project.id}',
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 64,
-          vertical: 5,
-        ),
-        color: isEvenRow
-            ? const Color(0xFFE9E9E9)
-            : Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 7),
+        color: isEvenRow ? const Color(0xFFE9E9E9) : Colors.white,
         child: Row(
           children: [
             Expanded(
               child: Text(
-                item.name,
+                project.name,
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
@@ -301,7 +331,7 @@ class _ProcessRow extends StatelessWidget {
               ),
             ),
             Text(
-              '%${item.progress}',
+              '%${project.roundedProgress}',
               style: const TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
@@ -314,12 +344,22 @@ class _ProcessRow extends StatelessWidget {
   }
 }
 
-class _ProcessItem {
-  final String name;
-  final int progress;
+class _EmptySection extends StatelessWidget {
+  final String message;
 
-  const _ProcessItem({
-    required this.name,
-    required this.progress,
-  });
+  const _EmptySection({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          message,
+          style: const TextStyle(fontSize: 14, color: Colors.black54),
+        ),
+      ),
+    );
+  }
 }
