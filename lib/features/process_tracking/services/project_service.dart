@@ -21,7 +21,7 @@ class ProjectService {
       );
 
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      request.headers.accept.add(ContentType.json.mimeType);
+      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
 
       final response = await request.close();
       final responseBody = await response.transform(utf8.decoder).join();
