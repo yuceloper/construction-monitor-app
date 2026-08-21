@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../services/auth_service.dart';
+import '../services/session_manager.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -11,6 +14,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _authService = AuthService();
+
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -19,8 +26,49 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _login() {
-    context.go('/sites');
+  Future<void> _login() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (username.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Kullanıcı adı ve parola zorunludur.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final auth = await _authService.login(
+        username: username,
+        password: password,
+      );
+
+      SessionManager.instance.setAuth(auth);
+
+      if (!mounted) return;
+      context.go('/sites');
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Beklenmeyen bir hata oluştu.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -36,7 +84,6 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: [
                   const SizedBox(height: 40),
-
                   const Text(
                     'LOGO',
                     style: TextStyle(
@@ -45,9 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
                   const Text(
                     'Şantiye Takip Uygulaması',
                     textAlign: TextAlign.center,
@@ -57,9 +102,7 @@ class _LoginPageState extends State<LoginPage> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
                   const SizedBox(height: 28),
-
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
@@ -76,6 +119,8 @@ class _LoginPageState extends State<LoginPage> {
                           label: 'Kullanıcı Adı',
                           child: TextField(
                             controller: _usernameController,
+                            enabled: !_isLoading,
+                            textInputAction: TextInputAction.next,
                             decoration: _inputDecoration(),
                           ),
                         ),
@@ -84,40 +129,66 @@ class _LoginPageState extends State<LoginPage> {
                           label: 'Parola',
                           child: TextField(
                             controller: _passwordController,
+                            enabled: !_isLoading,
                             obscureText: true,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) {
+                              if (!_isLoading) _login();
+                            },
                             decoration: _inputDecoration(),
                           ),
                         ),
-                        const SizedBox(height: 36),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 18),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 30),
                         SizedBox(
                           width: double.infinity,
                           height: 58,
                           child: ElevatedButton(
-                            onPressed: _login,
+                            onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.black54,
+                              disabledForegroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(22),
                               ),
                             ),
-                            child: const Text(
-                              'GİRİŞ',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'GİRİŞ',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 18),
-
                   const Text(
                     '© Copyright 2026 SefaTech tüm hakları saklıdır.',
                     textAlign: TextAlign.center,
