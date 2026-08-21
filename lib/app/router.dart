@@ -6,6 +6,7 @@ import '../features/site_selection/presentation/site_selection_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/process_tracking/presentation/process_tracking_page.dart';
 import '../features/process_tracking/presentation/process_detail_page.dart';
+import '../features/process_tracking/presentation/work_detail_page.dart';
 
 import 'main_shell.dart';
 
@@ -57,6 +58,24 @@ class AppRouter {
                 );
             },
             ),
+            GoRoute(
+  path: '/process/:blockName/work/:workId',
+  pageBuilder: (context, state) {
+    final blockName = state.pathParameters['blockName']!;
+    final workId = state.pathParameters['workId']!;
+
+    final workTitle =
+        state.uri.queryParameters['title'] ?? 'İş Detayı';
+
+    return NoTransitionPage(
+      child: WorkDetailPage(
+        blockName: blockName,
+        workId: workId,
+        workTitle: workTitle,
+      ),
+    );
+  },
+),
         ],
       ),
     ],

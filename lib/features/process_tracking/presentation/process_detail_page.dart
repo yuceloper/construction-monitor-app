@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/process_work_item.dart';
+
 class ProcessDetailPage extends StatefulWidget {
   final String blockName;
   final int progress;
@@ -20,55 +22,85 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
   final List<_ProcessStage> _stages = const [
     _ProcessStage(
-      title: 'Proje & Hazırlık',
-      status: _StageStatus.completed,
-      items: [
-        'Proje',
-        'Ruhsat',
-        'Şantiye Hazırlığı',
-      ],
-    ),
-    _ProcessStage(
-      title: 'Hafriyat & Temel',
-      status: _StageStatus.completed,
-      items: [
-        'Kazı',
-        'Grobeton',
-        'Temel Donatı + Beton',
-        'İzolasyon & Drenaj',
-      ],
-    ),
+    title: 'Proje & Hazırlık',
+    status: _StageStatus.completed,
+    items: [
+      ProcessWorkItem(
+        id: 'project',
+        title: 'Proje',
+        status: 'completed',
+      ),
+      ProcessWorkItem(
+        id: 'permit',
+        title: 'Ruhsat',
+        status: 'completed',
+      ),
+      ProcessWorkItem(
+        id: 'site-preparation',
+        title: 'Şantiye Hazırlığı',
+        status: 'completed',
+      ),
+    ],
+  ),
+    
+  _ProcessStage(
+    title: 'Hafriyat & Temel',
+    status: _StageStatus.completed,
+    items: [
+      ProcessWorkItem(
+        id: 'excavation',
+        title: 'Kazı',
+        status: 'completed',
+      ),
+      ProcessWorkItem(
+        id: 'lean-concrete',
+        title: 'Grobeton',
+        status: 'completed',
+      ),
+      ProcessWorkItem(
+        id: 'foundation',
+        title: 'Temel Donatı + Beton',
+        status: 'completed',
+      ),
+      ProcessWorkItem(
+        id: 'insulation',
+        title: 'İzolasyon & Drenaj',
+        status: 'completed',
+      ),
+    ],
+  ),
     _ProcessStage(
       title: 'Taşıyıcı Sistem',
       status: _StageStatus.completed,
       items: [
-        'Kolon',
-        'Kiriş',
-        'Döşeme',
       ],
     ),
     _ProcessStage(
-      title: 'Duvar İşleri',
-      status: _StageStatus.active,
-      items: [
-        'Dış Duvar',
-        'İç Bölme',
-      ],
-    ),
+    title: 'Duvar İşleri',
+    status: _StageStatus.active,
+    items: [
+      ProcessWorkItem(
+        id: 'exterior-wall',
+        title: 'Dış Duvar',
+        status: 'active',
+      ),
+      ProcessWorkItem(
+        id: 'interior-wall',
+        title: 'İç Bölme',
+        status: 'waiting',
+      ),
+    ],
+  ),
     _ProcessStage(
       title: 'Tesisat Alt Yapı',
       status: _StageStatus.waiting,
       items: [
-        'Elektrik',
-        'Mekanik',
       ],
     ),
     _ProcessStage(
       title: 'Sıva & Şap',
       status: _StageStatus.waiting,
       items: [
-        'Sıva',
-        'Şap',
       ],
     ),
     _ProcessStage(
@@ -214,14 +246,15 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                   final expanded = _expandedIndex == index;
 
                   return _StageCard(
-                    stage: stage,
-                    expanded: expanded,
-                    onTap: () {
-                      setState(() {
-                        _expandedIndex = expanded ? null : index;
-                      });
-                    },
-                  );
+  blockName: widget.blockName,
+  stage: stage,
+  expanded: expanded,
+  onTap: () {
+    setState(() {
+      _expandedIndex = expanded ? null : index;
+    });
+  },
+);
                 },
               ),
             ),
@@ -233,11 +266,13 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 }
 
 class _StageCard extends StatelessWidget {
+  final String blockName;
   final _ProcessStage stage;
   final bool expanded;
   final VoidCallback onTap;
 
   const _StageCard({
+    required this.blockName,
     required this.stage,
     required this.expanded,
     required this.onTap,
@@ -323,37 +358,47 @@ class _StageCard extends StatelessWidget {
               ),
               child: Column(
                 children: stage.items
-                    .map(
-                      (item) => Padding(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 5),
-                        child: Row(
-                          children: [
-                            Icon(
-                              stage.status ==
-                                      _StageStatus.completed
-                                  ? Icons.check_box_outlined
-                                  : Icons.check_box_outline_blank,
-                              color: stage.status ==
-                                      _StageStatus.completed
-                                  ? const Color(0xFF00A52B)
-                                  : Colors.black,
-                              size: 26,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              item,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                decoration:
-                                    TextDecoration.underline,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
+    .map(
+      (item) => InkWell(
+        onTap: () {
+          context.push(
+            '/process/$blockName/work/${item.id}'
+            '?title=${Uri.encodeComponent(item.title)}',
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Icon(
+                item.status == 'completed'
+                    ? Icons.check_box_outlined
+                    : Icons.check_box_outline_blank,
+                color: item.status == 'completed'
+                    ? const Color(0xFF00A52B)
+                    : Colors.black,
+                size: 26,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      ),
+    )
+    .toList(),
               ),
             ),
         ],
@@ -434,7 +479,7 @@ enum _StageStatus {
 class _ProcessStage {
   final String title;
   final _StageStatus status;
-  final List<String> items;
+  final List<ProcessWorkItem> items;
 
   const _ProcessStage({
     required this.title,
