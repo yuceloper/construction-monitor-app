@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ProcessTrackingPage extends StatefulWidget {
   const ProcessTrackingPage({super.key});
@@ -275,7 +276,9 @@ class _ProcessRow extends StatelessWidget {
 
     return InkWell(
       onTap: () {
-        // Sonraki adımda detay ekranına geçeceğiz.
+        context.push(
+            '/process/${item.name}?progress=${item.progress}',
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(
