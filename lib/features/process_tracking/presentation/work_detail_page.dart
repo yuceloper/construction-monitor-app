@@ -87,7 +87,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
   }
 
   Future<void> _addWarning() async {
-    final controller = TextEditingController();
+    String draft = '';
 
     final text = await showDialog<String>(
       context: context,
@@ -95,10 +95,10 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
         return AlertDialog(
           title: const Text('Uyarı Ekle'),
           content: TextField(
-            controller: controller,
             autofocus: true,
             minLines: 3,
             maxLines: 5,
+            onChanged: (value) => draft = value,
             decoration: const InputDecoration(
               hintText: 'Uyarı açıklaması',
               border: OutlineInputBorder(),
@@ -111,7 +111,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
             ),
             FilledButton(
               onPressed: () {
-                final value = controller.text.trim();
+                final value = draft.trim();
                 if (value.isNotEmpty) {
                   Navigator.of(dialogContext).pop(value);
                 }
@@ -122,8 +122,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
         );
       },
     );
-
-    controller.dispose();
 
     if (text == null || !mounted) return;
 
