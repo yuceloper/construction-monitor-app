@@ -22,86 +22,58 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
   final List<_ProcessStage> _stages = const [
     _ProcessStage(
-    title: 'Proje & Hazırlık',
-    status: _StageStatus.completed,
-    items: [
-      ProcessWorkItem(
-        id: 'project',
-        title: 'Proje',
-        status: 'completed',
-      ),
-      ProcessWorkItem(
-        id: 'permit',
-        title: 'Ruhsat',
-        status: 'completed',
-      ),
-      ProcessWorkItem(
-        id: 'site-preparation',
-        title: 'Şantiye Hazırlığı',
-        status: 'completed',
-      ),
-    ],
-  ),
-    
-  _ProcessStage(
-    title: 'Hafriyat & Temel',
-    status: _StageStatus.completed,
-    items: [
-      ProcessWorkItem(
-        id: 'excavation',
-        title: 'Kazı',
-        status: 'completed',
-      ),
-      ProcessWorkItem(
-        id: 'lean-concrete',
-        title: 'Grobeton',
-        status: 'completed',
-      ),
-      ProcessWorkItem(
-        id: 'foundation',
-        title: 'Temel Donatı + Beton',
-        status: 'completed',
-      ),
-      ProcessWorkItem(
-        id: 'insulation',
-        title: 'İzolasyon & Drenaj',
-        status: 'completed',
-      ),
-    ],
-  ),
-    _ProcessStage(
-      title: 'Taşıyıcı Sistem',
+      title: 'Proje & Hazırlık',
       status: _StageStatus.completed,
       items: [
+        ProcessWorkItem(id: 'project', title: 'Proje', status: 'completed'),
+        ProcessWorkItem(id: 'permit', title: 'Ruhsat', status: 'completed'),
+        ProcessWorkItem(
+          id: 'site-preparation',
+          title: 'Şantiye Hazırlığı',
+          status: 'completed',
+        ),
       ],
     ),
     _ProcessStage(
-    title: 'Duvar İşleri',
-    status: _StageStatus.active,
-    items: [
-      ProcessWorkItem(
-        id: 'exterior-wall',
-        title: 'Dış Duvar',
-        status: 'active',
-      ),
-      ProcessWorkItem(
-        id: 'interior-wall',
-        title: 'İç Bölme',
-        status: 'waiting',
-      ),
-    ],
-  ),
+      title: 'Hafriyat & Temel',
+      status: _StageStatus.completed,
+      items: [
+        ProcessWorkItem(id: 'excavation', title: 'Kazı', status: 'completed'),
+        ProcessWorkItem(id: 'lean-concrete', title: 'Grobeton', status: 'completed'),
+        ProcessWorkItem(
+          id: 'foundation',
+          title: 'Temel Donatı + Beton',
+          status: 'completed',
+        ),
+        ProcessWorkItem(
+          id: 'insulation',
+          title: 'İzolasyon & Drenaj',
+          status: 'completed',
+        ),
+      ],
+    ),
+    _ProcessStage(
+      title: 'Taşıyıcı Sistem',
+      status: _StageStatus.completed,
+      items: [],
+    ),
+    _ProcessStage(
+      title: 'Duvar İşleri',
+      status: _StageStatus.active,
+      items: [
+        ProcessWorkItem(id: 'exterior-wall', title: 'Dış Duvar', status: 'active'),
+        ProcessWorkItem(id: 'interior-wall', title: 'İç Bölme', status: 'waiting'),
+      ],
+    ),
     _ProcessStage(
       title: 'Tesisat Alt Yapı',
       status: _StageStatus.waiting,
-      items: [
-      ],
+      items: [],
     ),
     _ProcessStage(
       title: 'Sıva & Şap',
       status: _StageStatus.waiting,
-      items: [
-      ],
+      items: [],
     ),
     _ProcessStage(
       title: 'Doğrama & Çatı',
@@ -138,17 +110,13 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
         child: Column(
           children: [
             const _PageHeader(),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
               child: Row(
                 children: [
                   InkWell(
                     onTap: () => context.pop(),
-                    child: const Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 20,
-                    ),
+                    child: const Icon(Icons.arrow_back_ios_new, size: 20),
                   ),
                   const SizedBox(width: 10),
                   Text(
@@ -161,9 +129,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                 ],
               ),
             ),
-
             const Divider(height: 1),
-
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
               child: Row(
@@ -187,10 +153,8 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                               child: LinearProgressIndicator(
                                 value: widget.progress / 100,
                                 minHeight: 11,
-                                backgroundColor:
-                                    const Color(0xFFAECBE1),
-                                valueColor:
-                                    const AlwaysStoppedAnimation<Color>(
+                                backgroundColor: const Color(0xFFAECBE1),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
                                   Color(0xFF0066A6),
                                 ),
                               ),
@@ -213,7 +177,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                     height: 40,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Sonraki adımda güncelleme ekranı.
+                        context.push('/process/${widget.blockName}/update');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0066A6),
@@ -223,38 +187,30 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                       ),
-                      child: const Text(
-                        'Güncelle',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
+                      child: const Text('Güncelle', style: TextStyle(fontSize: 16)),
                     ),
                   ),
                 ],
               ),
             ),
-
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
                 itemCount: _stages.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(height: 12),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final stage = _stages[index];
                   final expanded = _expandedIndex == index;
 
                   return _StageCard(
-  blockName: widget.blockName,
-  stage: stage,
-  expanded: expanded,
-  onTap: () {
-    setState(() {
-      _expandedIndex = expanded ? null : index;
-    });
-  },
-);
+                    stage: stage,
+                    expanded: expanded,
+                    onTap: () {
+                      setState(() {
+                        _expandedIndex = expanded ? null : index;
+                      });
+                    },
+                  );
                 },
               ),
             ),
@@ -266,13 +222,11 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 }
 
 class _StageCard extends StatelessWidget {
-  final String blockName;
   final _ProcessStage stage;
   final bool expanded;
   final VoidCallback onTap;
 
   const _StageCard({
-    required this.blockName,
     required this.stage,
     required this.expanded,
     required this.onTap,
@@ -292,19 +246,10 @@ class _StageCard extends StatelessWidget {
   Widget get statusIcon {
     switch (stage.status) {
       case _StageStatus.completed:
-        return const Icon(
-          Icons.check,
-          color: Color(0xFF00A52B),
-          size: 30,
-        );
-
+        return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
       case _StageStatus.active:
       case _StageStatus.waiting:
-        return const Icon(
-          Icons.hourglass_empty,
-          color: Colors.black,
-          size: 30,
-        );
+        return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
     }
   }
 
@@ -321,10 +266,7 @@ class _StageCard extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(18),
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 17,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
               child: Row(
                 children: [
                   statusIcon,
@@ -332,73 +274,48 @@ class _StageCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       stage.title,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
                     ),
                   ),
                   Icon(
-                    expanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
+                    expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
                     size: 38,
                   ),
                 ],
               ),
             ),
           ),
-
           if (expanded && stage.items.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(
-                left: 56,
-                right: 20,
-                bottom: 18,
-              ),
+              padding: const EdgeInsets.only(left: 56, right: 20, bottom: 18),
               child: Column(
-                children: stage.items
-    .map(
-      (item) => InkWell(
-        onTap: () {
-          context.push(
-            '/process/$blockName/work/${item.id}'
-            '?title=${Uri.encodeComponent(item.title)}',
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(
-            children: [
-              Icon(
-                item.status == 'completed'
-                    ? Icons.check_box_outlined
-                    : Icons.check_box_outline_blank,
-                color: item.status == 'completed'
-                    ? const Color(0xFF00A52B)
-                    : Colors.black,
-                size: 26,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                size: 22,
-              ),
-            ],
-          ),
-        ),
-      ),
-    )
-    .toList(),
+                children: stage.items.map((item) {
+                  final completed = item.status == 'completed';
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Icon(
+                          completed
+                              ? Icons.check_box_outlined
+                              : Icons.check_box_outline_blank,
+                          color: completed ? const Color(0xFF00A52B) : Colors.black,
+                          size: 26,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
             ),
         ],
@@ -418,38 +335,20 @@ class _PageHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Expanded(
-            child: Text(
-              'LOGO',
-              style: TextStyle(
-                fontSize: 32,
-                color: Colors.grey,
-              ),
-            ),
+            child: Text('LOGO', style: TextStyle(fontSize: 32, color: Colors.grey)),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 7,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             color: const Color(0xFFE9E9E9),
             child: const Row(
               children: [
-                Icon(
-                  Icons.person_outline,
-                  size: 26,
-                ),
+                Icon(Icons.person_outline, size: 26),
                 SizedBox(width: 7),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Deniz',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                    Text(
-                      'Özdemir',
-                      style: TextStyle(fontSize: 12),
-                    ),
+                    Text('Deniz', style: TextStyle(fontSize: 12)),
+                    Text('Özdemir', style: TextStyle(fontSize: 12)),
                     Text(
                       'Konacık',
                       style: TextStyle(
@@ -470,11 +369,7 @@ class _PageHeader extends StatelessWidget {
   }
 }
 
-enum _StageStatus {
-  completed,
-  active,
-  waiting,
-}
+enum _StageStatus { completed, active, waiting }
 
 class _ProcessStage {
   final String title;
