@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'router.dart';
 import 'theme.dart';
 
 class ConstructionMonitorApp extends StatelessWidget {
@@ -6,17 +8,11 @@ class ConstructionMonitorApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Construction Monitor',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const Scaffold(
-        body: Center(
-          child: Text(
-            'Construction Monitor',
-          ),
-        ),
-      ),
+      routerConfig: AppRouter.router,
     );
   }
 }
