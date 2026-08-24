@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/work_item_summary.dart';
+import '../services/work_item_service.dart';
+
 class StageUpdatePage extends StatefulWidget {
   final String blockName;
-  final String stageId;
+  final int stageId;
   final String stageTitle;
+  final int projectId;
 
   const StageUpdatePage({
     super.key,
     required this.blockName,
     required this.stageId,
     required this.stageTitle,
+    required this.projectId,
   });
 
   @override
@@ -18,43 +23,108 @@ class StageUpdatePage extends StatefulWidget {
 }
 
 class _StageUpdatePageState extends State<StageUpdatePage> {
-  late final List<_EditableWork> _works;
+  final _workItemService = WorkItemService();
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+  String? _errorMessage;
+  List<_EditableWork> _works = const [];
 
   @override
   void initState() {
     super.initState();
-    _works = _itemsForStage(widget.stageId)
-        .map((item) => item.copy())
-        .toList();
+    _loadWorks();
   }
 
-  List<_EditableWork> _itemsForStage(String stageId) {
-    switch (stageId) {
-      case 'excavation-foundation':
-        return const [
-          _EditableWork(id: 'excavation', title: 'Kazı', completed: true),
-          _EditableWork(id: 'lean-concrete', title: 'Grobeton', completed: true),
-          _EditableWork(id: 'foundation', title: 'Temel Donatı + Beton', completed: true),
-          _EditableWork(id: 'insulation', title: 'İzolasyon & Drenaj', completed: true),
-        ];
-      case 'wall-works':
-        return const [
-          _EditableWork(id: 'exterior-wall', title: 'Dış Duvar', completed: true),
-          _EditableWork(id: 'interior-wall', title: 'İç Bölme', completed: false),
-        ];
-      default:
-        return const [
-          _EditableWork(id: 'work-1', title: 'İş 1', completed: false),
-          _EditableWork(id: 'work-2', title: 'İş 2', completed: false),
-        ];
+  Future<void> _loadWorks() async {
+    if (widget.projectId <= 0 || widget.stageId <= 0) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Proje veya süreç kimliği bulunamadı.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final items = await _workItemService.getByProject(widget.projectId);
+      final stageItems = items
+          .where((item) => item.progressBlockId == widget.stageId)
+          .map(_EditableWork.fromSummary)
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _works = stageItems;
+      });
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Alt işler yüklenirken beklenmeyen bir hata oluştu.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   void _openWorkDetail(_EditableWork work) {
     context.push(
-      '/process/${widget.blockName}/work/${work.id}'
+      '/process/${Uri.encodeComponent(widget.blockName)}/work/${work.id}'
       '?title=${Uri.encodeComponent(work.title)}',
     );
+  }
+
+  Future<void> _save() async {
+    if (_isSaving) return;
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      for (final work in _works.where((work) => work.changed)) {
+        await _workItemService.updateStatus(
+          work.id,
+          completed: work.completed,
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Değişiklikler kaydedildi.')),
+      );
+      context.pop();
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Değişiklikler kaydedilirken beklenmeyen bir hata oluştu.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   @override
@@ -84,110 +154,175 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
               ),
             ),
             const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEDEDED),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Column(
-                      children: _works.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final work = entry.value;
-                        return Padding(
-                          padding: EdgeInsets.only(bottom: index == _works.length - 1 ? 0 : 16),
-                          child: Row(
-                            children: [
-                              SizedBox(
-                                width: 34,
-                                height: 34,
-                                child: Checkbox(
-                                  value: work.completed,
-                                  activeColor: Colors.black,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _works[index] = work.copy(completed: value ?? false);
-                                    });
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => _openWorkDetail(work),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 8),
-                                    child: Text(
-                                      work.title,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w500,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              if (work.id == 'exterior-wall') ...[
-                                const Icon(Icons.link, color: Colors.red, size: 25),
-                                const SizedBox(width: 10),
-                                const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 26),
-                              ],
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 42),
-                  SizedBox(
-                    height: 58,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Değişiklikler kaydedildi.')),
-                        );
-                        context.pop();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                      ),
-                      child: const Text('KAYDET', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: _buildContent()),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.black));
+    }
+
+    if (_errorMessage != null && _works.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              Text(_errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 18),
+              ElevatedButton(
+                onPressed: _loadWorks,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
+      children: [
+        if (_errorMessage != null) ...[
+          Text(
+            _errorMessage!,
+            style: const TextStyle(color: Colors.redAccent),
+          ),
+          const SizedBox(height: 16),
+        ],
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEDEDED),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: _works.isEmpty
+              ? const Text('Bu süreç için alt iş bulunmuyor.')
+              : Column(
+                  children: _works.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final work = entry.value;
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: index == _works.length - 1 ? 0 : 16,
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 34,
+                            height: 34,
+                            child: Checkbox(
+                              value: work.completed,
+                              activeColor: Colors.black,
+                              onChanged: _isSaving
+                                  ? null
+                                  : (value) {
+                                      setState(() {
+                                        _works[index] = work.copy(
+                                          completed: value ?? false,
+                                        );
+                                      });
+                                    },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => _openWorkDetail(work),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Text(
+                                  work.title,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+        ),
+        const SizedBox(height: 42),
+        SizedBox(
+          height: 58,
+          child: ElevatedButton(
+            onPressed: _isSaving ? null : _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.black38,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'KAYDET',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _EditableWork {
-  final String id;
+  final int id;
   final String title;
   final bool completed;
+  final bool initialCompleted;
 
   const _EditableWork({
     required this.id,
     required this.title,
     required this.completed,
+    required this.initialCompleted,
   });
+
+  factory _EditableWork.fromSummary(WorkItemSummary item) {
+    return _EditableWork(
+      id: item.id,
+      title: item.title,
+      completed: item.isCompleted,
+      initialCompleted: item.isCompleted,
+    );
+  }
+
+  bool get changed => completed != initialCompleted;
 
   _EditableWork copy({bool? completed}) {
     return _EditableWork(
       id: id,
       title: title,
       completed: completed ?? this.completed,
+      initialCompleted: initialCompleted,
     );
   }
 }
