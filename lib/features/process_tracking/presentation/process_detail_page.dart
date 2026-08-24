@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/process_work_item.dart';
+import '../models/progress_stage.dart';
+import '../services/progress_service.dart';
 
 class ProcessDetailPage extends StatefulWidget {
   final String blockName;
   final int progress;
+  final int projectId;
 
   const ProcessDetailPage({
     super.key,
     required this.blockName,
     required this.progress,
+    required this.projectId,
   });
 
   @override
@@ -18,89 +22,94 @@ class ProcessDetailPage extends StatefulWidget {
 }
 
 class _ProcessDetailPageState extends State<ProcessDetailPage> {
-  int? _expandedIndex;
+  final _progressService = ProgressService();
 
-  final List<_ProcessStage> _stages = const [
-    _ProcessStage(
-      title: 'Proje & Hazırlık',
-      status: _StageStatus.completed,
-      items: [
-        ProcessWorkItem(id: 'project', title: 'Proje', status: 'completed'),
-        ProcessWorkItem(id: 'permit', title: 'Ruhsat', status: 'completed'),
-        ProcessWorkItem(
-          id: 'site-preparation',
-          title: 'Şantiye Hazırlığı',
-          status: 'completed',
-        ),
-      ],
-    ),
-    _ProcessStage(
-      title: 'Hafriyat & Temel',
-      status: _StageStatus.completed,
-      items: [
-        ProcessWorkItem(id: 'excavation', title: 'Kazı', status: 'completed'),
-        ProcessWorkItem(id: 'lean-concrete', title: 'Grobeton', status: 'completed'),
-        ProcessWorkItem(
-          id: 'foundation',
-          title: 'Temel Donatı + Beton',
-          status: 'completed',
-        ),
-        ProcessWorkItem(
-          id: 'insulation',
-          title: 'İzolasyon & Drenaj',
-          status: 'completed',
-        ),
-      ],
-    ),
-    _ProcessStage(
-      title: 'Taşıyıcı Sistem',
-      status: _StageStatus.completed,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'Duvar İşleri',
-      status: _StageStatus.active,
-      items: [
-        ProcessWorkItem(id: 'exterior-wall', title: 'Dış Duvar', status: 'active'),
-        ProcessWorkItem(id: 'interior-wall', title: 'İç Bölme', status: 'waiting'),
-      ],
-    ),
-    _ProcessStage(
-      title: 'Tesisat Alt Yapı',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'Sıva & Şap',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'Doğrama & Çatı',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'İnce İşler',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'Montaj',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'Peyzaj',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-    _ProcessStage(
-      title: 'Teslim',
-      status: _StageStatus.waiting,
-      items: [],
-    ),
-  ];
+  int? _expandedIndex;
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<ProgressStage> _stages = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStages();
+  }
+
+  Future<void> _loadStages() async {
+    if (widget.projectId <= 0) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Proje kimliği bulunamadı.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final stages = await _progressService.getStagesByProject(widget.projectId);
+      if (!mounted) return;
+      setState(() {
+        _stages = stages;
+      });
+    } on ProgressException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Süreç aşamaları yüklenirken beklenmeyen bir hata oluştu.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  List<ProcessWorkItem> _itemsForStage(String stageName) {
+    switch (stageName) {
+      case 'Proje & Hazırlık':
+        return const [
+          ProcessWorkItem(id: 'project', title: 'Proje', status: 'completed'),
+          ProcessWorkItem(id: 'permit', title: 'Ruhsat', status: 'completed'),
+          ProcessWorkItem(
+            id: 'site-preparation',
+            title: 'Şantiye Hazırlığı',
+            status: 'completed',
+          ),
+        ];
+      case 'Hafriyat & Temel':
+        return const [
+          ProcessWorkItem(id: 'excavation', title: 'Kazı', status: 'completed'),
+          ProcessWorkItem(id: 'lean-concrete', title: 'Grobeton', status: 'completed'),
+          ProcessWorkItem(
+            id: 'foundation',
+            title: 'Temel Donatı + Beton',
+            status: 'completed',
+          ),
+          ProcessWorkItem(
+            id: 'insulation',
+            title: 'İzolasyon & Drenaj',
+            status: 'completed',
+          ),
+        ];
+      case 'Duvar İşleri':
+        return const [
+          ProcessWorkItem(id: 'exterior-wall', title: 'Dış Duvar', status: 'active'),
+          ProcessWorkItem(id: 'interior-wall', title: 'İç Bölme', status: 'waiting'),
+        ];
+      default:
+        return const [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +186,10 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                     height: 40,
                     child: ElevatedButton(
                       onPressed: () {
-                        context.push('/process/${widget.blockName}/update');
+                        context.push(
+                          '/process/${Uri.encodeComponent(widget.blockName)}/update'
+                          '?projectId=${widget.projectId}',
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0066A6),
@@ -193,31 +205,92 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-                itemCount: _stages.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final stage = _stages[index];
-                  final expanded = _expandedIndex == index;
-
-                  return _StageCard(
-                    stage: stage,
-                    expanded: expanded,
-                    onTap: () {
-                      setState(() {
-                        _expandedIndex = expanded ? null : index;
-                      });
-                    },
-                  );
-                },
-              ),
-            ),
+            Expanded(child: _buildStageContent()),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildStageContent() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.black),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              const SizedBox(height: 12),
+              Text(_errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 18),
+              ElevatedButton(
+                onPressed: _loadStages,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_stages.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadStages,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 120),
+            Center(child: Text('Bu proje için süreç aşaması bulunmuyor.')),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadStages,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
+        itemCount: _stages.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final progressStage = _stages[index];
+          final stage = _ProcessStage(
+            title: progressStage.name,
+            status: _statusForPercentage(progressStage.percentage),
+            items: _itemsForStage(progressStage.name),
+          );
+          final expanded = _expandedIndex == index;
+
+          return _StageCard(
+            stage: stage,
+            expanded: expanded,
+            onTap: () {
+              setState(() {
+                _expandedIndex = expanded ? null : index;
+              });
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  _StageStatus _statusForPercentage(double percentage) {
+    if (percentage >= 100) return _StageStatus.completed;
+    if (percentage > 0) return _StageStatus.active;
+    return _StageStatus.waiting;
   }
 }
 
@@ -306,10 +379,7 @@ class _StageCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item.title,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              decoration: TextDecoration.underline,
-                            ),
+                            style: const TextStyle(fontSize: 16),
                           ),
                         ),
                       ],
