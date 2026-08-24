@@ -62,8 +62,13 @@ class AppRouter {
             path: '/process/:blockName/update',
             pageBuilder: (context, state) {
               final blockName = state.pathParameters['blockName']!;
+              final projectId =
+                  int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
               return NoTransitionPage(
-                child: ProcessUpdatePage(blockName: blockName),
+                child: ProcessUpdatePage(
+                  blockName: blockName,
+                  projectId: projectId,
+                ),
               );
             },
           ),
@@ -71,15 +76,18 @@ class AppRouter {
             path: '/process/:blockName/update/:stageId',
             pageBuilder: (context, state) {
               final blockName = state.pathParameters['blockName']!;
-              final stageId = state.pathParameters['stageId']!;
+              final stageId = int.tryParse(state.pathParameters['stageId'] ?? '') ?? 0;
               final stageTitle =
                   state.uri.queryParameters['title'] ?? 'Süreç Güncelle';
+              final projectId =
+                  int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
 
               return NoTransitionPage(
                 child: StageUpdatePage(
                   blockName: blockName,
                   stageId: stageId,
                   stageTitle: stageTitle,
+                  projectId: projectId,
                 ),
               );
             },
