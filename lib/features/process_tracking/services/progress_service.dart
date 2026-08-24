@@ -7,6 +7,38 @@ import '../models/progress_stage.dart';
 
 class ProgressService {
   Future<List<ProgressStage>> getStagesByProject(int projectId) async {
+    final decoded = await _get('/progress/project/$projectId');
+    final data = decoded['data'];
+
+    if (data is! List) {
+      throw const ProgressException('Sunucu süreç listesi döndürmedi.');
+    }
+
+    final stages = data
+        .whereType<Map>()
+        .map((item) => ProgressStage.fromJson(Map<String, dynamic>.from(item)))
+        .where((stage) => stage.id > 0 && stage.name.isNotEmpty)
+        .toList();
+
+    stages.sort((a, b) => a.blockNumber.compareTo(b.blockNumber));
+    return stages;
+  }
+
+  Future<double> getOverallProgress(int projectId) async {
+    final decoded = await _get('/progress/project/$projectId/overall');
+    final raw = decoded['data'];
+
+    if (raw is num) return raw.toDouble().clamp(0.0, 100.0);
+
+    final parsed = double.tryParse(raw?.toString() ?? '');
+    if (parsed == null) {
+      throw const ProgressException('Sunucu genel ilerleme değerini döndürmedi.');
+    }
+
+    return parsed.clamp(0.0, 100.0);
+  }
+
+  Future<Map<String, dynamic>> _get(String path) async {
     final token = SessionManager.instance.accessToken;
 
     if (token == null || token.isEmpty) {
@@ -16,10 +48,7 @@ class ProgressService {
     final client = HttpClient();
 
     try {
-      final request = await client.getUrl(
-        Uri.parse('${ApiConfig.baseUrl}/progress/project/$projectId'),
-      );
-
+      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}$path'));
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
 
@@ -35,23 +64,11 @@ class ProgressService {
 
         if (decoded['success'] != true) {
           throw ProgressException(
-            decoded['message']?.toString() ?? 'Süreç aşamaları alınamadı.',
+            decoded['message']?.toString() ?? 'Süreç bilgileri alınamadı.',
           );
         }
 
-        final data = decoded['data'];
-        if (data is! List) {
-          throw const ProgressException('Sunucu süreç listesi döndürmedi.');
-        }
-
-        final stages = data
-            .whereType<Map>()
-            .map((item) => ProgressStage.fromJson(Map<String, dynamic>.from(item)))
-            .where((stage) => stage.id > 0 && stage.name.isNotEmpty)
-            .toList();
-
-        stages.sort((a, b) => a.blockNumber.compareTo(b.blockNumber));
-        return stages;
+        return decoded;
       }
 
       if (response.statusCode == 401 || response.statusCode == 403) {
@@ -60,7 +77,7 @@ class ProgressService {
         );
       }
 
-      throw ProgressException('Süreç aşamaları alınamadı. Sunucu hatası: ${response.statusCode}');
+      throw ProgressException('Süreç bilgileri alınamadı. Sunucu hatası: ${response.statusCode}');
     } on SocketException {
       throw ProgressException(
         'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
