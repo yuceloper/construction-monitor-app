@@ -64,6 +64,17 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
     }
   }
 
+  Future<void> _openProject(ProjectSummary project) async {
+    await context.push(
+      '/process/${Uri.encodeComponent(project.name)}'
+      '?progress=${project.roundedProgress}'
+      '&projectId=${project.id}',
+    );
+
+    if (!mounted) return;
+    await _loadProjects();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -191,6 +202,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
             (entry) => _ProjectRow(
               project: entry.value,
               index: entry.key,
+              onTap: () => _openProject(entry.value),
             ),
           )
           .toList(),
@@ -316,10 +328,12 @@ class _SectionCard extends StatelessWidget {
 class _ProjectRow extends StatelessWidget {
   final ProjectSummary project;
   final int index;
+  final VoidCallback onTap;
 
   const _ProjectRow({
     required this.project,
     required this.index,
+    required this.onTap,
   });
 
   @override
@@ -327,13 +341,7 @@ class _ProjectRow extends StatelessWidget {
     final isEvenRow = (index + 1).isEven;
 
     return InkWell(
-      onTap: () {
-        context.push(
-          '/process/${Uri.encodeComponent(project.name)}'
-          '?progress=${project.roundedProgress}'
-          '&projectId=${project.id}',
-        );
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 7),
         color: isEvenRow ? const Color(0xFFE9E9E9) : Colors.white,
