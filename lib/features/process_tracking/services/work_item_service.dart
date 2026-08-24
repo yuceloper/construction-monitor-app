@@ -51,13 +51,7 @@ class WorkItemService {
         return items;
       }
 
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        throw const WorkItemException(
-          'Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.',
-        );
-      }
-
-      throw WorkItemException('Alt işler alınamadı. Sunucu hatası: ${response.statusCode}');
+      _throwForStatus(response.statusCode, 'Alt işler alınamadı.');
     } on SocketException {
       throw WorkItemException(
         'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
@@ -67,6 +61,64 @@ class WorkItemService {
     } finally {
       client.close(force: true);
     }
+  }
+
+  Future<WorkItemSummary> updateStatus(int id, {required bool completed}) async {
+    final token = SessionManager.instance.accessToken;
+
+    if (token == null || token.isEmpty) {
+      throw const WorkItemException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+    }
+
+    final client = HttpClient();
+
+    try {
+      final request = await client.putUrl(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/$id/status'),
+      );
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.contentType = ContentType.json;
+      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
+      request.write(jsonEncode({
+        'status': completed ? 'COMPLETED' : 'WAITING',
+      }));
+
+      final response = await request.close();
+      final responseBody = await response.transform(utf8.decoder).join();
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(responseBody);
+        if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+          throw const WorkItemException('Alt iş güncellenemedi.');
+        }
+
+        final data = decoded['data'];
+        if (data is! Map) {
+          throw const WorkItemException('Sunucu güncellenen alt işi döndürmedi.');
+        }
+
+        return WorkItemSummary.fromJson(Map<String, dynamic>.from(data));
+      }
+
+      _throwForStatus(response.statusCode, 'Alt iş güncellenemedi.');
+    } on SocketException {
+      throw WorkItemException(
+        'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
+      );
+    } on FormatException {
+      throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Never _throwForStatus(int statusCode, String message) {
+    if (statusCode == 401 || statusCode == 403) {
+      throw const WorkItemException(
+        'Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.',
+      );
+    }
+    throw WorkItemException('$message Sunucu hatası: $statusCode');
   }
 }
 
