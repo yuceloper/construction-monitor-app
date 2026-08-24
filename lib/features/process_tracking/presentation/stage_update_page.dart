@@ -80,11 +80,15 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
     }
   }
 
-  void _openWorkDetail(_EditableWork work) {
-    context.push(
+  Future<void> _openWorkDetail(_EditableWork work) async {
+    await context.push(
       '/process/${Uri.encodeComponent(widget.blockName)}/work/${work.id}'
       '?title=${Uri.encodeComponent(work.title)}',
     );
+
+    if (mounted) {
+      await _loadWorks();
+    }
   }
 
   Future<void> _save() async {
@@ -255,6 +259,18 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                               ),
                             ),
                           ),
+                          if (work.hasDependency) ...[
+                            const SizedBox(width: 8),
+                            const Icon(Icons.link, color: Colors.red, size: 25),
+                          ],
+                          if (work.hasCriticalWarning) ...[
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.red,
+                              size: 26,
+                            ),
+                          ],
                         ],
                       ),
                     );
@@ -300,12 +316,16 @@ class _EditableWork {
   final String title;
   final bool completed;
   final bool initialCompleted;
+  final bool hasDependency;
+  final bool hasCriticalWarning;
 
   const _EditableWork({
     required this.id,
     required this.title,
     required this.completed,
     required this.initialCompleted,
+    required this.hasDependency,
+    required this.hasCriticalWarning,
   });
 
   factory _EditableWork.fromSummary(WorkItemSummary item) {
@@ -314,6 +334,8 @@ class _EditableWork {
       title: item.title,
       completed: item.isCompleted,
       initialCompleted: item.isCompleted,
+      hasDependency: item.hasDependency,
+      hasCriticalWarning: item.hasCriticalWarning,
     );
   }
 
@@ -325,6 +347,8 @@ class _EditableWork {
       title: title,
       completed: completed ?? this.completed,
       initialCompleted: initialCompleted,
+      hasDependency: hasDependency,
+      hasCriticalWarning: hasCriticalWarning,
     );
   }
 }
