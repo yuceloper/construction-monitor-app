@@ -5,6 +5,8 @@ class WorkItemSummary {
   final String status;
   final double percentage;
   final int orderIndex;
+  final bool hasDependency;
+  final bool hasCriticalWarning;
 
   const WorkItemSummary({
     required this.id,
@@ -13,6 +15,8 @@ class WorkItemSummary {
     required this.status,
     required this.percentage,
     required this.orderIndex,
+    required this.hasDependency,
+    required this.hasCriticalWarning,
   });
 
   factory WorkItemSummary.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,8 @@ class WorkItemSummary {
       status: json['status']?.toString() ?? 'WAITING',
       percentage: percentage.clamp(0, 100),
       orderIndex: (json['orderIndex'] as num?)?.toInt() ?? 0,
+      hasDependency: json['hasDependency'] == true,
+      hasCriticalWarning: json['hasCriticalWarning'] == true,
     );
   }
 
