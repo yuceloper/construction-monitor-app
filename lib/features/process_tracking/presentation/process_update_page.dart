@@ -48,26 +48,29 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
     try {
       final stages = await _progressService.getStagesByProject(widget.projectId);
       if (!mounted) return;
-      setState(() {
-        _stages = stages;
-      });
+      setState(() => _stages = stages);
     } on ProgressException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = error.message;
-      });
+      setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Süreç aşamaları yüklenirken beklenmeyen bir hata oluştu.';
       });
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openStage(ProgressStage stage) async {
+    await context.push<bool>(
+      '/process/${Uri.encodeComponent(widget.blockName)}/update/${stage.id}'
+      '?title=${Uri.encodeComponent(stage.name)}'
+      '&projectId=${widget.projectId}',
+    );
+
+    if (!mounted) return;
+    await _loadStages();
   }
 
   @override
@@ -89,10 +92,7 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
                   const SizedBox(width: 8),
                   Text(
                     '${widget.blockName} > Güncelle',
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -147,13 +147,7 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
           return _StageUpdateCard(
             title: stage.name,
             percentage: stage.percentage,
-            onTap: () {
-              context.push(
-                '/process/${Uri.encodeComponent(widget.blockName)}/update/${stage.id}'
-                '?title=${Uri.encodeComponent(stage.name)}'
-                '&projectId=${widget.projectId}',
-              );
-            },
+            onTap: () => _openStage(stage),
           );
         },
       ),
