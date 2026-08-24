@@ -31,10 +31,12 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
   String? _errorMessage;
   List<ProgressStage> _stages = const [];
   Map<int, List<WorkItemSummary>> _workItemsByStage = const {};
+  late double _overallProgress;
 
   @override
   void initState() {
     super.initState();
+    _overallProgress = widget.progress.toDouble();
     _loadData();
   }
 
@@ -56,10 +58,12 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       final results = await Future.wait([
         _progressService.getStagesByProject(widget.projectId),
         _workItemService.getByProject(widget.projectId),
+        _progressService.getOverallProgress(widget.projectId),
       ]);
 
       final stages = results[0] as List<ProgressStage>;
       final workItems = results[1] as List<WorkItemSummary>;
+      final overallProgress = results[2] as double;
       final grouped = <int, List<WorkItemSummary>>{};
 
       for (final item in workItems) {
@@ -73,6 +77,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       setState(() {
         _stages = stages;
         _workItemsByStage = grouped;
+        _overallProgress = overallProgress;
       });
     } on ProgressException catch (error) {
       if (!mounted) return;
@@ -86,14 +91,24 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
         _errorMessage = 'Süreç detayları yüklenirken beklenmeyen bir hata oluştu.';
       });
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openUpdate() async {
+    await context.push(
+      '/process/${Uri.encodeComponent(widget.blockName)}/update'
+      '?projectId=${widget.projectId}',
+    );
+
+    if (!mounted) return;
+    await _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
+    final roundedProgress = _overallProgress.round();
+
     return ColoredBox(
       color: Colors.white,
       child: SafeArea(
@@ -105,7 +120,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
               child: Row(
                 children: [
                   InkWell(
-                    onTap: () => context.pop(),
+                    onTap: () => context.pop(true),
                     child: const Icon(Icons.arrow_back_ios_new, size: 20),
                   ),
                   const SizedBox(width: 10),
@@ -135,7 +150,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                           children: [
                             Expanded(
                               child: LinearProgressIndicator(
-                                value: widget.progress / 100,
+                                value: _overallProgress / 100,
                                 minHeight: 11,
                                 backgroundColor: const Color(0xFFAECBE1),
                                 valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0066A6)),
@@ -143,7 +158,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              '%${widget.progress}',
+                              '%$roundedProgress',
                               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -155,12 +170,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                   SizedBox(
                     height: 40,
                     child: ElevatedButton(
-                      onPressed: () {
-                        context.push(
-                          '/process/${Uri.encodeComponent(widget.blockName)}/update'
-                          '?projectId=${widget.projectId}',
-                        );
-                      },
+                      onPressed: _openUpdate,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF0066A6),
                         foregroundColor: Colors.white,
