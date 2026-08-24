@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../models/process_work_item.dart';
 import '../models/progress_stage.dart';
+import '../models/work_item_summary.dart';
 import '../services/progress_service.dart';
+import '../services/work_item_service.dart';
 
 class ProcessDetailPage extends StatefulWidget {
   final String blockName;
@@ -23,19 +24,21 @@ class ProcessDetailPage extends StatefulWidget {
 
 class _ProcessDetailPageState extends State<ProcessDetailPage> {
   final _progressService = ProgressService();
+  final _workItemService = WorkItemService();
 
   int? _expandedIndex;
   bool _isLoading = true;
   String? _errorMessage;
   List<ProgressStage> _stages = const [];
+  Map<int, List<WorkItemSummary>> _workItemsByStage = const {};
 
   @override
   void initState() {
     super.initState();
-    _loadStages();
+    _loadData();
   }
 
-  Future<void> _loadStages() async {
+  Future<void> _loadData() async {
     if (widget.projectId <= 0) {
       setState(() {
         _isLoading = false;
@@ -50,64 +53,42 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
     });
 
     try {
-      final stages = await _progressService.getStagesByProject(widget.projectId);
+      final results = await Future.wait([
+        _progressService.getStagesByProject(widget.projectId),
+        _workItemService.getByProject(widget.projectId),
+      ]);
+
+      final stages = results[0] as List<ProgressStage>;
+      final workItems = results[1] as List<WorkItemSummary>;
+      final grouped = <int, List<WorkItemSummary>>{};
+
+      for (final item in workItems) {
+        grouped.putIfAbsent(item.progressBlockId, () => []).add(item);
+      }
+      for (final items in grouped.values) {
+        items.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+      }
+
       if (!mounted) return;
       setState(() {
         _stages = stages;
+        _workItemsByStage = grouped;
       });
     } on ProgressException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = error.message;
-      });
+      setState(() => _errorMessage = error.message);
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Süreç aşamaları yüklenirken beklenmeyen bir hata oluştu.';
+        _errorMessage = 'Süreç detayları yüklenirken beklenmeyen bir hata oluştu.';
       });
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
-    }
-  }
-
-  List<ProcessWorkItem> _itemsForStage(String stageName) {
-    switch (stageName) {
-      case 'Proje & Hazırlık':
-        return const [
-          ProcessWorkItem(id: 'project', title: 'Proje', status: 'completed'),
-          ProcessWorkItem(id: 'permit', title: 'Ruhsat', status: 'completed'),
-          ProcessWorkItem(
-            id: 'site-preparation',
-            title: 'Şantiye Hazırlığı',
-            status: 'completed',
-          ),
-        ];
-      case 'Hafriyat & Temel':
-        return const [
-          ProcessWorkItem(id: 'excavation', title: 'Kazı', status: 'completed'),
-          ProcessWorkItem(id: 'lean-concrete', title: 'Grobeton', status: 'completed'),
-          ProcessWorkItem(
-            id: 'foundation',
-            title: 'Temel Donatı + Beton',
-            status: 'completed',
-          ),
-          ProcessWorkItem(
-            id: 'insulation',
-            title: 'İzolasyon & Drenaj',
-            status: 'completed',
-          ),
-        ];
-      case 'Duvar İşleri':
-        return const [
-          ProcessWorkItem(id: 'exterior-wall', title: 'Dış Duvar', status: 'active'),
-          ProcessWorkItem(id: 'interior-wall', title: 'İç Bölme', status: 'waiting'),
-        ];
-      default:
-        return const [];
     }
   }
 
@@ -130,10 +111,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                   const SizedBox(width: 10),
                   Text(
                     widget.blockName,
-                    style: const TextStyle(
-                      fontSize: 23,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -150,10 +128,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                       children: [
                         const Text(
                           'Genel İlerleme',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
                         ),
                         const SizedBox(height: 6),
                         Row(
@@ -163,18 +138,13 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                                 value: widget.progress / 100,
                                 minHeight: 11,
                                 backgroundColor: const Color(0xFFAECBE1),
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF0066A6),
-                                ),
+                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0066A6)),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               '%${widget.progress}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -195,9 +165,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                         backgroundColor: const Color(0xFF0066A6),
                         foregroundColor: Colors.white,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       child: const Text('Güncelle', style: TextStyle(fontSize: 16)),
                     ),
@@ -205,18 +173,16 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                 ],
               ),
             ),
-            Expanded(child: _buildStageContent()),
+            Expanded(child: _buildContent()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStageContent() {
+  Widget _buildContent() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.black),
-      );
+      return const Center(child: CircularProgressIndicator(color: Colors.black));
     }
 
     if (_errorMessage != null) {
@@ -231,7 +197,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
               Text(_errorMessage!, textAlign: TextAlign.center),
               const SizedBox(height: 18),
               ElevatedButton(
-                onPressed: _loadStages,
+                onPressed: _loadData,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
@@ -246,7 +212,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
     if (_stages.isEmpty) {
       return RefreshIndicator(
-        onRefresh: _loadStages,
+        onRefresh: _loadData,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: const [
@@ -258,7 +224,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadStages,
+      onRefresh: _loadData,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
@@ -269,7 +235,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
           final stage = _ProcessStage(
             title: progressStage.name,
             status: _statusForPercentage(progressStage.percentage),
-            items: _itemsForStage(progressStage.name),
+            items: _workItemsByStage[progressStage.id] ?? const [],
           );
           final expanded = _expandedIndex == index;
 
@@ -277,9 +243,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
             stage: stage,
             expanded: expanded,
             onTap: () {
-              setState(() {
-                _expandedIndex = expanded ? null : index;
-              });
+              setState(() => _expandedIndex = expanded ? null : index);
             },
           );
         },
@@ -299,11 +263,7 @@ class _StageCard extends StatelessWidget {
   final bool expanded;
   final VoidCallback onTap;
 
-  const _StageCard({
-    required this.stage,
-    required this.expanded,
-    required this.onTap,
-  });
+  const _StageCard({required this.stage, required this.expanded, required this.onTap});
 
   Color get backgroundColor {
     switch (stage.status) {
@@ -317,13 +277,10 @@ class _StageCard extends StatelessWidget {
   }
 
   Widget get statusIcon {
-    switch (stage.status) {
-      case _StageStatus.completed:
-        return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
-      case _StageStatus.active:
-      case _StageStatus.waiting:
-        return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
+    if (stage.status == _StageStatus.completed) {
+      return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
     }
+    return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
   }
 
   @override
@@ -358,29 +315,33 @@ class _StageCard extends StatelessWidget {
               ),
             ),
           ),
+          if (expanded && stage.items.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(left: 56, right: 20, bottom: 18),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Bu aşama için alt iş bulunmuyor.'),
+              ),
+            ),
           if (expanded && stage.items.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(left: 56, right: 20, bottom: 18),
               child: Column(
                 children: stage.items.map((item) {
-                  final completed = item.status == 'completed';
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
                       children: [
                         Icon(
-                          completed
+                          item.isCompleted
                               ? Icons.check_box_outlined
                               : Icons.check_box_outline_blank,
-                          color: completed ? const Color(0xFF00A52B) : Colors.black,
+                          color: item.isCompleted ? const Color(0xFF00A52B) : Colors.black,
                           size: 26,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
-                            item.title,
-                            style: const TextStyle(fontSize: 16),
-                          ),
+                          child: Text(item.title, style: const TextStyle(fontSize: 16)),
                         ),
                       ],
                     ),
@@ -444,11 +405,7 @@ enum _StageStatus { completed, active, waiting }
 class _ProcessStage {
   final String title;
   final _StageStatus status;
-  final List<ProcessWorkItem> items;
+  final List<WorkItemSummary> items;
 
-  const _ProcessStage({
-    required this.title,
-    required this.status,
-    required this.items,
-  });
+  const _ProcessStage({required this.title, required this.status, required this.items});
 }
