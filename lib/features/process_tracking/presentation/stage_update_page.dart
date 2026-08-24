@@ -90,13 +90,15 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
   Future<void> _save() async {
     if (_isSaving) return;
 
+    final changedWorks = _works.where((work) => work.changed).toList();
+
     setState(() {
       _isSaving = true;
       _errorMessage = null;
     });
 
     try {
-      for (final work in _works.where((work) => work.changed)) {
+      for (final work in changedWorks) {
         await _workItemService.updateStatus(
           work.id,
           completed: work.completed,
@@ -107,7 +109,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Değişiklikler kaydedildi.')),
       );
-      context.pop();
+      context.pop(changedWorks.isNotEmpty);
     } on WorkItemException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -140,7 +142,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
               child: Row(
                 children: [
                   InkWell(
-                    onTap: () => context.pop(),
+                    onTap: () => context.pop(false),
                     child: const Icon(Icons.arrow_back_ios_new, size: 20),
                   ),
                   const SizedBox(width: 10),
