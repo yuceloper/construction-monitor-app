@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/work_item_detail.dart';
+import '../services/work_item_service.dart';
+
 class WorkDetailPage extends StatefulWidget {
   final String blockName;
   final String workId;
@@ -18,131 +21,99 @@ class WorkDetailPage extends StatefulWidget {
 }
 
 class _WorkDetailPageState extends State<WorkDetailPage> {
-  late final List<_WarningItem> _warnings;
+  final _service = WorkItemService();
+  bool _isLoading = true;
+  bool _isAddingWarning = false;
+  String? _errorMessage;
+  WorkItemDetail? _detail;
+
+  int get _id => int.tryParse(widget.workId) ?? 0;
 
   @override
   void initState() {
     super.initState();
-    _warnings = [..._initialWarnings(widget.workId)];
+    _loadDetail();
   }
 
-  List<String> _dependencies(String workId) {
-    switch (workId) {
-      case 'exterior-wall':
-        return const ['Kaba İnşaat'];
-      case 'interior-wall':
-        return const ['Dış Duvar'];
-      case 'lean-concrete':
-        return const ['Kazı'];
-      case 'foundation':
-        return const ['Grobeton'];
-      case 'insulation':
-        return const ['Temel Donatı + Beton'];
-      default:
-        return const [];
+  Future<void> _loadDetail() async {
+    if (_id <= 0) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'İş kimliği bulunamadı.';
+      });
+      return;
     }
-  }
 
-  List<_WarningItem> _initialWarnings(String workId) {
-    if (workId == 'exterior-wall') {
-      return const [
-        _WarningItem(
-          text: 'Dış duvarın arasındaki boşluklar düzeltilmeli',
-          date: '27.03.2026',
-          user: 'Ali Reis',
-          critical: true,
-        ),
-        _WarningItem(
-          text: 'Düzeltme için sıvacı bekleniyor.',
-          date: '03.04.2026',
-          user: 'Sefa Özdem',
-        ),
-      ];
-    }
-    return const [];
-  }
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
-  List<_HistoryItem> _history(String workId) {
-    if (workId == 'exterior-wall') {
-      return const [
-        _HistoryItem(
-          text: 'Dış Duvar "tamamlandı" olarak işaretlendi.',
-          date: '26.03.2026',
-          user: 'Sefa Özdem',
-        ),
-        _HistoryItem(
-          text: 'Dış Duvar "tamamlanmadı" olarak işaretlendi.',
-          date: '27.03.2026',
-          user: 'Ali Reis',
-        ),
-      ];
+    try {
+      final detail = await _service.getDetail(_id);
+      if (!mounted) return;
+      setState(() => _detail = detail);
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      setState(() => _errorMessage = error.message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-    return [
-      _HistoryItem(
-        text: '${widget.workTitle} görüntülendi.',
-        date: '22.08.2026',
-        user: 'Deniz Özdemir',
-      ),
-    ];
   }
 
   Future<void> _addWarning() async {
     String draft = '';
-
     final text = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Uyarı Ekle'),
-          content: TextField(
-            autofocus: true,
-            minLines: 3,
-            maxLines: 5,
-            onChanged: (value) => draft = value,
-            decoration: const InputDecoration(
-              hintText: 'Uyarı açıklaması',
-              border: OutlineInputBorder(),
-            ),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Uyarı Ekle'),
+        content: TextField(
+          autofocus: true,
+          minLines: 3,
+          maxLines: 5,
+          onChanged: (value) => draft = value,
+          decoration: const InputDecoration(
+            hintText: 'Uyarı açıklaması',
+            border: OutlineInputBorder(),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('İptal'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final value = draft.trim();
-                if (value.isNotEmpty) {
-                  Navigator.of(dialogContext).pop(value);
-                }
-              },
-              child: const Text('Ekle'),
-            ),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = draft.trim();
+              if (value.isNotEmpty) Navigator.of(dialogContext).pop(value);
+            },
+            child: const Text('Ekle'),
+          ),
+        ],
+      ),
     );
 
     if (text == null || !mounted) return;
+    setState(() => _isAddingWarning = true);
+    try {
+      await _service.addWarning(_id, text);
+      await _loadDetail();
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _isAddingWarning = false);
+    }
+  }
 
-    setState(() {
-      _warnings.insert(
-        0,
-        _WarningItem(
-          text: text,
-          date: '22.08.2026',
-          user: 'Deniz Özdemir',
-          critical: true,
-        ),
-      );
-    });
+  String _date(DateTime? date) {
+    if (date == null) return '-';
+    final local = date.toLocal();
+    return '${local.day.toString().padLeft(2, '0')}.${local.month.toString().padLeft(2, '0')}.${local.year}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final dependencies = _dependencies(widget.workId);
-    final history = _history(widget.workId);
-
     return ColoredBox(
       color: Colors.white,
       child: SafeArea(
@@ -175,7 +146,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                   ),
                   Expanded(
                     child: Text(
-                      widget.workTitle,
+                      _detail?.title ?? widget.workTitle,
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -183,104 +154,118 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
               ),
             ),
             const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.attach_file, size: 34),
-                      SizedBox(width: 6),
-                      Text(
-                        'Bağımlı İşler',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(46, 8, 0, 20),
-                    child: dependencies.isEmpty
-                        ? const Text('Bağımlı iş bulunmuyor.', style: TextStyle(fontSize: 17, color: Colors.black54))
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: dependencies
-                                .map((item) => Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Text(item, style: const TextStyle(fontSize: 19)),
-                                    ))
-                                .toList(),
-                          ),
-                  ),
-                  Row(
-                    children: [
-                      const Icon(Icons.warning_amber_rounded, size: 34),
-                      const SizedBox(width: 6),
-                      const Expanded(
-                        child: Text(
-                          'Uyarılar',
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 44,
-                        width: 145,
-                        child: ElevatedButton.icon(
-                          onPressed: _addWarning,
-                          icon: const Icon(Icons.add, size: 26),
-                          label: const Text('Ekle', style: TextStyle(fontSize: 17)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0066A6),
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (_warnings.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Text('Bu iş için uyarı bulunmuyor.', style: TextStyle(color: Colors.black54)),
-                    )
-                  else
-                    ..._warnings.asMap().entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _WarningCard(item: entry.value),
-                      );
-                    }),
-                  const SizedBox(height: 14),
-                  const Row(
-                    children: [
-                      Icon(Icons.history, size: 32),
-                      SizedBox(width: 6),
-                      Text(
-                        'Tarihçe',
-                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  ...history.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _HistoryCard(item: item),
-                      )),
-                ],
-              ),
-            ),
+            Expanded(child: _buildContent()),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading && _detail == null) {
+      return const Center(child: CircularProgressIndicator(color: Colors.black));
+    }
+    if (_errorMessage != null && _detail == null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_errorMessage!),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _loadDetail, child: const Text('Tekrar Dene')),
+          ],
+        ),
+      );
+    }
+
+    final detail = _detail!;
+    return RefreshIndicator(
+      onRefresh: _loadDetail,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.attach_file, size: 34),
+              SizedBox(width: 6),
+              Text('Bağımlı İşler', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(46, 8, 0, 20),
+            child: detail.dependencies.isEmpty
+                ? const Text('Bağımlı iş bulunmuyor.', style: TextStyle(fontSize: 17, color: Colors.black54))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: detail.dependencies
+                        .map((item) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(item, style: const TextStyle(fontSize: 19)),
+                            ))
+                        .toList(),
+                  ),
+          ),
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, size: 34),
+              const SizedBox(width: 6),
+              const Expanded(
+                child: Text('Uyarılar', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+              ),
+              SizedBox(
+                height: 44,
+                width: 145,
+                child: ElevatedButton.icon(
+                  onPressed: _isAddingWarning ? null : _addWarning,
+                  icon: const Icon(Icons.add, size: 26),
+                  label: const Text('Ekle', style: TextStyle(fontSize: 17)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0066A6),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (detail.warnings.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text('Bu iş için uyarı bulunmuyor.', style: TextStyle(color: Colors.black54)),
+            )
+          else
+            ...detail.warnings.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _WarningCard(item: item, date: _date(item.createdAt)),
+                )),
+          const SizedBox(height: 14),
+          const Row(
+            children: [
+              Icon(Icons.history, size: 32),
+              SizedBox(width: 6),
+              Text('Tarihçe', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (detail.history.isEmpty)
+            const Text('Henüz tarihçe kaydı bulunmuyor.', style: TextStyle(color: Colors.black54))
+          else
+            ...detail.history.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _HistoryCard(item: item, date: _date(item.createdAt)),
+                )),
+        ],
       ),
     );
   }
 }
 
 class _WarningCard extends StatelessWidget {
-  final _WarningItem item;
-
-  const _WarningCard({required this.item});
+  final WorkItemWarning item;
+  final String date;
+  const _WarningCard({required this.item, required this.date});
 
   @override
   Widget build(BuildContext context) {
@@ -293,22 +278,14 @@ class _WarningCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(item.text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-          ),
+          Expanded(child: Text(item.text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(item.date, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              Text(date, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.account_box_outlined, size: 22),
-                  const SizedBox(width: 4),
-                  Text(item.user, style: const TextStyle(fontSize: 15)),
-                ],
-              ),
+              Text(item.user, style: const TextStyle(fontSize: 15)),
             ],
           ),
         ],
@@ -318,37 +295,26 @@ class _WarningCard extends StatelessWidget {
 }
 
 class _HistoryCard extends StatelessWidget {
-  final _HistoryItem item;
-
-  const _HistoryCard({required this.item});
+  final WorkItemHistory item;
+  final String date;
+  const _HistoryCard({required this.item, required this.date});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEDEDED),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFFEDEDED), borderRadius: BorderRadius.circular(16)),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(item.text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-          ),
+          Expanded(child: Text(item.text, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500))),
           const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(item.date, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              Text(date, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.account_box_outlined, size: 21),
-                  const SizedBox(width: 4),
-                  Text(item.user, style: const TextStyle(fontSize: 14)),
-                ],
-              ),
+              Text(item.user, style: const TextStyle(fontSize: 14)),
             ],
           ),
         ],
@@ -357,45 +323,15 @@ class _HistoryCard extends StatelessWidget {
   }
 }
 
-class _WarningItem {
-  final String text;
-  final String date;
-  final String user;
-  final bool critical;
-
-  const _WarningItem({
-    required this.text,
-    required this.date,
-    required this.user,
-    this.critical = false,
-  });
-}
-
-class _HistoryItem {
-  final String text;
-  final String date;
-  final String user;
-
-  const _HistoryItem({
-    required this.text,
-    required this.date,
-    required this.user,
-  });
-}
-
 class _PageHeader extends StatelessWidget {
   const _PageHeader();
-
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Expanded(
-            child: Text('LOGO', style: TextStyle(fontSize: 32, color: Colors.grey)),
-          ),
+          const Expanded(child: Text('LOGO', style: TextStyle(fontSize: 32, color: Colors.grey))),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             color: const Color(0xFFE9E9E9),
@@ -408,15 +344,7 @@ class _PageHeader extends StatelessWidget {
                   children: [
                     Text('Deniz', style: TextStyle(fontSize: 12)),
                     Text('Özdemir', style: TextStyle(fontSize: 12)),
-                    Text(
-                      'Konacık',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
+                    Text('Konacık', style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
                   ],
                 ),
               ],
