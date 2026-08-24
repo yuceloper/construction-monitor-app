@@ -20,6 +20,12 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   String? _errorMessage;
   List<ProjectSummary> _projects = const [];
 
+  List<ProjectSummary> get _houses =>
+      _projects.where((project) => project.isHouse).toList();
+
+  List<ProjectSummary> get _shops =>
+      _projects.where((project) => project.isShop).toList();
+
   @override
   void initState() {
     super.initState();
@@ -144,20 +150,10 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
                 _housesExpanded = !_housesExpanded;
               });
             },
-            child: _projects.isEmpty
-                ? const _EmptySection(message: 'Henüz proje bulunmuyor.')
-                : Column(
-                    children: _projects
-                        .asMap()
-                        .entries
-                        .map(
-                          (entry) => _ProjectRow(
-                            project: entry.value,
-                            index: entry.key,
-                          ),
-                        )
-                        .toList(),
-                  ),
+            child: _buildProjectList(
+              projects: _houses,
+              emptyMessage: 'Henüz ev projesi bulunmuyor.',
+            ),
           ),
           const SizedBox(height: 18),
           _SectionCard(
@@ -169,12 +165,35 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
                 _shopsExpanded = !_shopsExpanded;
               });
             },
-            child: const _EmptySection(
-              message: 'Dükkan projeleri daha sonra ayrıştırılacak.',
+            child: _buildProjectList(
+              projects: _shops,
+              emptyMessage: 'Henüz dükkan projesi bulunmuyor.',
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProjectList({
+    required List<ProjectSummary> projects,
+    required String emptyMessage,
+  }) {
+    if (projects.isEmpty) {
+      return _EmptySection(message: emptyMessage);
+    }
+
+    return Column(
+      children: projects
+          .asMap()
+          .entries
+          .map(
+            (entry) => _ProjectRow(
+              project: entry.value,
+              index: entry.key,
+            ),
+          )
+          .toList(),
     );
   }
 }
