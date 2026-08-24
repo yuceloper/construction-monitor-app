@@ -46,11 +46,14 @@ class AppRouter {
               final blockName = state.pathParameters['blockName']!;
               final progress =
                   int.tryParse(state.uri.queryParameters['progress'] ?? '') ?? 0;
+              final projectId =
+                  int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
 
               return NoTransitionPage(
                 child: ProcessDetailPage(
                   blockName: blockName,
                   progress: progress,
+                  projectId: projectId,
                 ),
               );
             },
