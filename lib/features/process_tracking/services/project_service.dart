@@ -8,17 +8,22 @@ import '../models/project_summary.dart';
 class ProjectService {
   Future<List<ProjectSummary>> getProjects() async {
     final token = SessionManager.instance.accessToken;
+    final siteId = SessionManager.instance.selectedSiteId;
 
     if (token == null || token.isEmpty) {
       throw const ProjectException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+    }
+    if (siteId == null || siteId <= 0) {
+      throw const ProjectException('Şantiye seçimi bulunamadı. Lütfen şantiye seçin.');
     }
 
     final client = HttpClient();
 
     try {
-      final request = await client.getUrl(
-        Uri.parse('${ApiConfig.baseUrl}/projects'),
+      final uri = Uri.parse('${ApiConfig.baseUrl}/projects').replace(
+        queryParameters: {'siteId': '$siteId'},
       );
+      final request = await client.getUrl(uri);
 
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
       request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
@@ -34,9 +39,7 @@ class ProjectService {
         }
 
         if (decoded['success'] != true) {
-          throw ProjectException(
-            decoded['message']?.toString() ?? 'Projeler alınamadı.',
-          );
+          throw ProjectException(decoded['message']?.toString() ?? 'Projeler alınamadı.');
         }
 
         final data = decoded['data'];
@@ -46,28 +49,18 @@ class ProjectService {
 
         return data
             .whereType<Map>()
-            .map(
-              (item) => ProjectSummary.fromJson(
-                Map<String, dynamic>.from(item),
-              ),
-            )
+            .map((item) => ProjectSummary.fromJson(Map<String, dynamic>.from(item)))
             .where((project) => project.id > 0 && project.name.isNotEmpty)
             .toList();
       }
 
       if (response.statusCode == 401 || response.statusCode == 403) {
-        throw const ProjectException(
-          'Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.',
-        );
+        throw const ProjectException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
       }
 
-      throw ProjectException(
-        _readErrorMessage(responseBody, response.statusCode),
-      );
+      throw ProjectException(_readErrorMessage(responseBody, response.statusCode));
     } on SocketException {
-      throw ProjectException(
-        'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
-      );
+      throw ProjectException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
       throw const ProjectException('Sunucudan geçersiz bir yanıt geldi.');
     } finally {
@@ -80,21 +73,15 @@ class ProjectService {
       final decoded = jsonDecode(body);
       if (decoded is Map<String, dynamic>) {
         final message = decoded['message']?.toString().trim();
-        if (message != null && message.isNotEmpty) {
-          return message;
-        }
+        if (message != null && message.isNotEmpty) return message;
       }
-    } catch (_) {
-      // Status based message below.
-    }
-
+    } catch (_) {}
     return 'Projeler alınamadı. Sunucu hatası: $statusCode';
   }
 }
 
 class ProjectException implements Exception {
   final String message;
-
   const ProjectException(this.message);
 
   @override
