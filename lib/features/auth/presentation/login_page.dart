@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../site_selection/services/site_service.dart';
 import '../services/auth_service.dart';
 import '../services/session_manager.dart';
 
@@ -15,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+  final _siteService = SiteService();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -31,9 +34,7 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text;
 
     if (username.isEmpty || password.isEmpty) {
-      setState(() {
-        _errorMessage = 'Kullanıcı adı ve parola zorunludur.';
-      });
+      setState(() => _errorMessage = 'Kullanıcı adı ve parola zorunludur.');
       return;
     }
 
@@ -47,27 +48,38 @@ class _LoginPageState extends State<LoginPage> {
         username: username,
         password: password,
       );
-
       SessionManager.instance.setAuth(auth);
 
+      final sites = await _siteService.getSites();
       if (!mounted) return;
+
+      if (sites.isEmpty) {
+        SessionManager.instance.clear();
+        setState(() {
+          _errorMessage = 'Bu kullanıcıya atanmış şantiye bulunmuyor.';
+        });
+        return;
+      }
+
+      if (sites.length == 1) {
+        SessionManager.instance.setSelectedSite(sites.first);
+        context.go('/dashboard');
+        return;
+      }
+
       context.go('/sites');
     } on AuthException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = error.message;
-      });
+      setState(() => _errorMessage = error.message);
+    } on SiteException catch (error) {
+      if (!mounted) return;
+      SessionManager.instance.clear();
+      setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Beklenmeyen bir hata oluştu.';
-      });
+      setState(() => _errorMessage = 'Beklenmeyen bir hata oluştu.');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -85,11 +97,12 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 40),
                   const Text(
-                    'LOGO',
+                    'SefaTech',
                     style: TextStyle(
-                      fontSize: 42,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w400,
+                      fontSize: 46,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1.5,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -105,10 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 28),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 32,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE9E9E9),
                       borderRadius: BorderRadius.circular(20),
@@ -121,6 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _usernameController,
                             enabled: !_isLoading,
                             textInputAction: TextInputAction.next,
+                            inputFormatters: [LengthLimitingTextInputFormatter(50)],
                             decoration: _inputDecoration(),
                           ),
                         ),
@@ -132,6 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                             enabled: !_isLoading,
                             obscureText: true,
                             textInputAction: TextInputAction.done,
+                            inputFormatters: [LengthLimitingTextInputFormatter(25)],
                             onSubmitted: (_) {
                               if (!_isLoading) _login();
                             },
@@ -192,10 +204,7 @@ class _LoginPageState extends State<LoginPage> {
                   const Text(
                     '© Copyright 2026 SefaTech tüm hakları saklıdır.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.black26,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.black26),
                   ),
                 ],
               ),
@@ -209,10 +218,8 @@ class _LoginPageState extends State<LoginPage> {
   InputDecoration _inputDecoration() {
     return InputDecoration(
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 12,
-      ),
+      counterText: '',
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       filled: true,
       fillColor: Colors.white,
       border: OutlineInputBorder(
@@ -235,10 +242,7 @@ class _LoginFieldRow extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _LoginFieldRow({
-    required this.label,
-    required this.child,
-  });
+  const _LoginFieldRow({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -248,10 +252,7 @@ class _LoginFieldRow extends StatelessWidget {
           width: 120,
           child: Text(
             label,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
         ),
         const SizedBox(width: 12),
