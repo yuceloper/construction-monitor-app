@@ -46,6 +46,27 @@ class DailyTaskService {
     }
   }
 
+  Future<DailyTaskSummary> getTask(int taskId) async {
+    final token = _token();
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/daily'));
+      _auth(request, token);
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return _taskFromApi(body, 'Günlük iş detayı alınamadı.');
+      }
+      _throwForResponse(response.statusCode, body, 'Günlük iş detayı alınamadı.');
+    } on SocketException {
+      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } on FormatException {
+      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<DailyTaskSummary> createTask({
     required int projectId,
     required String priority,
@@ -69,12 +90,7 @@ class DailyTaskService {
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(body);
-        final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
-        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! Map) {
-          throw const DailyTaskException('Günlük iş oluşturulamadı.');
-        }
-        return DailyTaskSummary.fromJson(Map<String, dynamic>.from(data));
+        return _taskFromApi(body, 'Günlük iş oluşturulamadı.');
       }
       _throwForResponse(response.statusCode, body, 'Günlük iş oluşturulamadı.');
     } on SocketException {
@@ -86,9 +102,35 @@ class DailyTaskService {
     }
   }
 
+  Future<DailyTaskSummary> updateTask({
+    required int taskId,
+    required String status,
+    required String note,
+  }) async {
+    final token = _token();
+    final client = HttpClient();
+    try {
+      final request = await client.putUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/daily'));
+      _auth(request, token, json: true);
+      request.write(jsonEncode({'status': status, 'note': note}));
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return _taskFromApi(body, 'Günlük iş güncellenemedi.');
+      }
+      _throwForResponse(response.statusCode, body, 'Günlük iş güncellenemedi.');
+    } on SocketException {
+      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } on FormatException {
+      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<DailyTaskSummary> uploadPhotos(int taskId, List<XFile> photos) async {
     if (photos.isEmpty) {
-      return getTaskFromList(taskId);
+      return getTask(taskId);
     }
     if (photos.length > 10) {
       throw const DailyTaskException('En fazla 10 fotoğraf ekleyebilirsiniz.');
@@ -122,12 +164,7 @@ class DailyTaskService {
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(body);
-        final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
-        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! Map) {
-          throw const DailyTaskException('Fotoğraflar yüklendi ancak görev bilgisi alınamadı.');
-        }
-        return DailyTaskSummary.fromJson(Map<String, dynamic>.from(data));
+        return _taskFromApi(body, 'Fotoğraflar yüklendi ancak görev bilgisi alınamadı.');
       }
       _throwForResponse(response.statusCode, body, 'Fotoğraflar yüklenemedi.');
     } on SocketException {
@@ -139,15 +176,20 @@ class DailyTaskService {
     }
   }
 
-  Future<DailyTaskSummary> getTaskFromList(int taskId) async {
-    final all = await getTasks(includeCompleted: true);
-    return all.firstWhere(
-      (task) => task.id == taskId,
-      orElse: () => throw const DailyTaskException('Günlük iş bulunamadı.'),
-    );
-  }
-
   String photoUrl(int photoId) => '${ApiConfig.baseUrl}/tasks/photos/$photoId';
+
+  Map<String, String> photoHeaders() => {
+        HttpHeaders.authorizationHeader: 'Bearer ${_token()}',
+      };
+
+  DailyTaskSummary _taskFromApi(String body, String fallback) {
+    final decoded = jsonDecode(body);
+    final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
+    if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! Map) {
+      throw DailyTaskException(fallback);
+    }
+    return DailyTaskSummary.fromJson(Map<String, dynamic>.from(data));
+  }
 
   String _token() {
     final token = SessionManager.instance.accessToken;
