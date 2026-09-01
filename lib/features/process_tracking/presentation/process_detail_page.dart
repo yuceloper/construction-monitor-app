@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/app_header.dart';
 import '../models/progress_stage.dart';
 import '../models/work_item_summary.dart';
 import '../services/progress_service.dart';
@@ -114,7 +115,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       child: SafeArea(
         child: Column(
           children: [
-            const _PageHeader(),
+            const AppHeader(),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
               child: Row(
@@ -242,10 +243,11 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
           final progressStage = _stages[index];
+          final items = _workItemsByStage[progressStage.id] ?? const <WorkItemSummary>[];
           final stage = _ProcessStage(
             title: progressStage.name,
-            status: _statusForPercentage(progressStage.percentage),
-            items: _workItemsByStage[progressStage.id] ?? const [],
+            status: _statusForItems(items),
+            items: items,
           );
           final expanded = _expandedIndex == index;
 
@@ -261,10 +263,15 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
     );
   }
 
-  _StageStatus _statusForPercentage(double percentage) {
-    if (percentage >= 100) return _StageStatus.completed;
-    if (percentage > 0) return _StageStatus.active;
-    return _StageStatus.waiting;
+  _StageStatus _statusForItems(List<WorkItemSummary> items) {
+    if (items.isEmpty) return _StageStatus.waiting;
+    if (items.every((item) => item.status == 'COMPLETED')) {
+      return _StageStatus.completed;
+    }
+    if (items.every((item) => item.status == 'WAITING')) {
+      return _StageStatus.waiting;
+    }
+    return _StageStatus.active;
   }
 }
 
@@ -287,10 +294,14 @@ class _StageCard extends StatelessWidget {
   }
 
   Widget get statusIcon {
-    if (stage.status == _StageStatus.completed) {
-      return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
+    switch (stage.status) {
+      case _StageStatus.completed:
+        return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
+      case _StageStatus.active:
+        return const Icon(Icons.autorenew, color: Colors.black, size: 30);
+      case _StageStatus.waiting:
+        return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
     }
-    return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
   }
 
   @override
@@ -371,51 +382,6 @@ class _StageCard extends StatelessWidget {
                 }).toList(),
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PageHeader extends StatelessWidget {
-  const _PageHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Expanded(
-            child: Text('LOGO', style: TextStyle(fontSize: 32, color: Colors.grey)),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            color: const Color(0xFFE9E9E9),
-            child: const Row(
-              children: [
-                Icon(Icons.person_outline, size: 26),
-                SizedBox(width: 7),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Deniz', style: TextStyle(fontSize: 12)),
-                    Text('Özdemir', style: TextStyle(fontSize: 12)),
-                    Text(
-                      'Konacık',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
