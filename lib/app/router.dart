@@ -7,9 +7,9 @@ import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/daily_tasks/presentation/daily_task_create_page.dart';
 import '../features/daily_tasks/presentation/daily_task_detail_page.dart';
 import '../features/daily_tasks/presentation/daily_tasks_page.dart';
-import '../features/stakeholders/models/stakeholder_summary.dart';
-import '../features/stakeholders/presentation/stakeholder_form_page.dart';
 import '../features/stakeholders/presentation/stakeholders_page.dart';
+import '../features/safety/presentation/safety_page.dart';
+import '../features/safety/presentation/safety_pdf_page.dart';
 import '../features/process_tracking/presentation/process_tracking_page.dart';
 import '../features/process_tracking/presentation/process_detail_page.dart';
 import '../features/process_tracking/presentation/process_update_page.dart';
@@ -36,21 +36,15 @@ class AppRouter {
         routes: [
           GoRoute(
             path: '/dashboard',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DashboardPage(),
-            ),
+            pageBuilder: (context, state) => const NoTransitionPage(child: DashboardPage()),
           ),
           GoRoute(
             path: '/daily-tasks',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DailyTasksPage(),
-            ),
+            pageBuilder: (context, state) => const NoTransitionPage(child: DailyTasksPage()),
           ),
           GoRoute(
             path: '/daily-tasks/create',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: DailyTaskCreatePage(),
-            ),
+            pageBuilder: (context, state) => const NoTransitionPage(child: DailyTaskCreatePage()),
           ),
           GoRoute(
             path: '/daily-tasks/:taskId',
@@ -61,32 +55,25 @@ class AppRouter {
           ),
           GoRoute(
             path: '/stakeholders',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: StakeholdersPage(),
-            ),
+            pageBuilder: (context, state) => const NoTransitionPage(child: StakeholdersPage()),
           ),
           GoRoute(
-            path: '/stakeholders/create',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: StakeholderFormPage(),
-            ),
+            path: '/safety',
+            pageBuilder: (context, state) => const NoTransitionPage(child: SafetyPage()),
           ),
           GoRoute(
-            path: '/stakeholders/:id/edit',
+            path: '/safety/pdf/:documentId',
             pageBuilder: (context, state) {
-              final stakeholder = state.extra is StakeholderSummary
-                  ? state.extra as StakeholderSummary
-                  : null;
+              final documentId = int.tryParse(state.pathParameters['documentId'] ?? '') ?? 0;
+              final title = state.uri.queryParameters['title'] ?? 'İSG Dokümanı';
               return NoTransitionPage(
-                child: StakeholderFormPage(stakeholder: stakeholder),
+                child: SafetyPdfPage(documentId: documentId, title: title),
               );
             },
           ),
           GoRoute(
             path: '/process',
-            pageBuilder: (context, state) => const NoTransitionPage(
-              child: ProcessTrackingPage(),
-            ),
+            pageBuilder: (context, state) => const NoTransitionPage(child: ProcessTrackingPage()),
           ),
           GoRoute(
             path: '/process/:blockName',
