@@ -53,6 +53,12 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     await _loadTasks();
   }
 
+  Future<void> _openCreate() async {
+    final created = await context.push<bool>('/daily-tasks/create');
+    if (!mounted || created != true) return;
+    await _loadTasks();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -82,11 +88,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                   SizedBox(
                     height: 42,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Günlük iş ekleme ekranını sıradaki adımda bağlıyoruz.')),
-                        );
-                      },
+                      onPressed: _openCreate,
                       icon: const Icon(Icons.add, size: 25),
                       label: const Text('Ekle', style: TextStyle(fontSize: 17)),
                       style: ElevatedButton.styleFrom(
