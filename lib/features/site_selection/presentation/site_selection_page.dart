@@ -36,6 +36,12 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
       final sites = await _siteService.getSites();
       if (!mounted) return;
 
+      if (sites.length == 1) {
+        SessionManager.instance.setSelectedSite(sites.first);
+        context.go('/dashboard');
+        return;
+      }
+
       final currentSite = SessionManager.instance.selectedSite;
       SiteSummary? selected;
       if (currentSite != null) {
@@ -89,11 +95,12 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
                 children: [
                   const SizedBox(height: 40),
                   const Text(
-                    'LOGO',
+                    'SefaTech',
                     style: TextStyle(
-                      fontSize: 42,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w400,
+                      fontSize: 46,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1.5,
                     ),
                   ),
                   const SizedBox(height: 40),
