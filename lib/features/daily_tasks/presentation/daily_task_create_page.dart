@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/widgets/app_header.dart';
 import '../../auth/services/session_manager.dart';
@@ -21,6 +22,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   final _projectService = ProjectService();
   final _siteService = SiteService();
   final _taskService = DailyTaskService();
+  final _imagePicker = ImagePicker();
   final _noteController = TextEditingController();
 
   bool _isLoading = true;
@@ -28,6 +30,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   String? _errorMessage;
   List<ProjectSummary> _projects = const [];
   List<SiteMemberSummary> _members = const [];
+  List<XFile> _photos = const [];
   int? _projectId;
   int? _memberId;
   String _priority = 'MEDIUM';
@@ -78,6 +81,40 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     }
   }
 
+  Future<void> _pickPhotos() async {
+    if (_isSaving) return;
+    try {
+      final picked = await _imagePicker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 2400,
+      );
+      if (!mounted || picked.isEmpty) return;
+
+      final merged = <XFile>[..._photos, ...picked];
+      final unique = <String, XFile>{};
+      for (final photo in merged) {
+        unique[photo.path] = photo;
+      }
+      final values = unique.values.take(10).toList();
+      setState(() => _photos = values);
+
+      if (unique.length > 10) {
+        _show('En fazla 10 fotoğraf ekleyebilirsiniz. İlk 10 fotoğraf seçildi.');
+      }
+    } catch (_) {
+      if (mounted) _show('Fotoğraflar seçilemedi.');
+    }
+  }
+
+  void _removePhoto(int index) {
+    if (_isSaving) return;
+    setState(() {
+      final copy = [..._photos];
+      copy.removeAt(index);
+      _photos = copy;
+    });
+  }
+
   Future<void> _save() async {
     if (_isSaving) return;
     final note = _noteController.text.trim();
@@ -97,15 +134,26 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
 
     setState(() => _isSaving = true);
     try {
-      await _taskService.createTask(
+      final task = await _taskService.createTask(
         projectId: _projectId!,
         priority: _priority,
         assignedToId: _memberId!,
         note: note,
       );
+
+      if (_photos.isNotEmpty) {
+        await _taskService.uploadPhotos(task.id, _photos);
+      }
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Günlük iş kaydedildi.')),
+        SnackBar(
+          content: Text(
+            _photos.isEmpty
+                ? 'Günlük iş kaydedildi.'
+                : 'Günlük iş ve ${_photos.length} fotoğraf kaydedildi.',
+          ),
+        ),
       );
       context.pop(true);
     } on DailyTaskException catch (error) {
@@ -225,12 +273,54 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         ),
         _FormRow(
           label: 'Fotoğraf',
-          child: OutlinedButton.icon(
-            onPressed: _isSaving
-                ? null
-                : () => _show('Çoklu fotoğraf yükleme altyapısını bir sonraki adımda bağlıyoruz.'),
-            icon: const Icon(Icons.camera_alt_outlined),
-            label: const Text('Fotoğraf ekle'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _isSaving ? null : _pickPhotos,
+                icon: const Icon(Icons.camera_alt_outlined),
+                label: Text(_photos.isEmpty ? 'Fotoğraf ekle' : '${_photos.length} fotoğraf seçildi'),
+              ),
+              if (_photos.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _photos.asMap().entries.map((entry) {
+                    return Container(
+                      constraints: const BoxConstraints(maxWidth: 170),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEDEDED),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.image_outlined, size: 18),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              entry.value.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => _removePhoto(entry.key),
+                            child: const Padding(
+                              padding: EdgeInsets.only(left: 5),
+                              child: Icon(Icons.close, size: 17),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(height: 8),
