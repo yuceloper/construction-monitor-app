@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/site_selection/presentation/site_selection_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
+import '../features/daily_tasks/presentation/daily_task_create_page.dart';
 import '../features/daily_tasks/presentation/daily_tasks_page.dart';
 import '../features/process_tracking/presentation/process_tracking_page.dart';
 import '../features/process_tracking/presentation/process_detail_page.dart';
@@ -39,6 +40,12 @@ class AppRouter {
             path: '/daily-tasks',
             pageBuilder: (context, state) => const NoTransitionPage(
               child: DailyTasksPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/daily-tasks/create',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: DailyTaskCreatePage(),
             ),
           ),
           GoRoute(
