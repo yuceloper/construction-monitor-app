@@ -7,6 +7,9 @@ import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/daily_tasks/presentation/daily_task_create_page.dart';
 import '../features/daily_tasks/presentation/daily_task_detail_page.dart';
 import '../features/daily_tasks/presentation/daily_tasks_page.dart';
+import '../features/stakeholders/models/stakeholder_summary.dart';
+import '../features/stakeholders/presentation/stakeholder_form_page.dart';
+import '../features/stakeholders/presentation/stakeholders_page.dart';
 import '../features/process_tracking/presentation/process_tracking_page.dart';
 import '../features/process_tracking/presentation/process_detail_page.dart';
 import '../features/process_tracking/presentation/process_update_page.dart';
@@ -53,8 +56,29 @@ class AppRouter {
             path: '/daily-tasks/:taskId',
             pageBuilder: (context, state) {
               final taskId = int.tryParse(state.pathParameters['taskId'] ?? '') ?? 0;
+              return NoTransitionPage(child: DailyTaskDetailPage(taskId: taskId));
+            },
+          ),
+          GoRoute(
+            path: '/stakeholders',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: StakeholdersPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/stakeholders/create',
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: StakeholderFormPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/stakeholders/:id/edit',
+            pageBuilder: (context, state) {
+              final stakeholder = state.extra is StakeholderSummary
+                  ? state.extra as StakeholderSummary
+                  : null;
               return NoTransitionPage(
-                child: DailyTaskDetailPage(taskId: taskId),
+                child: StakeholderFormPage(stakeholder: stakeholder),
               );
             },
           ),
@@ -68,11 +92,8 @@ class AppRouter {
             path: '/process/:blockName',
             pageBuilder: (context, state) {
               final blockName = state.pathParameters['blockName']!;
-              final progress =
-                  int.tryParse(state.uri.queryParameters['progress'] ?? '') ?? 0;
-              final projectId =
-                  int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
-
+              final progress = int.tryParse(state.uri.queryParameters['progress'] ?? '') ?? 0;
+              final projectId = int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
               return NoTransitionPage(
                 child: ProcessDetailPage(
                   blockName: blockName,
@@ -86,13 +107,9 @@ class AppRouter {
             path: '/process/:blockName/update',
             pageBuilder: (context, state) {
               final blockName = state.pathParameters['blockName']!;
-              final projectId =
-                  int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
+              final projectId = int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
               return NoTransitionPage(
-                child: ProcessUpdatePage(
-                  blockName: blockName,
-                  projectId: projectId,
-                ),
+                child: ProcessUpdatePage(blockName: blockName, projectId: projectId),
               );
             },
           ),
@@ -101,11 +118,8 @@ class AppRouter {
             pageBuilder: (context, state) {
               final blockName = state.pathParameters['blockName']!;
               final stageId = int.tryParse(state.pathParameters['stageId'] ?? '') ?? 0;
-              final stageTitle =
-                  state.uri.queryParameters['title'] ?? 'Süreç Güncelle';
-              final projectId =
-                  int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
-
+              final stageTitle = state.uri.queryParameters['title'] ?? 'Süreç Güncelle';
+              final projectId = int.tryParse(state.uri.queryParameters['projectId'] ?? '') ?? 0;
               return NoTransitionPage(
                 child: StageUpdatePage(
                   blockName: blockName,
@@ -121,9 +135,7 @@ class AppRouter {
             pageBuilder: (context, state) {
               final blockName = state.pathParameters['blockName']!;
               final workId = state.pathParameters['workId']!;
-              final workTitle =
-                  state.uri.queryParameters['title'] ?? 'İş Detayı';
-
+              final workTitle = state.uri.queryParameters['title'] ?? 'İş Detayı';
               return NoTransitionPage(
                 child: WorkDetailPage(
                   blockName: blockName,
