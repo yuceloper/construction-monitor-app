@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/app_header.dart';
+import '../../auth/services/session_manager.dart';
 import '../../process_tracking/models/project_summary.dart';
 import '../../process_tracking/services/project_service.dart';
 import '../../site_selection/models/site_member_summary.dart';
@@ -50,7 +51,11 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     });
 
     try {
-      final siteId = await _selectedSiteId();
+      final siteId = SessionManager.instance.selectedSiteId;
+      if (siteId == null || siteId <= 0) {
+        throw const DailyTaskException('Şantiye seçimi bulunamadı.');
+      }
+
       final results = await Future.wait([
         _projectService.getProjects(),
         _siteService.getMembers(siteId),
@@ -71,14 +76,6 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<int> _selectedSiteId() async {
-    final siteId = (await Future.value()) == null ? null : null;
-    // Kept local to avoid exposing session details to the widget tree.
-    final dynamic session = _SessionAccess.siteId;
-    if (session is int && session > 0) return session;
-    throw const DailyTaskException('Şantiye seçimi bulunamadı.');
   }
 
   Future<void> _save() async {
@@ -189,7 +186,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         _FormRow(
           label: 'Ev/Dükkan Blok',
           child: DropdownButtonFormField<int>(
-            value: _projectId,
+            initialValue: _projectId,
             isExpanded: true,
             items: _projects
                 .map((project) => DropdownMenuItem(
@@ -204,7 +201,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         _FormRow(
           label: 'Kritiklik Seviyesi',
           child: DropdownButtonFormField<String>(
-            value: _priority,
+            initialValue: _priority,
             items: const [
               DropdownMenuItem(value: 'LOW', child: Text('Düşük')),
               DropdownMenuItem(value: 'MEDIUM', child: Text('Orta')),
@@ -217,7 +214,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         _FormRow(
           label: 'İlgili Kişi',
           child: DropdownButtonFormField<int>(
-            value: _memberId,
+            initialValue: _memberId,
             isExpanded: true,
             items: _members
                 .map((member) => DropdownMenuItem(value: member.id, child: Text(member.fullName)))
@@ -290,19 +287,19 @@ class _FormRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 142,
-            child: Text(label, style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontStyle: FontStyle.italic,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(child: child),
         ],
       ),
     );
-  }
-}
-
-class _SessionAccess {
-  static int? get siteId {
-    // Delayed import avoidance helper is replaced at compile time by direct session access below.
-    return null;
   }
 }
