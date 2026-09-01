@@ -7,6 +7,37 @@ import '../../auth/services/session_manager.dart';
 import '../models/safety_document_summary.dart';
 
 class SafetyDocumentService {
+  Future<List<SafetyDocumentSummary>> getDocuments() async {
+    final token = _token();
+    final siteId = _siteId();
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(
+        Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/safety-documents'),
+      );
+      _auth(request, token);
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(body);
+        final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
+        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! List) {
+          throw const SafetyDocumentException('İSG dokümanları alınamadı.');
+        }
+        return data
+            .whereType<Map>()
+            .map((item) => SafetyDocumentSummary.fromJson(Map<String, dynamic>.from(item)))
+            .where((item) => item.id > 0)
+            .toList();
+      }
+      _throwForResponse(response.statusCode, body);
+    } on SocketException {
+      throw DailySafetyConnectionException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<SafetyDocumentSummary?> getLatest(String type) async {
     final token = _token();
     final siteId = _siteId();
