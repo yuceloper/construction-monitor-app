@@ -353,6 +353,18 @@ class _StageCard extends StatelessWidget {
                         Expanded(
                           child: Text(item.title, style: const TextStyle(fontSize: 16)),
                         ),
+                        if (item.hasDependency) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.link, color: Colors.red, size: 24),
+                        ],
+                        if (item.hasWarning) ...[
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.warning_amber_rounded,
+                            color: Colors.red,
+                            size: 24,
+                          ),
+                        ],
                       ],
                     ),
                   );
