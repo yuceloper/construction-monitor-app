@@ -35,14 +35,14 @@ class WorkItemDetail {
 class WorkItemWarning {
   final int id;
   final String text;
-  final bool critical;
+  final DateTime? dueDate;
   final DateTime? createdAt;
   final String user;
 
   const WorkItemWarning({
     required this.id,
     required this.text,
-    required this.critical,
+    required this.dueDate,
     required this.createdAt,
     required this.user,
   });
@@ -50,10 +50,19 @@ class WorkItemWarning {
   factory WorkItemWarning.fromJson(Map<String, dynamic> json) => WorkItemWarning(
         id: (json['id'] as num?)?.toInt() ?? 0,
         text: json['text']?.toString() ?? '',
-        critical: json['critical'] == true,
+        dueDate: DateTime.tryParse(json['dueDate']?.toString() ?? ''),
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
         user: json['user']?.toString() ?? '',
       );
+
+  bool get isOverdue {
+    final due = dueDate;
+    if (due == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(due.year, due.month, due.day);
+    return date.isBefore(today);
+  }
 }
 
 class WorkItemHistory {
