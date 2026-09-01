@@ -7,6 +7,7 @@ class WorkItemSummary {
   final double weight;
   final int orderIndex;
   final bool hasDependency;
+  final bool hasWarning;
   final bool hasCriticalWarning;
 
   const WorkItemSummary({
@@ -18,6 +19,7 @@ class WorkItemSummary {
     required this.weight,
     required this.orderIndex,
     required this.hasDependency,
+    required this.hasWarning,
     required this.hasCriticalWarning,
   });
 
@@ -40,6 +42,7 @@ class WorkItemSummary {
       weight: weight <= 0 ? 1 : weight,
       orderIndex: (json['orderIndex'] as num?)?.toInt() ?? 0,
       hasDependency: json['hasDependency'] == true,
+      hasWarning: json['hasWarning'] == true,
       hasCriticalWarning: json['hasCriticalWarning'] == true,
     );
   }
