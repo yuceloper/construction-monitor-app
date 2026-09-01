@@ -131,7 +131,7 @@ class DashboardPage extends StatelessWidget {
                       title: 'İSG Takip',
                       icon: Icons.shield_outlined,
                       backgroundColor: const Color(0xFFDED6EE),
-                      onTap: () {},
+                      onTap: () => context.go('/safety'),
                     ),
                     const SizedBox(height: 14),
                     _WideDashboardCard(
