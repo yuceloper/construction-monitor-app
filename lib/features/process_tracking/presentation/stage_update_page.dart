@@ -58,25 +58,15 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
           .toList();
 
       if (!mounted) return;
-      setState(() {
-        _works = stageItems;
-      });
+      setState(() => _works = stageItems);
     } on WorkItemException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = error.message;
-      });
+      setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Alt işler yüklenirken beklenmeyen bir hata oluştu.';
-      });
+      setState(() => _errorMessage = 'Alt işler yüklenirken beklenmeyen bir hata oluştu.');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -86,16 +76,13 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       '?title=${Uri.encodeComponent(work.title)}',
     );
 
-    if (mounted) {
-      await _loadWorks();
-    }
+    if (mounted) await _loadWorks();
   }
 
   Future<void> _save() async {
     if (_isSaving) return;
 
     final changedWorks = _works.where((work) => work.changed).toList();
-
     setState(() {
       _isSaving = true;
       _errorMessage = null;
@@ -103,10 +90,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
 
     try {
       for (final work in changedWorks) {
-        await _workItemService.updateStatus(
-          work.id,
-          completed: work.completed,
-        );
+        await _workItemService.updateStatus(work.id, completed: work.completed);
       }
 
       if (!mounted) return;
@@ -116,20 +100,16 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       context.pop(changedWorks.isNotEmpty);
     } on WorkItemException catch (error) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = error.message;
-      });
+      setState(() => _errorMessage = error.message);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+      await _loadWorks();
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Değişiklikler kaydedilirken beklenmeyen bir hata oluştu.';
-      });
+      setState(() => _errorMessage = 'Değişiklikler kaydedilirken beklenmeyen bir hata oluştu.');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -201,10 +181,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
       children: [
         if (_errorMessage != null) ...[
-          Text(
-            _errorMessage!,
-            style: const TextStyle(color: Colors.redAccent),
-          ),
+          Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
           const SizedBox(height: 16),
         ],
         Container(
@@ -220,9 +197,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                     final index = entry.key;
                     final work = entry.value;
                     return Padding(
-                      padding: EdgeInsets.only(
-                        bottom: index == _works.length - 1 ? 0 : 16,
-                      ),
+                      padding: EdgeInsets.only(bottom: index == _works.length - 1 ? 0 : 16),
                       child: Row(
                         children: [
                           SizedBox(
@@ -235,9 +210,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                   ? null
                                   : (value) {
                                       setState(() {
-                                        _works[index] = work.copy(
-                                          completed: value ?? false,
-                                        );
+                                        _works[index] = work.copy(completed: value ?? false);
                                       });
                                     },
                             ),
@@ -259,18 +232,6 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                               ),
                             ),
                           ),
-                          if (work.hasDependency) ...[
-                            const SizedBox(width: 8),
-                            const Icon(Icons.link, color: Colors.red, size: 25),
-                          ],
-                          if (work.hasCriticalWarning) ...[
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.red,
-                              size: 26,
-                            ),
-                          ],
                         ],
                       ),
                     );
@@ -287,18 +248,13 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
               foregroundColor: Colors.white,
               disabledBackgroundColor: Colors.black38,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
             ),
             child: _isSaving
                 ? const SizedBox(
                     width: 24,
                     height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                   )
                 : const Text(
                     'KAYDET',
@@ -316,16 +272,12 @@ class _EditableWork {
   final String title;
   final bool completed;
   final bool initialCompleted;
-  final bool hasDependency;
-  final bool hasCriticalWarning;
 
   const _EditableWork({
     required this.id,
     required this.title,
     required this.completed,
     required this.initialCompleted,
-    required this.hasDependency,
-    required this.hasCriticalWarning,
   });
 
   factory _EditableWork.fromSummary(WorkItemSummary item) {
@@ -334,8 +286,6 @@ class _EditableWork {
       title: item.title,
       completed: item.isCompleted,
       initialCompleted: item.isCompleted,
-      hasDependency: item.hasDependency,
-      hasCriticalWarning: item.hasCriticalWarning,
     );
   }
 
@@ -347,8 +297,6 @@ class _EditableWork {
       title: title,
       completed: completed ?? this.completed,
       initialCompleted: initialCompleted,
-      hasDependency: hasDependency,
-      hasCriticalWarning: hasCriticalWarning,
     );
   }
 }
