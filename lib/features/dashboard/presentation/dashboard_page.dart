@@ -69,15 +69,9 @@ class DashboardPage extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              firstName,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                            ),
+                            Text(firstName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                             if (lastName.isNotEmpty)
-                              Text(
-                                lastName,
-                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                              ),
+                              Text(lastName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                             if (siteName.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Text(
@@ -130,7 +124,7 @@ class DashboardPage extends StatelessWidget {
                       title: 'Paydaşlar',
                       icon: Icons.handshake_outlined,
                       backgroundColor: const Color(0xFFDCEBD5),
-                      onTap: () {},
+                      onTap: () => context.go('/stakeholders'),
                     ),
                     const SizedBox(height: 14),
                     _WideDashboardCard(
@@ -239,27 +233,17 @@ class _WideDashboardCard extends StatelessWidget {
                         width: 23,
                         height: 23,
                         alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
+                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
                         child: Text(
                           '$badgeCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
                 ],
               ),
               const SizedBox(width: 18),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w500),
-              ),
+              Text(title, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w500)),
             ],
           ),
         ),
