@@ -5,6 +5,7 @@ import '../features/auth/presentation/login_page.dart';
 import '../features/site_selection/presentation/site_selection_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/daily_tasks/presentation/daily_task_create_page.dart';
+import '../features/daily_tasks/presentation/daily_task_detail_page.dart';
 import '../features/daily_tasks/presentation/daily_tasks_page.dart';
 import '../features/process_tracking/presentation/process_tracking_page.dart';
 import '../features/process_tracking/presentation/process_detail_page.dart';
@@ -47,6 +48,15 @@ class AppRouter {
             pageBuilder: (context, state) => const NoTransitionPage(
               child: DailyTaskCreatePage(),
             ),
+          ),
+          GoRoute(
+            path: '/daily-tasks/:taskId',
+            pageBuilder: (context, state) {
+              final taskId = int.tryParse(state.pathParameters['taskId'] ?? '') ?? 0;
+              return NoTransitionPage(
+                child: DailyTaskDetailPage(taskId: taskId),
+              );
+            },
           ),
           GoRoute(
             path: '/process',
