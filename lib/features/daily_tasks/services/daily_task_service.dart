@@ -7,15 +7,8 @@ import '../models/daily_task_summary.dart';
 
 class DailyTaskService {
   Future<List<DailyTaskSummary>> getTasks({required bool includeCompleted}) async {
-    final token = SessionManager.instance.accessToken;
-    final siteId = SessionManager.instance.selectedSiteId;
-
-    if (token == null || token.isEmpty) {
-      throw const DailyTaskException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
-    }
-    if (siteId == null || siteId <= 0) {
-      throw const DailyTaskException('Şantiye seçimi bulunamadı.');
-    }
+    final token = _token();
+    final siteId = _siteId();
 
     final client = HttpClient();
     try {
@@ -23,9 +16,7 @@ class DailyTaskService {
         queryParameters: {'includeCompleted': includeCompleted.toString()},
       );
       final request = await client.getUrl(uri);
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
-
+      _auth(request, token);
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
 
@@ -42,11 +33,7 @@ class DailyTaskService {
             .where((item) => item.id > 0)
             .toList();
       }
-
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        throw const DailyTaskException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
-      }
-      throw DailyTaskException('Günlük işler alınamadı. Sunucu hatası: ${response.statusCode}');
+      _throwForResponse(response.statusCode, body, 'Günlük işler alınamadı.');
     } on SocketException {
       throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
@@ -54,6 +41,90 @@ class DailyTaskService {
     } finally {
       client.close(force: true);
     }
+  }
+
+  Future<DailyTaskSummary> createTask({
+    required int projectId,
+    required String priority,
+    required int assignedToId,
+    required String note,
+  }) async {
+    final token = _token();
+    final siteId = _siteId();
+    final client = HttpClient();
+
+    try {
+      final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/site/$siteId'));
+      _auth(request, token, json: true);
+      request.write(jsonEncode({
+        'projectId': projectId,
+        'priority': priority,
+        'assignedToId': assignedToId,
+        'note': note,
+      }));
+
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(body);
+        final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
+        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! Map) {
+          throw const DailyTaskException('Günlük iş oluşturulamadı.');
+        }
+        return DailyTaskSummary.fromJson(Map<String, dynamic>.from(data));
+      }
+      _throwForResponse(response.statusCode, body, 'Günlük iş oluşturulamadı.');
+    } on SocketException {
+      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } on FormatException {
+      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  String _token() {
+    final token = SessionManager.instance.accessToken;
+    if (token == null || token.isEmpty) {
+      throw const DailyTaskException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+    }
+    return token;
+  }
+
+  int _siteId() {
+    final siteId = SessionManager.instance.selectedSiteId;
+    if (siteId == null || siteId <= 0) {
+      throw const DailyTaskException('Şantiye seçimi bulunamadı.');
+    }
+    return siteId;
+  }
+
+  void _auth(HttpClientRequest request, String token, {bool json = false}) {
+    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+    request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
+    if (json) request.headers.contentType = ContentType.json;
+  }
+
+  Never _throwForResponse(int statusCode, String body, String fallback) {
+    if (statusCode == 401 || statusCode == 403) {
+      throw const DailyTaskException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+
+    String? message;
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        message = decoded['message']?.toString();
+        message ??= decoded['detail']?.toString();
+        message ??= decoded['error']?.toString();
+      }
+    } catch (_) {}
+
+    throw DailyTaskException(
+      message != null && message.trim().isNotEmpty
+          ? message.trim()
+          : '$fallback Sunucu hatası: $statusCode',
+    );
   }
 }
 
