@@ -2,23 +2,59 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/services/session_manager.dart';
+import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
-class SafetyPage extends StatelessWidget {
+class SafetyPage extends StatefulWidget {
   const SafetyPage({super.key});
 
-  Future<void> _openLatest(BuildContext context, String type, String fallbackTitle) async {
-    final messenger = ScaffoldMessenger.of(context);
+  @override
+  State<SafetyPage> createState() => _SafetyPageState();
+}
+
+class _SafetyPageState extends State<SafetyPage> {
+  final _service = SafetyDocumentService();
+
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<SafetyDocumentSummary> _documents = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
-      final document = await SafetyDocumentService().getLatest(type);
-      if (!context.mounted) return;
-      if (document == null) {
-        messenger.showSnackBar(SnackBar(content: Text('$fallbackTitle için henüz PDF eklenmemiş.')));
-        return;
-      }
-      await context.push('/safety/pdf/${document.id}?title=${Uri.encodeComponent(document.title)}');
+      final documents = await _service.getDocuments();
+      if (!mounted) return;
+      setState(() => _documents = documents);
     } on SafetyDocumentException catch (error) {
-      if (context.mounted) messenger.showSnackBar(SnackBar(content: Text(error.message)));
+      if (mounted) setState(() => _errorMessage = error.message);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _openDocument(SafetyDocumentSummary document) async {
+    await context.push(
+      '/safety/pdf/${document.id}?title=${Uri.encodeComponent(document.title)}',
+    );
+  }
+
+  IconData _iconFor(SafetyDocumentSummary document) {
+    switch (document.documentType) {
+      case 'DAILY_SITE_CONTROL_FORM':
+        return Icons.checklist_rounded;
+      case 'MONTHLY_SITE_REPORT':
+        return Icons.outlined_flag;
+      default:
+        return Icons.picture_as_pdf_outlined;
     }
   }
 
@@ -65,22 +101,60 @@ class SafetyPage extends StatelessWidget {
                   const Icon(Icons.account_circle_outlined, size: 42, color: Colors.black54),
                 ],
               ),
-              const SizedBox(height: 50),
-              _SafetyMenuCard(
-                icon: Icons.outlined_flag,
-                title: 'Aylık Saha Kontrol Raporu',
-                onTap: () => _openLatest(context, 'MONTHLY_SITE_REPORT', 'Aylık Saha Kontrol Raporu'),
-              ),
-              const SizedBox(height: 20),
-              _SafetyMenuCard(
-                icon: Icons.checklist_rounded,
-                title: 'Günlük Saha Kontrol Formu',
-                onTap: () => _openLatest(context, 'DAILY_SITE_CONTROL_FORM', 'Günlük Saha Kontrol Formu'),
-              ),
-              const Spacer(),
+              const SizedBox(height: 38),
+              Expanded(child: _buildContent()),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Colors.black));
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_errorMessage!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
+          ],
+        ),
+      );
+    }
+
+    if (_documents.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [
+            SizedBox(height: 120),
+            Center(child: Text('Bu şantiye için İSG belgesi bulunmuyor.')),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _documents.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 20),
+        itemBuilder: (_, index) {
+          final document = _documents[index];
+          return _SafetyMenuCard(
+            icon: _iconFor(document),
+            title: document.title,
+            onTap: () => _openDocument(document),
+          );
+        },
       ),
     );
   }
