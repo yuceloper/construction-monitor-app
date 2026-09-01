@@ -42,17 +42,18 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     }
   }
 
-  Future<void> _openCreate() async {
-    final changed = await context.push<bool>('/stakeholders/create');
-    if (mounted && changed == true) await _load();
-  }
+  Future<void> _call(StakeholderSummary item) async {
+    final phone = item.phoneNumber.trim();
+    if (phone.isEmpty) {
+      _show('Geçerli telefon numarası bulunamadı.');
+      return;
+    }
 
-  Future<void> _openEdit(StakeholderSummary item) async {
-    final changed = await context.push<bool>(
-      '/stakeholders/${item.id}/edit',
-      extra: item,
-    );
-    if (mounted && changed == true) await _load();
+    final uri = Uri(scheme: 'tel', path: phone);
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      _show('Arama ekranı açılamadı.');
+    }
   }
 
   Future<void> _openWhatsApp(StakeholderSummary item) async {
@@ -110,17 +111,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                       style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: _openCreate,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Ekle'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0066A6),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -155,7 +145,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
           physics: const AlwaysScrollableScrollPhysics(),
           children: const [
             SizedBox(height: 120),
-            Center(child: Text('Henüz paydaş eklenmemiş.')),
+            Center(child: Text('Henüz paydaş bulunmuyor.')),
           ],
         ),
       );
@@ -172,52 +162,52 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
           return Material(
             color: const Color(0xFFEDEDED),
             borderRadius: BorderRadius.circular(18),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: () => _openEdit(item),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.companyName,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                          ),
-                          if (item.detail.isNotEmpty) ...[
-                            const SizedBox(height: 5),
-                            Text(item.detail, style: const TextStyle(fontSize: 14)),
-                          ],
-                          const SizedBox(height: 9),
-                          Row(
-                            children: [
-                              const Icon(Icons.person_outline, size: 20),
-                              const SizedBox(width: 5),
-                              Expanded(child: Text(item.contactPerson)),
-                            ],
-                          ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.companyName,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        ),
+                        if (item.detail.isNotEmpty) ...[
                           const SizedBox(height: 5),
-                          Row(
-                            children: [
-                              const Icon(Icons.phone_outlined, size: 20),
-                              const SizedBox(width: 5),
-                              Text(item.phoneNumber),
-                            ],
-                          ),
+                          Text(item.detail, style: const TextStyle(fontSize: 14)),
                         ],
-                      ),
+                        const SizedBox(height: 9),
+                        Row(
+                          children: [
+                            const Icon(Icons.person_outline, size: 20),
+                            const SizedBox(width: 5),
+                            Expanded(child: Text(item.contactPerson)),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone_outlined, size: 20),
+                            const SizedBox(width: 5),
+                            Text(item.phoneNumber),
+                          ],
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'WhatsApp',
-                      onPressed: () => _openWhatsApp(item),
-                      icon: const Icon(Icons.chat, size: 30, color: Color(0xFF1FA855)),
-                    ),
-                    const Icon(Icons.chevron_right, size: 36),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    tooltip: 'Ara',
+                    onPressed: () => _call(item),
+                    icon: const Icon(Icons.call_outlined, size: 29, color: Color(0xFF0066A6)),
+                  ),
+                  IconButton(
+                    tooltip: 'WhatsApp',
+                    onPressed: () => _openWhatsApp(item),
+                    icon: const Icon(Icons.chat, size: 30, color: Color(0xFF1FA855)),
+                  ),
+                ],
               ),
             ),
           );
