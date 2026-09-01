@@ -9,6 +9,7 @@ class DailyTaskSummary {
   final String priority;
   final int? assignedToId;
   final String assignedToName;
+  final List<int> photoIds;
 
   const DailyTaskSummary({
     required this.id,
@@ -21,9 +22,11 @@ class DailyTaskSummary {
     required this.priority,
     required this.assignedToId,
     required this.assignedToName,
+    required this.photoIds,
   });
 
   factory DailyTaskSummary.fromJson(Map<String, dynamic> json) {
+    final rawPhotoIds = json['photoIds'];
     return DailyTaskSummary(
       id: (json['id'] as num?)?.toInt() ?? 0,
       projectId: (json['projectId'] as num?)?.toInt() ?? 0,
@@ -35,6 +38,9 @@ class DailyTaskSummary {
       priority: json['priority']?.toString() ?? 'MEDIUM',
       assignedToId: (json['assignedToId'] as num?)?.toInt(),
       assignedToName: json['assignedToName']?.toString() ?? 'Atanmamış',
+      photoIds: rawPhotoIds is List
+          ? rawPhotoIds.whereType<num>().map((id) => id.toInt()).where((id) => id > 0).toList()
+          : const [],
     );
   }
 
