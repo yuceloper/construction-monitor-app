@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/app_header.dart';
 import '../models/project_summary.dart';
 import '../services/project_service.dart';
 
@@ -82,16 +83,19 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
       child: SafeArea(
         child: Column(
           children: [
-            const _PageHeader(),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            const AppHeader(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Row(
                   children: [
-                    Icon(Icons.arrow_back_ios_new, size: 20),
-                    SizedBox(width: 8),
-                    Text(
+                    InkWell(
+                      onTap: () => context.go('/dashboard'),
+                      child: const Icon(Icons.arrow_back_ios_new, size: 20),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
                       'Süreç Takibi',
                       style: TextStyle(
                         fontSize: 23,
@@ -206,58 +210,6 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
             ),
           )
           .toList(),
-    );
-  }
-}
-
-class _PageHeader extends StatelessWidget {
-  const _PageHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Expanded(
-            child: Text(
-              'LOGO',
-              style: TextStyle(
-                fontSize: 32,
-                color: Colors.grey,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            color: const Color(0xFFE9E9E9),
-            child: const Row(
-              children: [
-                Icon(Icons.person_outline, size: 26),
-                SizedBox(width: 7),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Deniz', style: TextStyle(fontSize: 12)),
-                    Text('Özdemir', style: TextStyle(fontSize: 12)),
-                    Text(
-                      'Konacık',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
