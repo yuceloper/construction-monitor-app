@@ -29,7 +29,7 @@ class WorkItemService {
         items.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
         return items;
       }
-      _throwForStatus(response.statusCode, 'Alt işler alınamadı.');
+      _throwForResponse(response.statusCode, body, 'Alt işler alınamadı.');
     } on SocketException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
@@ -55,7 +55,7 @@ class WorkItemService {
         }
         return WorkItemDetail.fromJson(Map<String, dynamic>.from(data));
       }
-      _throwForStatus(response.statusCode, 'İş detayı alınamadı.');
+      _throwForResponse(response.statusCode, body, 'İş detayı alınamadı.');
     } on SocketException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
@@ -65,17 +65,20 @@ class WorkItemService {
     }
   }
 
-  Future<void> addWarning(int id, String text) async {
+  Future<void> addWarning(int id, String text, DateTime dueDate) async {
     final token = _token();
     final client = HttpClient();
     try {
       final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings'));
       _auth(request, token, json: true);
-      request.write(jsonEncode({'text': text, 'critical': true}));
+      request.write(jsonEncode({
+        'text': text,
+        'dueDate': _dateOnly(dueDate),
+      }));
       final response = await request.close();
-      await response.drain();
+      final body = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        _throwForStatus(response.statusCode, 'Uyarı eklenemedi.');
+        _throwForResponse(response.statusCode, body, 'Uyarı eklenemedi.');
       }
     } on SocketException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
@@ -101,7 +104,7 @@ class WorkItemService {
         }
         return WorkItemSummary.fromJson(Map<String, dynamic>.from(data));
       }
-      _throwForStatus(response.statusCode, 'Alt iş güncellenemedi.');
+      _throwForResponse(response.statusCode, body, 'Alt iş güncellenemedi.');
     } on SocketException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
@@ -125,11 +128,32 @@ class WorkItemService {
     if (json) request.headers.contentType = ContentType.json;
   }
 
-  Never _throwForStatus(int statusCode, String message) {
+  String _dateOnly(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  Never _throwForResponse(int statusCode, String body, String fallback) {
     if (statusCode == 401 || statusCode == 403) {
       throw const WorkItemException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
     }
-    throw WorkItemException('$message Sunucu hatası: $statusCode');
+
+    String? message;
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, dynamic>) {
+        message = decoded['message']?.toString();
+        message ??= decoded['detail']?.toString();
+        message ??= decoded['error']?.toString();
+      }
+    } catch (_) {
+      // Fallback below.
+    }
+
+    throw WorkItemException(
+      message != null && message.trim().isNotEmpty
+          ? message.trim()
+          : '$fallback Sunucu hatası: $statusCode',
+    );
   }
 }
 
