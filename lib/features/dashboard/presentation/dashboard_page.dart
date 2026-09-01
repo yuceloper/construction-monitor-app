@@ -1,74 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/services/session_manager.dart';
+
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final session = SessionManager.instance;
+    final auth = session.auth;
+    final siteName = session.selectedSiteName ?? '';
+    final firstName = auth?.firstName.isNotEmpty == true ? auth!.firstName : auth?.username ?? '';
+    final lastName = auth?.lastName ?? '';
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 18,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           child: Column(
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'LOGO',
-                      style: TextStyle(
-                        fontSize: 34,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w400,
-                      ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        InkWell(
+                          onTap: () => context.go('/dashboard'),
+                          child: const Text(
+                            'SefaTech',
+                            style: TextStyle(
+                              fontSize: 34,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'TDS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     color: const Color(0xFFE9E9E9),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(
-                          Icons.person_outline,
-                          size: 28,
-                        ),
-                        SizedBox(width: 8),
+                        const Icon(Icons.person_outline, size: 28),
+                        const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Deniz',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
+                              firstName,
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                             ),
-                            Text(
-                              'Özdemir',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                            if (lastName.isNotEmpty)
+                              Text(
+                                lastName,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                               ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Konacık',
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                fontStyle: FontStyle.italic,
+                            if (siteName.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                siteName,
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                       ],
@@ -76,9 +97,7 @@ class DashboardPage extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 48),
-
               Expanded(
                 child: Column(
                   children: [
@@ -88,12 +107,10 @@ class DashboardPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _DashboardCard(
-                            title: 'Süreç Takip',
-                            icon: Icons.autorenew,
-                            backgroundColor: const Color(0xFFFFF0C8),
-                            onTap: () {
-                                context.go('/process');
-                            },
+                              title: 'Süreç Takip',
+                              icon: Icons.autorenew,
+                              backgroundColor: const Color(0xFFFFF0C8),
+                              onTap: () => context.go('/process'),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -102,41 +119,33 @@ class DashboardPage extends StatelessWidget {
                               title: 'Günlük\nİşler',
                               icon: Icons.format_list_bulleted,
                               backgroundColor: const Color(0xFFD3E4FF),
-                              onTap: () {
-                                // Sonraki adımda route bağlarız.
-                              },
+                              onTap: () => context.go('/daily-tasks'),
                             ),
                           ),
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
                     _WideDashboardCard(
                       title: 'Paydaşlar',
                       icon: Icons.handshake_outlined,
                       backgroundColor: const Color(0xFFDCEBD5),
                       onTap: () {},
                     ),
-
                     const SizedBox(height: 14),
-
                     _WideDashboardCard(
                       title: 'İSG Takip',
                       icon: Icons.shield_outlined,
                       backgroundColor: const Color(0xFFDED6EE),
                       onTap: () {},
                     ),
-
                     const SizedBox(height: 14),
-
                     _WideDashboardCard(
                       title: 'Bildirimler',
                       icon: Icons.notifications_none,
                       backgroundColor: const Color(0xFFECECEC),
                       badgeCount: 2,
-                      onTap: () {},
+                      onTap: () => context.go('/notifications'),
                     ),
                   ],
                 ),
@@ -175,19 +184,12 @@ class _DashboardCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 44,
-                color: Colors.black,
-              ),
+              Icon(icon, size: 44, color: Colors.black),
               const SizedBox(height: 26),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
               ),
             ],
           ),
@@ -228,10 +230,7 @@ class _WideDashboardCard extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(
-                    icon,
-                    size: 34,
-                  ),
+                  Icon(icon, size: 34),
                   if (badgeCount != null)
                     Positioned(
                       right: -10,
@@ -259,10 +258,7 @@ class _WideDashboardCard extends StatelessWidget {
               const SizedBox(width: 18),
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 23,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w500),
               ),
             ],
           ),
