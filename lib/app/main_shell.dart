@@ -9,8 +9,12 @@ class MainShell extends StatelessWidget {
     required this.child,
   });
 
+  String _location(BuildContext context) {
+    return GoRouterState.of(context).uri.toString();
+  }
+
   int _currentIndex(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
+    final location = _location(context);
 
     if (location.startsWith('/process')) return 1;
     if (location.startsWith('/daily-tasks')) return 2;
@@ -38,65 +42,74 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final location = _location(context);
+    final isDashboard = location == '/dashboard';
     final currentIndex = _currentIndex(context);
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) => _onTap(context, index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black87,
-        backgroundColor: Colors.white,
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        items: [
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Ana Sayfa',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.autorenew),
-            label: 'Süreç Takip',
-          ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.format_list_bulleted),
-            label: 'Günlük İşler',
-          ),
-          BottomNavigationBarItem(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_none),
-                Positioned(
-                  right: -8,
-                  top: -7,
-                  child: Container(
-                    width: 19,
-                    height: 19,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Text(
-                      '2',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+      bottomNavigationBar: isDashboard
+          ? null
+          : BottomNavigationBar(
+              currentIndex: currentIndex,
+              onTap: (index) => _onTap(context, index),
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: const Color(0xFF0066A6),
+              unselectedItemColor: Colors.black54,
+              backgroundColor: Colors.white,
+              selectedFontSize: 13,
+              unselectedFontSize: 12,
+              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
+              items: [
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.home_outlined),
+                  activeIcon: Icon(Icons.home),
+                  label: 'Ana Sayfa',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.autorenew),
+                  activeIcon: Icon(Icons.autorenew, size: 30),
+                  label: 'Süreç Takip',
+                ),
+                const BottomNavigationBarItem(
+                  icon: Icon(Icons.format_list_bulleted),
+                  activeIcon: Icon(Icons.format_list_bulleted, size: 30),
+                  label: 'Günlük İşler',
+                ),
+                BottomNavigationBarItem(
+                  icon: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(Icons.notifications_none),
+                      Positioned(
+                        right: -8,
+                        top: -7,
+                        child: Container(
+                          width: 19,
+                          height: 19,
+                          alignment: Alignment.center,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Text(
+                            '2',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
+                  activeIcon: const Icon(Icons.notifications, size: 30),
+                  label: 'Bildirimler',
                 ),
               ],
             ),
-            label: 'Bildirimler',
-          ),
-        ],
-      ),
     );
   }
 }
