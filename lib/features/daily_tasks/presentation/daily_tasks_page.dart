@@ -59,6 +59,12 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     await _loadTasks();
   }
 
+  Future<void> _openTask(DailyTaskSummary task) async {
+    await context.push<bool>('/daily-tasks/${task.id}');
+    if (!mounted) return;
+    await _loadTasks();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
@@ -176,7 +182,10 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         itemCount: _tasks.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (_, index) => _TaskCard(task: _tasks[index]),
+        itemBuilder: (_, index) => _TaskCard(
+          task: _tasks[index],
+          onTap: () => _openTask(_tasks[index]),
+        ),
       ),
     );
   }
@@ -212,8 +221,9 @@ class _TabButton extends StatelessWidget {
 
 class _TaskCard extends StatelessWidget {
   final DailyTaskSummary task;
+  final VoidCallback onTap;
 
-  const _TaskCard({required this.task});
+  const _TaskCard({required this.task, required this.onTap});
 
   Color get badgeColor {
     switch (task.priority) {
@@ -234,7 +244,7 @@ class _TaskCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () {},
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
           child: Row(
@@ -264,6 +274,12 @@ class _TaskCard extends StatelessWidget {
                         Expanded(
                           child: Text(task.assignedToName, style: const TextStyle(fontSize: 14)),
                         ),
+                        if (task.photoIds.isNotEmpty) ...[
+                          const Icon(Icons.photo_library_outlined, size: 19),
+                          const SizedBox(width: 4),
+                          Text('${task.photoIds.length}', style: const TextStyle(fontSize: 13)),
+                          const SizedBox(width: 10),
+                        ],
                         Container(
                           constraints: const BoxConstraints(minWidth: 88),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
