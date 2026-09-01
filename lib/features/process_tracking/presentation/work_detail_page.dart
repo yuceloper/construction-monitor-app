@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/app_header.dart';
 import '../models/work_item_detail.dart';
 import '../services/work_item_service.dart';
 
@@ -182,7 +183,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
       child: SafeArea(
         child: Column(
           children: [
-            const _PageHeader(),
+            const AppHeader(),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
               child: Row(
@@ -410,37 +411,4 @@ class _WarningDraft {
   final DateTime dueDate;
 
   const _WarningDraft({required this.text, required this.dueDate});
-}
-
-class _PageHeader extends StatelessWidget {
-  const _PageHeader();
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Row(
-        children: [
-          const Expanded(child: Text('LOGO', style: TextStyle(fontSize: 32, color: Colors.grey))),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            color: const Color(0xFFE9E9E9),
-            child: const Row(
-              children: [
-                Icon(Icons.person_outline, size: 26),
-                SizedBox(width: 7),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Deniz', style: TextStyle(fontSize: 12)),
-                    Text('Özdemir', style: TextStyle(fontSize: 12)),
-                    Text('Konacık', style: TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold, fontStyle: FontStyle.italic)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
