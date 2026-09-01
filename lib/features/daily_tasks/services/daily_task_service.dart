@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
@@ -83,6 +86,69 @@ class DailyTaskService {
     }
   }
 
+  Future<DailyTaskSummary> uploadPhotos(int taskId, List<XFile> photos) async {
+    if (photos.isEmpty) {
+      return getTaskFromList(taskId);
+    }
+    if (photos.length > 10) {
+      throw const DailyTaskException('En fazla 10 fotoğraf ekleyebilirsiniz.');
+    }
+
+    final token = _token();
+    final client = HttpClient();
+    final boundary = '----construction-monitor-${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 32)}';
+
+    try {
+      final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/photos'));
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
+      request.headers.set(HttpHeaders.contentTypeHeader, 'multipart/form-data; boundary=$boundary');
+
+      for (final photo in photos) {
+        final bytes = await photo.readAsBytes();
+        if (bytes.length > 10 * 1024 * 1024) {
+          throw DailyTaskException('${photo.name} 10 MB sınırını aşıyor.');
+        }
+        request.add(utf8.encode('--$boundary\r\n'));
+        request.add(utf8.encode(
+          'Content-Disposition: form-data; name="files"; filename="${_safeFileName(photo.name)}"\r\n',
+        ));
+        request.add(utf8.encode('Content-Type: ${_contentType(photo.name)}\r\n\r\n'));
+        request.add(bytes);
+        request.add(utf8.encode('\r\n'));
+      }
+      request.add(utf8.encode('--$boundary--\r\n'));
+
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(body);
+        final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
+        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! Map) {
+          throw const DailyTaskException('Fotoğraflar yüklendi ancak görev bilgisi alınamadı.');
+        }
+        return DailyTaskSummary.fromJson(Map<String, dynamic>.from(data));
+      }
+      _throwForResponse(response.statusCode, body, 'Fotoğraflar yüklenemedi.');
+    } on SocketException {
+      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } on FormatException {
+      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<DailyTaskSummary> getTaskFromList(int taskId) async {
+    final all = await getTasks(includeCompleted: true);
+    return all.firstWhere(
+      (task) => task.id == taskId,
+      orElse: () => throw const DailyTaskException('Günlük iş bulunamadı.'),
+    );
+  }
+
+  String photoUrl(int photoId) => '${ApiConfig.baseUrl}/tasks/photos/$photoId';
+
   String _token() {
     final token = SessionManager.instance.accessToken;
     if (token == null || token.isEmpty) {
@@ -103,6 +169,17 @@ class DailyTaskService {
     request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
     request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
     if (json) request.headers.contentType = ContentType.json;
+  }
+
+  String _safeFileName(String name) => name.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+
+  String _contentType(String name) {
+    final lower = name.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.heic') || lower.endsWith('.heif')) return 'image/heic';
+    return 'image/jpeg';
   }
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
