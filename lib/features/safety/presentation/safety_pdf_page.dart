@@ -92,6 +92,9 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     if (bytes == null) {
       return const Center(child: CircularProgressIndicator(color: Colors.black));
     }
-    return PdfViewer.data(bytes);
+    return PdfViewer.data(
+      bytes,
+      sourceName: 'safety_document_${widget.documentId}.pdf',
+    );
   }
 }
