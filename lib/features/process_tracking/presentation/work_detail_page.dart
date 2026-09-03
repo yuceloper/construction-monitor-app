@@ -64,11 +64,10 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
   }
 
   Future<void> _addWarning() async {
-    final result = await showDialog<_WarningDraft>(
+    final result = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
         String draft = '';
-        DateTime? dueDate;
         String? validationMessage;
 
         return StatefulBuilder(
@@ -90,30 +89,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                     decoration: const InputDecoration(
                       hintText: 'Lütfen detay giriniz.',
                       border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final now = DateTime.now();
-                      final selected = await showDatePicker(
-                        context: dialogContext,
-                        initialDate: dueDate ?? now,
-                        firstDate: DateTime(now.year - 1),
-                        lastDate: DateTime(now.year + 5),
-                      );
-                      if (selected != null) {
-                        setDialogState(() {
-                          dueDate = selected;
-                          validationMessage = null;
-                        });
-                      }
-                    },
-                    icon: const Icon(Icons.event_outlined),
-                    label: Text(
-                      dueDate == null
-                          ? 'Termin tarihi seç'
-                          : 'Termin: ${_formatDate(dueDate!)}',
                     ),
                   ),
                   if (validationMessage != null) ...[
@@ -138,13 +113,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                     setDialogState(() => validationMessage = 'Uyarı detayı zorunludur.');
                     return;
                   }
-                  if (dueDate == null) {
-                    setDialogState(() => validationMessage = 'Termin tarihi seçilmelidir.');
-                    return;
-                  }
-                  Navigator.of(dialogContext).pop(
-                    _WarningDraft(text: value, dueDate: dueDate!),
-                  );
+                  Navigator.of(dialogContext).pop(value);
                 },
                 child: const Text('Ekle'),
               ),
@@ -157,7 +126,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     if (result == null || !mounted) return;
     setState(() => _isAddingWarning = true);
     try {
-      await _service.addWarning(_id, result.text, result.dueDate);
+      await _service.addWarning(_id, result);
       await _loadDetail();
     } on WorkItemException catch (error) {
       if (!mounted) return;
@@ -305,7 +274,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                   child: _WarningCard(
                     item: item,
                     createdDate: _date(item.createdAt),
-                    dueDate: _date(item.dueDate),
                   ),
                 )),
           const SizedBox(height: 14),
@@ -333,12 +301,10 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 class _WarningCard extends StatelessWidget {
   final WorkItemWarning item;
   final String createdDate;
-  final String dueDate;
 
   const _WarningCard({
     required this.item,
     required this.createdDate,
-    required this.dueDate,
   });
 
   @override
@@ -357,15 +323,6 @@ class _WarningCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'Termin: $dueDate',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: item.isOverdue ? Colors.red : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 6),
               Text('Eklenme: $createdDate', style: const TextStyle(fontSize: 12, color: Colors.black54)),
               const SizedBox(height: 8),
               Text(item.user, style: const TextStyle(fontSize: 15)),
@@ -404,11 +361,4 @@ class _HistoryCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _WarningDraft {
-  final String text;
-  final DateTime dueDate;
-
-  const _WarningDraft({required this.text, required this.dueDate});
 }
