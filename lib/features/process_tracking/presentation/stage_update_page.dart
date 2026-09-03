@@ -241,20 +241,18 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                         child: Icon(
                                           Icons.link_rounded,
                                           size: 24,
-                                          color: Colors.black87,
+                                          color: Colors.red,
                                         ),
                                       ),
                                     ],
                                     if (work.hasWarning) ...[
                                       const SizedBox(width: 8),
-                                      Tooltip(
+                                      const Tooltip(
                                         message: 'Uyarı var',
                                         child: Icon(
                                           Icons.warning_amber_rounded,
                                           size: 25,
-                                          color: work.hasCriticalWarning
-                                              ? Colors.red
-                                              : const Color(0xFFE0A800),
+                                          color: Colors.red,
                                         ),
                                       ),
                                     ],
