@@ -56,12 +56,13 @@ class WorkItemWarning {
       );
 
   bool get isOverdue {
-    final due = dueDate;
-    if (due == null) return false;
+    final created = createdAt;
+    if (created == null) return false;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final date = DateTime(due.year, due.month, due.day);
-    return date.isBefore(today);
+    final createdDay = DateTime(created.toLocal().year, created.toLocal().month, created.toLocal().day);
+    final redFrom = createdDay.add(const Duration(days: 5));
+    return !today.isBefore(redFrom);
   }
 }
 
