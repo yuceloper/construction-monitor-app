@@ -65,16 +65,13 @@ class WorkItemService {
     }
   }
 
-  Future<void> addWarning(int id, String text, DateTime dueDate) async {
+  Future<void> addWarning(int id, String text) async {
     final token = _token();
     final client = HttpClient();
     try {
       final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings'));
       _auth(request, token, json: true);
-      request.write(jsonEncode({
-        'text': text,
-        'dueDate': _dateOnly(dueDate),
-      }));
+      request.write(jsonEncode({'text': text}));
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -126,10 +123,6 @@ class WorkItemService {
     request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
     request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
     if (json) request.headers.contentType = ContentType.json;
-  }
-
-  String _dateOnly(DateTime date) {
-    return '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
