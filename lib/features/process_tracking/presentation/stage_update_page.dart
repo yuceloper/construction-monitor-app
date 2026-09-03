@@ -222,13 +222,43 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                               onTap: () => _openWorkDetail(work),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Text(
-                                  work.title,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w500,
-                                    decoration: TextDecoration.underline,
-                                  ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        work.title,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w500,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                    if (work.hasDependency) ...[
+                                      const SizedBox(width: 8),
+                                      const Tooltip(
+                                        message: 'Bağımlı iş var',
+                                        child: Icon(
+                                          Icons.link_rounded,
+                                          size: 24,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                    if (work.hasWarning) ...[
+                                      const SizedBox(width: 8),
+                                      Tooltip(
+                                        message: 'Uyarı var',
+                                        child: Icon(
+                                          Icons.warning_amber_rounded,
+                                          size: 25,
+                                          color: work.hasCriticalWarning
+                                              ? Colors.red
+                                              : const Color(0xFFE0A800),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ),
                             ),
@@ -273,12 +303,18 @@ class _EditableWork {
   final String title;
   final bool completed;
   final bool initialCompleted;
+  final bool hasDependency;
+  final bool hasWarning;
+  final bool hasCriticalWarning;
 
   const _EditableWork({
     required this.id,
     required this.title,
     required this.completed,
     required this.initialCompleted,
+    required this.hasDependency,
+    required this.hasWarning,
+    required this.hasCriticalWarning,
   });
 
   factory _EditableWork.fromSummary(WorkItemSummary item) {
@@ -287,6 +323,9 @@ class _EditableWork {
       title: item.title,
       completed: item.isCompleted,
       initialCompleted: item.isCompleted,
+      hasDependency: item.hasDependency,
+      hasWarning: item.hasWarning,
+      hasCriticalWarning: item.hasCriticalWarning,
     );
   }
 
@@ -298,6 +337,9 @@ class _EditableWork {
       title: title,
       completed: completed ?? this.completed,
       initialCompleted: initialCompleted,
+      hasDependency: hasDependency,
+      hasWarning: hasWarning,
+      hasCriticalWarning: hasCriticalWarning,
     );
   }
 }
