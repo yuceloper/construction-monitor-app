@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -178,34 +179,42 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                           const SizedBox(height: 5),
                           Text(item.detail, style: const TextStyle(fontSize: 14)),
                         ],
-                        const SizedBox(height: 9),
-                        Row(
-                          children: [
-                            const Icon(Icons.person_outline, size: 20),
-                            const SizedBox(width: 5),
-                            Expanded(child: Text(item.contactPerson)),
-                          ],
-                        ),
-                        const SizedBox(height: 5),
-                        Row(
-                          children: [
-                            const Icon(Icons.phone_outlined, size: 20),
-                            const SizedBox(width: 5),
-                            Text(item.phoneNumber),
-                          ],
-                        ),
+                        if (item.contactPerson.isNotEmpty) ...[
+                          const SizedBox(height: 9),
+                          Row(
+                            children: [
+                              const Icon(Icons.person_outline, size: 20),
+                              const SizedBox(width: 5),
+                              Expanded(child: Text(item.contactPerson)),
+                            ],
+                          ),
+                        ],
+                        if (item.phoneNumber.isNotEmpty) ...[
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              const Icon(Icons.phone_outlined, size: 20),
+                              const SizedBox(width: 5),
+                              Text(item.phoneNumber),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
                   IconButton(
                     tooltip: 'Ara',
-                    onPressed: () => _call(item),
-                    icon: const Icon(Icons.call_outlined, size: 29, color: Color(0xFF0066A6)),
+                    onPressed: item.phoneNumber.trim().isEmpty ? null : () => _call(item),
+                    icon: const Icon(Icons.call_rounded, size: 29, color: Color(0xFF0066A6)),
                   ),
                   IconButton(
                     tooltip: 'WhatsApp',
-                    onPressed: () => _openWhatsApp(item),
-                    icon: const Icon(Icons.chat, size: 30, color: Color(0xFF1FA855)),
+                    onPressed: item.phoneNumber.trim().isEmpty ? null : () => _openWhatsApp(item),
+                    icon: const FaIcon(
+                      FontAwesomeIcons.whatsapp,
+                      size: 30,
+                      color: Color(0xFF25D366),
+                    ),
                   ),
                 ],
               ),
