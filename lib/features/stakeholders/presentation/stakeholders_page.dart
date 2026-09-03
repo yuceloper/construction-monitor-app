@@ -45,28 +45,35 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
   Future<void> _call(StakeholderSummary item) async {
     final phone = item.phoneNumber.trim();
     if (phone.isEmpty) {
-      _show('Geçerli telefon numarası bulunamadı.');
+      _show('Bu paydaş için telefon numarası kayıtlı değil.');
       return;
     }
 
     final uri = Uri(scheme: 'tel', path: phone);
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      _show('Arama ekranı açılamadı.');
+      _show('Arama açılamadı. iOS Simulator telefon aramasını desteklemez; gerçek cihazda çalışır.');
     }
   }
 
   Future<void> _openWhatsApp(StakeholderSummary item) async {
     final phone = _normalizePhone(item.phoneNumber);
     if (phone.isEmpty) {
-      _show('Geçerli telefon numarası bulunamadı.');
+      _show('Bu paydaş için telefon numarası kayıtlı değil.');
       return;
     }
 
-    final uri = Uri.https('wa.me', '/$phone');
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final nativeUri = Uri.parse('whatsapp://send?phone=$phone');
+    final webUri = Uri.https('wa.me', '/$phone');
+
+    if (await canLaunchUrl(nativeUri)) {
+      final opened = await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      if (opened) return;
+    }
+
+    final opened = await launchUrl(webUri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      _show('WhatsApp açılamadı.');
+      _show('WhatsApp açılamadı. Uygulamanın cihazda kurulu olduğundan emin olun.');
     }
   }
 
@@ -203,13 +210,13 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                   ),
                   IconButton(
                     tooltip: 'Ara',
-                    onPressed: item.phoneNumber.trim().isEmpty ? null : () => _call(item),
-                    icon: const Icon(Icons.call_rounded, size: 29, color: Color(0xFF0066A6)),
+                    onPressed: () => _call(item),
+                    icon: const Icon(Icons.call_rounded, size: 30, color: Color(0xFF0077B5)),
                   ),
                   IconButton(
                     tooltip: 'WhatsApp',
-                    onPressed: item.phoneNumber.trim().isEmpty ? null : () => _openWhatsApp(item),
-                    icon: const _WhatsAppLikeIcon(),
+                    onPressed: () => _openWhatsApp(item),
+                    icon: const _WhatsAppIcon(size: 34),
                   ),
                 ],
               ),
@@ -221,28 +228,75 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
   }
 }
 
-class _WhatsAppLikeIcon extends StatelessWidget {
-  const _WhatsAppLikeIcon();
+class _WhatsAppIcon extends StatelessWidget {
+  final double size;
+
+  const _WhatsAppIcon({required this.size});
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        const Icon(
-          Icons.chat_bubble,
-          size: 32,
-          color: Color(0xFF25D366),
-        ),
-        Transform.rotate(
-          angle: -0.15,
-          child: const Icon(
-            Icons.call,
-            size: 17,
-            color: Colors.white,
-          ),
-        ),
-      ],
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _WhatsAppPainter()),
     );
   }
+}
+
+class _WhatsAppPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final green = Paint()..color = const Color(0xFF25D366);
+    final white = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.095
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final center = Offset(size.width * 0.5, size.height * 0.47);
+    final radius = size.width * 0.39;
+    canvas.drawCircle(center, radius, green);
+
+    final tail = Path()
+      ..moveTo(size.width * 0.24, size.height * 0.72)
+      ..lineTo(size.width * 0.16, size.height * 0.92)
+      ..lineTo(size.width * 0.38, size.height * 0.81)
+      ..close();
+    canvas.drawPath(tail, green);
+
+    final phone = Path()
+      ..moveTo(size.width * 0.36, size.height * 0.31)
+      ..cubicTo(
+        size.width * 0.29,
+        size.height * 0.40,
+        size.width * 0.37,
+        size.height * 0.58,
+        size.width * 0.47,
+        size.height * 0.67,
+      )
+      ..cubicTo(
+        size.width * 0.57,
+        size.height * 0.76,
+        size.width * 0.72,
+        size.height * 0.78,
+        size.width * 0.77,
+        size.height * 0.67,
+      );
+    canvas.drawPath(phone, white);
+
+    canvas.drawLine(
+      Offset(size.width * 0.35, size.height * 0.31),
+      Offset(size.width * 0.43, size.height * 0.40),
+      white,
+    );
+    canvas.drawLine(
+      Offset(size.width * 0.69, size.height * 0.61),
+      Offset(size.width * 0.77, size.height * 0.67),
+      white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
