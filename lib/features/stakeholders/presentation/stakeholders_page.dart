@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -210,11 +209,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                   IconButton(
                     tooltip: 'WhatsApp',
                     onPressed: item.phoneNumber.trim().isEmpty ? null : () => _openWhatsApp(item),
-                    icon: const FaIcon(
-                      FontAwesomeIcons.whatsapp,
-                      size: 30,
-                      color: Color(0xFF25D366),
-                    ),
+                    icon: const _WhatsAppLikeIcon(),
                   ),
                 ],
               ),
@@ -222,6 +217,32 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
           );
         },
       ),
+    );
+  }
+}
+
+class _WhatsAppLikeIcon extends StatelessWidget {
+  const _WhatsAppLikeIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const Icon(
+          Icons.chat_bubble,
+          size: 32,
+          color: Color(0xFF25D366),
+        ),
+        Transform.rotate(
+          angle: -0.15,
+          child: const Icon(
+            Icons.call,
+            size: 17,
+            color: Colors.white,
+          ),
+        ),
+      ],
     );
   }
 }
