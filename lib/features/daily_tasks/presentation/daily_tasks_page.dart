@@ -274,12 +274,6 @@ class _TaskCard extends StatelessWidget {
                         Expanded(
                           child: Text(task.assignedToName, style: const TextStyle(fontSize: 14)),
                         ),
-                        if (task.photoIds.isNotEmpty) ...[
-                          const Icon(Icons.photo_library_outlined, size: 19),
-                          const SizedBox(width: 4),
-                          Text('${task.photoIds.length}', style: const TextStyle(fontSize: 13)),
-                          const SizedBox(width: 10),
-                        ],
                         Container(
                           constraints: const BoxConstraints(minWidth: 88),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
