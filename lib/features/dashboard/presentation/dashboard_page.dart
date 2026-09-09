@@ -2,9 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/services/session_manager.dart';
+import '../../notifications/services/notification_service.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  final _notificationService = NotificationService();
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshUnreadCount();
+  }
+
+  Future<void> _refreshUnreadCount() async {
+    try {
+      await _notificationService.getUnreadCount();
+    } catch (_) {
+      // Keep the current badge value if the backend is temporarily unavailable.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,12 +156,17 @@ class DashboardPage extends StatelessWidget {
                       onTap: () => context.go('/safety'),
                     ),
                     const SizedBox(height: 14),
-                    _WideDashboardCard(
-                      title: 'Bildirimler',
-                      icon: Icons.notifications_none,
-                      backgroundColor: const Color(0xFFECECEC),
-                      badgeCount: 2,
-                      onTap: () => context.go('/notifications'),
+                    ValueListenableBuilder<int>(
+                      valueListenable: NotificationUnreadCount.value,
+                      builder: (context, unreadCount, _) {
+                        return _WideDashboardCard(
+                          title: 'Bildirimler',
+                          icon: Icons.notifications_none,
+                          backgroundColor: const Color(0xFFECECEC),
+                          badgeCount: unreadCount,
+                          onTap: () => context.go('/notifications'),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -225,17 +252,20 @@ class _WideDashboardCard extends StatelessWidget {
                 clipBehavior: Clip.none,
                 children: [
                   Icon(icon, size: 34),
-                  if (badgeCount != null)
+                  if ((badgeCount ?? 0) > 0)
                     Positioned(
-                      right: -10,
-                      top: -9,
+                      right: -12,
+                      top: -10,
                       child: Container(
-                        width: 23,
-                        height: 23,
+                        constraints: const BoxConstraints(minWidth: 23, minHeight: 23),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
                         alignment: Alignment.center,
-                        decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.all(Radius.circular(12)),
+                        ),
                         child: Text(
-                          '$badgeCount',
+                          badgeCount! > 99 ? '99+' : '$badgeCount',
                           style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
                         ),
                       ),
