@@ -42,17 +42,12 @@ class NotificationService {
         }
         final data = decoded['data'];
         final content = data is Map<String, dynamic> ? data['content'] : null;
-        if (content is! List) {
-          NotificationUnreadCount.clear();
-          return const [];
-        }
-        final items = content
+        if (content is! List) return const [];
+        return content
             .whereType<Map>()
             .map((item) => NotificationItem.fromJson(Map<String, dynamic>.from(item)))
             .where((item) => item.id > 0)
             .toList();
-        NotificationUnreadCount.set(items.where((item) => !item.isRead).length);
-        return items;
       }
       _throwForResponse(response.statusCode, body, 'Bildirimler alınamadı.');
     } on SocketException {
