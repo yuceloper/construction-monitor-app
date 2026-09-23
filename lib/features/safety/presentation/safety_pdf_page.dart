@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pdfrx/pdfrx.dart';
 
+import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
 class SafetyPdfPage extends StatefulWidget {
@@ -22,22 +23,74 @@ class SafetyPdfPage extends StatefulWidget {
 
 class _SafetyPdfPageState extends State<SafetyPdfPage> {
   final _service = SafetyDocumentService();
+
   Uint8List? _pdfBytes;
   String? _errorMessage;
+  List<SafetyDocumentSummary> _monthlyDocuments = const [];
+  int? _selectedDocumentId;
+  bool _isMonthlyReport = false;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _selectedDocumentId = widget.documentId;
+    _initialize();
   }
 
-  Future<void> _load() async {
+  Future<void> _initialize() async {
     setState(() {
       _pdfBytes = null;
       _errorMessage = null;
     });
+
     try {
-      final bytes = await _service.getPdfBytes(widget.documentId);
+      final documents = await _service.getDocuments();
+      final current = documents.where((document) => document.id == widget.documentId).firstOrNull;
+      final isMonthly = current?.documentType == 'MONTHLY_SITE_REPORT';
+
+      final monthlyByKey = <String, SafetyDocumentSummary>{};
+      if (isMonthly) {
+        final monthly = documents
+            .where((document) =>
+                document.documentType == 'MONTHLY_SITE_REPORT' && document.documentDate != null)
+            .toList()
+          ..sort((a, b) => b.documentDate!.compareTo(a.documentDate!));
+
+        for (final document in monthly) {
+          final date = document.documentDate!;
+          final key = '${date.year}-${date.month}';
+          monthlyByKey.putIfAbsent(key, () => document);
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isMonthlyReport = isMonthly;
+        _monthlyDocuments = monthlyByKey.values.toList();
+        if (_isMonthlyReport &&
+            !_monthlyDocuments.any((document) => document.id == _selectedDocumentId) &&
+            _monthlyDocuments.isNotEmpty) {
+          _selectedDocumentId = _monthlyDocuments.first.id;
+        }
+      });
+
+      await _loadPdf(_selectedDocumentId ?? widget.documentId);
+    } on SafetyDocumentException catch (error) {
+      if (mounted) setState(() => _errorMessage = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _errorMessage = 'PDF açılırken beklenmeyen bir hata oluştu.');
+    }
+  }
+
+  Future<void> _loadPdf(int documentId) async {
+    setState(() {
+      _selectedDocumentId = documentId;
+      _pdfBytes = null;
+      _errorMessage = null;
+    });
+
+    try {
+      final bytes = await _service.getPdfBytes(documentId);
       if (!mounted) return;
       setState(() => _pdfBytes = bytes);
     } on SafetyDocumentException catch (error) {
@@ -45,6 +98,25 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     } catch (_) {
       if (mounted) setState(() => _errorMessage = 'PDF açılırken beklenmeyen bir hata oluştu.');
     }
+  }
+
+  String _monthLabel(SafetyDocumentSummary document) {
+    const months = [
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
+    final date = document.documentDate!;
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   @override
@@ -66,7 +138,38 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
       ),
-      body: _buildBody(),
+      body: Column(
+        children: [
+          if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: DropdownButtonFormField<int>(
+                value: _selectedDocumentId,
+                isExpanded: true,
+                items: _monthlyDocuments
+                    .map(
+                      (document) => DropdownMenuItem<int>(
+                        value: document.id,
+                        child: Text(_monthLabel(document)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null && value != _selectedDocumentId) {
+                    _loadPdf(value);
+                  }
+                },
+                decoration: InputDecoration(
+                  labelText: 'Ay seçiniz',
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+          Expanded(child: _buildBody()),
+        ],
+      ),
     );
   }
 
@@ -82,19 +185,28 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
               const SizedBox(height: 14),
               Text(_errorMessage!, textAlign: TextAlign.center),
               const SizedBox(height: 18),
-              ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
+              ElevatedButton(
+                onPressed: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
+                child: const Text('Tekrar Dene'),
+              ),
             ],
           ),
         ),
       );
     }
+
     final bytes = _pdfBytes;
     if (bytes == null) {
       return const Center(child: CircularProgressIndicator(color: Colors.black));
     }
+
     return PdfViewer.data(
       bytes,
-      sourceName: 'safety_document_${widget.documentId}.pdf',
+      sourceName: 'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
     );
   }
+}
+
+extension _FirstOrNullExtension<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }
