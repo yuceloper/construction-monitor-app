@@ -196,6 +196,29 @@ class DailyTaskService {
     }
   }
 
+  Future<String> downloadAudioNote(int audioId) async {
+    final token = _token();
+    final client = HttpClient();
+    try {
+      final request = await client.getUrl(Uri.parse(audioUrl(audioId)));
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      final response = await request.close();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        final body = await response.transform(utf8.decoder).join();
+        _throwForResponse(response.statusCode, body, 'Sesli not indirilemedi.');
+      }
+      final bytes = await response.fold<List<int>>(<int>[], (buffer, chunk) => buffer..addAll(chunk));
+      if (bytes.isEmpty) throw const DailyTaskException('Sesli not dosyası boş geldi.');
+      final file = File('${Directory.systemTemp.path}/construction-monitor-audio-$audioId.m4a');
+      await file.writeAsBytes(bytes, flush: true);
+      return file.path;
+    } on SocketException {
+      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   String photoUrl(int photoId) => '${ApiConfig.baseUrl}/tasks/photos/$photoId';
   String audioUrl(int audioId) => '${ApiConfig.baseUrl}/tasks/audio/$audioId';
 
