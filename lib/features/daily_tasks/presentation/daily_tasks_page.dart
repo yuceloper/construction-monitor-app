@@ -67,73 +67,77 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Colors.white,
-      child: SafeArea(
-        child: Column(
-          children: [
-            const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.go('/dashboard'),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.arrow_back_ios_new, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Günlük İşler',
-                      style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  SizedBox(
-                    height: 42,
-                    child: ElevatedButton.icon(
-                      onPressed: _openCreate,
-                      icon: const Icon(Icons.add, size: 25),
-                      label: const Text('Ekle', style: TextStyle(fontSize: 17)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0066A6),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+    return Stack(
+      children: [
+        ColoredBox(
+          color: Colors.white,
+          child: SafeArea(
+            child: Column(
+              children: [
+                const AppHeader(),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+                  child: Row(
+                    children: [
+                      InkWell(
+                        onTap: () => context.go('/dashboard'),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(Icons.arrow_back_ios_new, size: 20),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Günlük İşler',
+                          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _TabButton(
+                          label: 'AKTİF İŞLER',
+                          selected: !_showAll,
+                          onTap: () => _selectTab(false),
+                        ),
+                      ),
+                      Expanded(
+                        child: _TabButton(
+                          label: 'TÜM İŞLER',
+                          selected: _showAll,
+                          onTap: () => _selectTab(true),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(child: _buildContent()),
+              ],
             ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _TabButton(
-                      label: 'AKTİF İŞLER',
-                      selected: !_showAll,
-                      onTap: () => _selectTab(false),
-                    ),
-                  ),
-                  Expanded(
-                    child: _TabButton(
-                      label: 'TÜM İŞLER',
-                      selected: _showAll,
-                      onTap: () => _selectTab(true),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(child: _buildContent()),
-          ],
+          ),
         ),
-      ),
+        Positioned(
+          right: 22,
+          bottom: 22,
+          child: SafeArea(
+            child: FloatingActionButton.extended(
+              heroTag: 'daily-task-add',
+              onPressed: _openCreate,
+              backgroundColor: const Color(0xFF0066A6),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add_rounded, size: 28),
+              label: const Text('Ekle', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -179,7 +183,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       onRefresh: _loadTasks,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 92),
         itemCount: _tasks.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) => _TaskCard(
@@ -255,11 +259,7 @@ class _TaskCard extends StatelessWidget {
                   children: [
                     Text(
                       '${task.typeLabel} - ${task.projectName}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF8A1111),
-                      ),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF8A1111)),
                     ),
                     const SizedBox(height: 7),
                     Text(
@@ -271,9 +271,7 @@ class _TaskCard extends StatelessWidget {
                       children: [
                         const Icon(Icons.account_box_outlined, size: 23),
                         const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(task.assignedToName, style: const TextStyle(fontSize: 14)),
-                        ),
+                        Expanded(child: Text(task.assignedToName, style: const TextStyle(fontSize: 14))),
                         Container(
                           constraints: const BoxConstraints(minWidth: 88),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
