@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -18,9 +19,13 @@ class DailyTaskDetailPage extends StatefulWidget {
 class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   final _service = DailyTaskService();
   final _noteController = TextEditingController();
+  final _audioPlayer = AudioPlayer();
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isAudioLoading = false;
+  bool _isAudioPlaying = false;
+  String? _audioPath;
   String? _errorMessage;
   DailyTaskSummary? _task;
   String _status = 'IN_PROGRESS';
@@ -28,11 +33,15 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   @override
   void initState() {
     super.initState();
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _isAudioPlaying = false);
+    });
     _load();
   }
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -54,6 +63,37 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       if (mounted) setState(() => _errorMessage = error.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleAudio() async {
+    final audioId = _task?.audioNoteId;
+    if (audioId == null || _isAudioLoading) return;
+
+    try {
+      if (_isAudioPlaying) {
+        await _audioPlayer.pause();
+        if (mounted) setState(() => _isAudioPlaying = false);
+        return;
+      }
+
+      if (_audioPath == null) {
+        setState(() => _isAudioLoading = true);
+        _audioPath = await _service.downloadAudioNote(audioId);
+      }
+
+      if (_audioPlayer.state == PlayerState.paused) {
+        await _audioPlayer.resume();
+      } else {
+        await _audioPlayer.play(DeviceFileSource(_audioPath!));
+      }
+      if (mounted) setState(() => _isAudioPlaying = true);
+    } on DailyTaskException catch (error) {
+      if (mounted) _show(error.message);
+    } catch (_) {
+      if (mounted) _show('Sesli not oynatılamadı.');
+    } finally {
+      if (mounted) setState(() => _isAudioLoading = false);
     }
   }
 
@@ -223,23 +263,47 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             const SizedBox(height: 22),
             const Text('Sesli Not', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEAF4FA),
+            Material(
+              color: const Color(0xFFEAF4FA),
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: _toggleAudio,
                 borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.mic_rounded, color: Color(0xFF0066A6)),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Bu günlük işe sesli not eklendi.',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0066A6),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: _isAudioLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : Icon(
+                                _isAudioPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 30,
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _isAudioPlaying ? 'Sesli not oynatılıyor' : 'Sesli notu dinle',
+                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                        ),
+                      ),
+                      const Icon(Icons.volume_up_outlined, color: Color(0xFF0066A6)),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],
