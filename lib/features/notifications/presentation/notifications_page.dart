@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/widgets/app_header.dart';
 import '../models/notification_item.dart';
 import '../services/notification_service.dart';
 
@@ -39,8 +38,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!mounted) return;
       setState(() => _items = items);
     } on NotificationException catch (error) {
-      if (!mounted) return;
-      setState(() => _error = error.message);
+      if (mounted) setState(() => _error = error.message);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -73,38 +71,53 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final unreadCount = _items.where((item) => !item.isRead).length;
+
     return ColoredBox(
       color: Colors.white,
       child: SafeArea(
         child: Column(
           children: [
-            const AppHeader(),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 7),
               child: Row(
                 children: [
                   InkWell(
                     onTap: () => context.go('/dashboard'),
                     child: const Padding(
-                      padding: EdgeInsets.all(5),
+                      padding: EdgeInsets.all(4),
                       child: Icon(Icons.arrow_back_ios_new, size: 20),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   const Expanded(
                     child: Text(
                       'Bildirimler',
-                      style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
+                      style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
                     ),
                   ),
-                  const Text(
-                    'Son 15 gün',
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
-                  ),
+                  if (unreadCount > 0)
+                    Container(
+                      width: 27,
+                      height: 27,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFEE2E3B),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: 1, thickness: 1),
             Expanded(child: _body()),
           ],
         ),
@@ -127,11 +140,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               const SizedBox(height: 14),
               Text(_error!, textAlign: TextAlign.center),
               const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _load,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tekrar Dene'),
-              ),
+              ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
             ],
           ),
         ),
@@ -142,22 +151,18 @@ class _NotificationsPageState extends State<NotificationsPage> {
       onRefresh: _load,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),
         itemCount: _items.isEmpty ? 1 : _items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
             return const Padding(
               padding: EdgeInsets.only(top: 90),
-              child: Column(
-                children: [
-                  Icon(Icons.notifications_none_rounded, size: 70, color: Colors.black26),
-                  SizedBox(height: 16),
-                  Text(
-                    'Son 15 günde bildirim bulunmuyor.',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-                  ),
-                ],
+              child: Center(
+                child: Text(
+                  'Son 15 günde bildirim bulunmuyor.',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             );
           }
@@ -178,66 +183,107 @@ class _NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDaily = item.isDailyTask;
-    final color = isDaily ? const Color(0xFF11875D) : const Color(0xFF0066A6);
-    final tint = isDaily ? const Color(0xFFF0FAF6) : const Color(0xFFF1F7FC);
+    final accent = isDaily ? const Color(0xFF78B9F2) : const Color(0xFFFFDF79);
+    final content = _NotificationContent.fromItem(item);
 
     return Material(
-      color: item.isRead ? const Color(0xFFF4F4F4) : tint,
-      borderRadius: BorderRadius.circular(18),
+      color: const Color(0xFFE9E9E9),
+      borderRadius: BorderRadius.circular(21),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
+        child: IntrinsicHeight(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  isDaily ? Icons.assignment_outlined : Icons.autorenew_rounded,
-                  color: color,
-                  size: 27,
-                ),
-              ),
-              const SizedBox(width: 13),
+              Container(width: 30, color: accent),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isDaily ? 'Günlük İş Güncelleme' : 'Süreç Güncelleme',
-                      style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      item.title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                    ),
-                    if (item.message.isNotEmpty) ...[
-                      const SizedBox(height: 5),
-                      Text(item.message, style: const TextStyle(fontSize: 14, height: 1.35)),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 7, 10, 7),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              content.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.05,
+                                fontWeight: isDaily ? FontWeight.w500 : FontWeight.w800,
+                                color: isDaily ? Colors.black54 : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatDate(item.createdAt),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              height: 1.05,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (content.detail.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          content.detail,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.05,
+                            fontWeight: isDaily ? FontWeight.w400 : FontWeight.w700,
+                            color: isDaily ? Colors.black54 : const Color(0xFF0066A6),
+                          ),
+                        ),
+                      ],
+                      if (isDaily && (content.block.isNotEmpty || content.person.isNotEmpty)) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                content.block,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  height: 1.05,
+                                  color: Color(0xFF0066A6),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            if (content.person.isNotEmpty) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                content.person,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  height: 1.05,
+                                  color: Color(0xFF0066A6),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                     ],
-                    const SizedBox(height: 8),
-                    Text(
-                      _formatDate(item.createdAt),
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              if (!item.isRead)
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(top: 7),
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                ),
             ],
           ),
         ),
@@ -249,8 +295,63 @@ class _NotificationCard extends StatelessWidget {
     final date = value.toLocal();
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    return '$day.$month.${date.year}  $hour:$minute';
+    return '$day.$month.${date.year}';
+  }
+}
+
+class _NotificationContent {
+  final String title;
+  final String detail;
+  final String block;
+  final String person;
+
+  const _NotificationContent({
+    required this.title,
+    required this.detail,
+    required this.block,
+    required this.person,
+  });
+
+  factory _NotificationContent.fromItem(NotificationItem item) {
+    if (!item.isDailyTask) {
+      return _NotificationContent(
+        title: item.title,
+        detail: item.message,
+        block: '',
+        person: '',
+      );
+    }
+
+    final lines = item.message
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    var detail = lines.isNotEmpty ? lines.first : '';
+    var block = item.projectName ?? '';
+    var person = '';
+
+    for (final line in lines.skip(1)) {
+      if (line.toLowerCase().startsWith('blok:')) {
+        final value = line.substring(line.indexOf(':') + 1).trim();
+        block = value.isEmpty ? block : 'Evler - $value';
+      } else if (line.toLowerCase().startsWith('kişi:') || line.toLowerCase().startsWith('kisi:')) {
+        person = line.substring(line.indexOf(':') + 1).trim();
+      } else if (!line.toLowerCase().startsWith('tarih:') && detail.isEmpty) {
+        detail = line;
+      }
+    }
+
+    if (block.isNotEmpty && !block.contains(' - ')) {
+      block = 'Evler - $block';
+    }
+
+    return _NotificationContent(
+      title: item.title,
+      detail: detail,
+      block: block,
+      person: person,
+    );
   }
 }
