@@ -219,6 +219,30 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               ),
             ),
           ],
+          if (task.audioNoteId != null) ...[
+            const SizedBox(height: 22),
+            const Text('Sesli Not', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF4FA),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.mic_rounded, color: Color(0xFF0066A6)),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Bu günlük işe sesli not eklendi.',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           const Text('Durum', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
