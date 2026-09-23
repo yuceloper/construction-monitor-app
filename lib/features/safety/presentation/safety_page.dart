@@ -18,6 +18,7 @@ class _SafetyPageState extends State<SafetyPage> {
   bool _isLoading = true;
   String? _errorMessage;
   List<SafetyDocumentSummary> _documents = const [];
+  _MonthKey? _selectedMonth;
 
   @override
   void initState() {
@@ -33,7 +34,16 @@ class _SafetyPageState extends State<SafetyPage> {
     try {
       final documents = await _service.getDocuments();
       if (!mounted) return;
-      setState(() => _documents = documents);
+
+      final months = _availableMonths(documents);
+      setState(() {
+        _documents = documents;
+        if (months.isEmpty) {
+          _selectedMonth = null;
+        } else if (_selectedMonth == null || !months.contains(_selectedMonth)) {
+          _selectedMonth = months.first;
+        }
+      });
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } finally {
@@ -56,6 +66,46 @@ class _SafetyPageState extends State<SafetyPage> {
       default:
         return Icons.picture_as_pdf_outlined;
     }
+  }
+
+  List<_MonthKey> _availableMonths([List<SafetyDocumentSummary>? source]) {
+    final months = (source ?? _documents)
+        .where((document) => document.documentType == 'MONTHLY_SITE_REPORT' && document.documentDate != null)
+        .map((document) => _MonthKey(document.documentDate!.year, document.documentDate!.month))
+        .toSet()
+        .toList()
+      ..sort((a, b) {
+        final yearCompare = b.year.compareTo(a.year);
+        return yearCompare != 0 ? yearCompare : b.month.compareTo(a.month);
+      });
+    return months;
+  }
+
+  List<SafetyDocumentSummary> get _visibleDocuments {
+    if (_selectedMonth == null) return _documents;
+    return _documents.where((document) {
+      if (document.documentType != 'MONTHLY_SITE_REPORT') return true;
+      final date = document.documentDate;
+      return date != null && date.year == _selectedMonth!.year && date.month == _selectedMonth!.month;
+    }).toList();
+  }
+
+  String _monthLabel(_MonthKey key) {
+    const months = [
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
+    return '${months[key.month - 1]} ${key.year}';
   }
 
   @override
@@ -101,7 +151,38 @@ class _SafetyPageState extends State<SafetyPage> {
                   const Icon(Icons.account_circle_outlined, size: 42, color: Colors.black54),
                 ],
               ),
-              const SizedBox(height: 38),
+              const SizedBox(height: 26),
+              if (!_isLoading && _availableMonths().isNotEmpty) ...[
+                Row(
+                  children: [
+                    const Text(
+                      'Ay',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<_MonthKey>(
+                        value: _selectedMonth,
+                        isExpanded: true,
+                        items: _availableMonths()
+                            .map((month) => DropdownMenuItem(
+                                  value: month,
+                                  child: Text(_monthLabel(month)),
+                                ))
+                            .toList(),
+                        onChanged: (value) => setState(() => _selectedMonth = value),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 22),
+              ] else
+                const SizedBox(height: 12),
               Expanded(child: _buildContent()),
             ],
           ),
@@ -128,14 +209,15 @@ class _SafetyPageState extends State<SafetyPage> {
       );
     }
 
-    if (_documents.isEmpty) {
+    final visibleDocuments = _visibleDocuments;
+    if (visibleDocuments.isEmpty) {
       return RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: const [
             SizedBox(height: 120),
-            Center(child: Text('Bu şantiye için İSG belgesi bulunmuyor.')),
+            Center(child: Text('Seçilen dönem için İSG belgesi bulunmuyor.')),
           ],
         ),
       );
@@ -145,10 +227,10 @@ class _SafetyPageState extends State<SafetyPage> {
       onRefresh: _load,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: _documents.length,
+        itemCount: visibleDocuments.length,
         separatorBuilder: (_, __) => const SizedBox(height: 20),
         itemBuilder: (_, index) {
-          final document = _documents[index];
+          final document = visibleDocuments[index];
           return _SafetyMenuCard(
             icon: _iconFor(document),
             title: document.title,
@@ -158,6 +240,19 @@ class _SafetyPageState extends State<SafetyPage> {
       ),
     );
   }
+}
+
+class _MonthKey {
+  final int year;
+  final int month;
+
+  const _MonthKey(this.year, this.month);
+
+  @override
+  bool operator ==(Object other) => other is _MonthKey && other.year == year && other.month == month;
+
+  @override
+  int get hashCode => Object.hash(year, month);
 }
 
 class _SafetyMenuCard extends StatelessWidget {
