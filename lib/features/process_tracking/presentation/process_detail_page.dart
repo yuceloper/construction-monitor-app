@@ -88,9 +88,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Süreç detayları yüklenirken beklenmeyen bir hata oluştu.';
-      });
+      setState(() => _errorMessage = 'Süreç detayları yüklenirken beklenmeyen bir hata oluştu.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -98,10 +96,8 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
   Future<void> _openUpdate() async {
     await context.push(
-      '/process/${Uri.encodeComponent(widget.blockName)}/update'
-      '?projectId=${widget.projectId}',
+      '/process/${Uri.encodeComponent(widget.blockName)}/update?projectId=${widget.projectId}',
     );
-
     if (!mounted) return;
     await _loadData();
   }
@@ -109,7 +105,6 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
   @override
   Widget build(BuildContext context) {
     final roundedProgress = _overallProgress.round();
-
     return ColoredBox(
       color: Colors.white,
       child: SafeArea(
@@ -125,10 +120,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                     child: const Icon(Icons.arrow_back_ios_new, size: 20),
                   ),
                   const SizedBox(width: 10),
-                  Text(
-                    widget.blockName,
-                    style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
-                  ),
+                  Text(widget.blockName, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
@@ -142,10 +134,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Genel İlerleme',
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500),
-                        ),
+                        const Text('Genel İlerleme', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 6),
                         Row(
                           children: [
@@ -158,10 +147,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              '%$roundedProgress',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                            ),
+                            Text('%$roundedProgress', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ],
@@ -192,10 +178,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
   }
 
   Widget _buildContent() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
-    }
-
+    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Colors.black));
     if (_errorMessage != null) {
       return Center(
         child: Padding(
@@ -207,29 +190,18 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
               const SizedBox(height: 12),
               Text(_errorMessage!, textAlign: TextAlign.center),
               const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: _loadData,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Tekrar Dene'),
-              ),
+              ElevatedButton(onPressed: _loadData, child: const Text('Tekrar Dene')),
             ],
           ),
         ),
       );
     }
-
     if (_stages.isEmpty) {
       return RefreshIndicator(
         onRefresh: _loadData,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 120),
-            Center(child: Text('Bu proje için süreç aşaması bulunmuyor.')),
-          ],
+          children: const [SizedBox(height: 120), Center(child: Text('Bu proje için süreç aşaması bulunmuyor.'))],
         ),
       );
     }
@@ -244,19 +216,12 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
         itemBuilder: (context, index) {
           final progressStage = _stages[index];
           final items = _workItemsByStage[progressStage.id] ?? const <WorkItemSummary>[];
-          final stage = _ProcessStage(
-            title: progressStage.name,
-            status: _statusForItems(items),
-            items: items,
-          );
+          final stage = _ProcessStage(title: progressStage.name, status: _statusForItems(items), items: items);
           final expanded = _expandedIndex == index;
-
           return _StageCard(
             stage: stage,
             expanded: expanded,
-            onTap: () {
-              setState(() => _expandedIndex = expanded ? null : index);
-            },
+            onTap: () => setState(() => _expandedIndex = expanded ? null : index),
           );
         },
       ),
@@ -265,12 +230,8 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
   _StageStatus _statusForItems(List<WorkItemSummary> items) {
     if (items.isEmpty) return _StageStatus.waiting;
-    if (items.every((item) => item.status == 'COMPLETED')) {
-      return _StageStatus.completed;
-    }
-    if (items.every((item) => item.status == 'WAITING')) {
-      return _StageStatus.waiting;
-    }
+    if (items.every((item) => item.status == 'COMPLETED')) return _StageStatus.completed;
+    if (items.every((item) => item.status == 'WAITING')) return _StageStatus.waiting;
     return _StageStatus.active;
   }
 }
@@ -307,10 +268,7 @@ class _StageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(18),
-      ),
+      decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(18)),
       child: Column(
         children: [
           InkWell(
@@ -322,16 +280,8 @@ class _StageCard extends StatelessWidget {
                 children: [
                   statusIcon,
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      stage.title,
-                      style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  Icon(
-                    expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    size: 38,
-                  ),
+                  Expanded(child: Text(stage.title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500))),
+                  Icon(expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 38),
                 ],
               ),
             ),
@@ -339,10 +289,7 @@ class _StageCard extends StatelessWidget {
           if (expanded && stage.items.isEmpty)
             const Padding(
               padding: EdgeInsets.only(left: 56, right: 20, bottom: 18),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Bu aşama için alt iş bulunmuyor.'),
-              ),
+              child: Align(alignment: Alignment.centerLeft, child: Text('Bu aşama için alt iş bulunmuyor.')),
             ),
           if (expanded && stage.items.isNotEmpty)
             Padding(
@@ -353,28 +300,21 @@ class _StageCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 6),
                     child: Row(
                       children: [
-                        Icon(
-                          item.isCompleted
-                              ? Icons.check_box_outlined
-                              : Icons.check_box_outline_blank,
-                          color: item.isCompleted ? const Color(0xFF00A52B) : Colors.black,
-                          size: 26,
+                        SizedBox(
+                          width: 26,
+                          child: item.isCompleted
+                              ? const Icon(Icons.check_rounded, color: Color(0xFF00A52B), size: 26)
+                              : const SizedBox.shrink(),
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(item.title, style: const TextStyle(fontSize: 16)),
-                        ),
+                        Expanded(child: Text(item.title, style: const TextStyle(fontSize: 16))),
+                        if (item.hasWarning) ...[
+                          const SizedBox(width: 8),
+                          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+                        ],
                         if (item.hasDependency) ...[
                           const SizedBox(width: 8),
                           const Icon(Icons.link, color: Colors.red, size: 24),
-                        ],
-                        if (item.hasWarning) ...[
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.warning_amber_rounded,
-                            color: Colors.red,
-                            size: 24,
-                          ),
                         ],
                       ],
                     ),
