@@ -15,15 +15,34 @@ class StakeholdersPage extends StatefulWidget {
 
 class _StakeholdersPageState extends State<StakeholdersPage> {
   final _service = StakeholderService();
+  final _searchController = TextEditingController();
 
   bool _isLoading = true;
   String? _errorMessage;
   List<StakeholderSummary> _items = const [];
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<StakeholderSummary> get _filteredItems {
+    final query = _query.trim().toLowerCase();
+    if (query.isEmpty) return _items;
+    return _items.where((item) {
+      return item.companyName.toLowerCase().contains(query) ||
+          item.contactPerson.toLowerCase().contains(query) ||
+          item.detail.toLowerCase().contains(query) ||
+          item.phoneNumber.toLowerCase().contains(query);
+    }).toList();
   }
 
   Future<void> _load() async {
@@ -52,7 +71,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     final uri = Uri(scheme: 'tel', path: phone);
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      _show('Arama açılamadı. iOS Simulator telefon aramasını desteklemez; gerçek cihazda çalışır.');
+      _show('Arama açılamadı. Gerçek cihazda tekrar deneyin.');
     }
   }
 
@@ -65,15 +84,13 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
 
     final nativeUri = Uri.parse('whatsapp://send?phone=$phone');
     final webUri = Uri.https('wa.me', '/$phone');
-
     if (await canLaunchUrl(nativeUri)) {
       final opened = await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
       if (opened) return;
     }
-
     final opened = await launchUrl(webUri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
-      _show('WhatsApp açılamadı. Uygulamanın cihazda kurulu olduğundan emin olun.');
+      _show('WhatsApp açılamadı.');
     }
   }
 
@@ -122,6 +139,33 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
               ),
             ),
             const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() => _query = value),
+                decoration: InputDecoration(
+                  hintText: 'Paydaş ara',
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  suffixIcon: _query.isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _query = '');
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
+                  filled: true,
+                  fillColor: const Color(0xFFF2F2F2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  isDense: true,
+                ),
+              ),
+            ),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -145,14 +189,16 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
         ),
       );
     }
-    if (_items.isEmpty) {
+
+    final items = _filteredItems;
+    if (items.isEmpty) {
       return RefreshIndicator(
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 120),
-            Center(child: Text('Henüz paydaş bulunmuyor.')),
+          children: [
+            const SizedBox(height: 100),
+            Center(child: Text(_query.isEmpty ? 'Henüz paydaş bulunmuyor.' : 'Aramaya uygun paydaş bulunamadı.')),
           ],
         ),
       );
@@ -161,11 +207,11 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-        itemCount: _items.length,
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+        itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) {
-          final item = _items[index];
+          final item = items[index];
           return Material(
             color: const Color(0xFFEDEDED),
             borderRadius: BorderRadius.circular(18),
@@ -197,13 +243,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         ],
                         if (item.phoneNumber.isNotEmpty) ...[
                           const SizedBox(height: 5),
-                          Row(
-                            children: [
-                              const Icon(Icons.phone_outlined, size: 20),
-                              const SizedBox(width: 5),
-                              Text(item.phoneNumber),
-                            ],
-                          ),
+                          Text(item.phoneNumber, style: const TextStyle(fontSize: 14, color: Colors.black54)),
                         ],
                       ],
                     ),
@@ -230,16 +270,11 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
 
 class _WhatsAppIcon extends StatelessWidget {
   final double size;
-
   const _WhatsAppIcon({required this.size});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(painter: _WhatsAppPainter()),
-    );
+    return SizedBox(width: size, height: size, child: CustomPaint(painter: _WhatsAppPainter()));
   }
 }
 
@@ -247,54 +282,35 @@ class _WhatsAppPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final green = Paint()..color = const Color(0xFF25D366);
-    final white = Paint()
+    final whiteBorder = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.095
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+      ..strokeWidth = size.width * 0.09;
+    final whitePhone = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.10
+      ..strokeCap = StrokeCap.round;
 
-    final center = Offset(size.width * 0.5, size.height * 0.47);
-    final radius = size.width * 0.39;
+    final center = Offset(size.width * 0.5, size.height * 0.46);
+    final radius = size.width * 0.36;
+    canvas.drawCircle(center, radius + size.width * 0.055, whiteBorder);
     canvas.drawCircle(center, radius, green);
 
     final tail = Path()
-      ..moveTo(size.width * 0.24, size.height * 0.72)
-      ..lineTo(size.width * 0.16, size.height * 0.92)
-      ..lineTo(size.width * 0.38, size.height * 0.81)
+      ..moveTo(size.width * 0.27, size.height * 0.69)
+      ..lineTo(size.width * 0.18, size.height * 0.91)
+      ..lineTo(size.width * 0.40, size.height * 0.80)
       ..close();
     canvas.drawPath(tail, green);
 
     final phone = Path()
       ..moveTo(size.width * 0.36, size.height * 0.31)
-      ..cubicTo(
-        size.width * 0.29,
-        size.height * 0.40,
-        size.width * 0.37,
-        size.height * 0.58,
-        size.width * 0.47,
-        size.height * 0.67,
-      )
-      ..cubicTo(
-        size.width * 0.57,
-        size.height * 0.76,
-        size.width * 0.72,
-        size.height * 0.78,
-        size.width * 0.77,
-        size.height * 0.67,
-      );
-    canvas.drawPath(phone, white);
-
-    canvas.drawLine(
-      Offset(size.width * 0.35, size.height * 0.31),
-      Offset(size.width * 0.43, size.height * 0.40),
-      white,
-    );
-    canvas.drawLine(
-      Offset(size.width * 0.69, size.height * 0.61),
-      Offset(size.width * 0.77, size.height * 0.67),
-      white,
-    );
+      ..cubicTo(size.width * 0.28, size.height * 0.39, size.width * 0.38, size.height * 0.59,
+          size.width * 0.48, size.height * 0.67)
+      ..cubicTo(size.width * 0.58, size.height * 0.75, size.width * 0.70, size.height * 0.76,
+          size.width * 0.76, size.height * 0.66);
+    canvas.drawPath(phone, whitePhone);
   }
 
   @override
