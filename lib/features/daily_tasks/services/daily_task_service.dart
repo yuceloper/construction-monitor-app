@@ -12,7 +12,6 @@ class DailyTaskService {
   Future<List<DailyTaskSummary>> getTasks({required bool includeCompleted}) async {
     final token = _token();
     final siteId = _siteId();
-
     final client = HttpClient();
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/tasks/site/$siteId').replace(
@@ -22,14 +21,12 @@ class DailyTaskService {
       _auth(request, token);
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
-
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
         if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! List) {
           throw const DailyTaskException('Günlük işler alınamadı.');
         }
-
         return data
             .whereType<Map>()
             .map((item) => DailyTaskSummary.fromJson(Map<String, dynamic>.from(item)))
@@ -76,7 +73,6 @@ class DailyTaskService {
     final token = _token();
     final siteId = _siteId();
     final client = HttpClient();
-
     try {
       final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/site/$siteId'));
       _auth(request, token, json: true);
@@ -86,7 +82,6 @@ class DailyTaskService {
         'assignedToId': assignedToId,
         'note': note,
       }));
-
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -129,17 +124,12 @@ class DailyTaskService {
   }
 
   Future<DailyTaskSummary> uploadPhotos(int taskId, List<XFile> photos) async {
-    if (photos.isEmpty) {
-      return getTask(taskId);
-    }
-    if (photos.length > 10) {
-      throw const DailyTaskException('En fazla 10 fotoğraf ekleyebilirsiniz.');
-    }
+    if (photos.isEmpty) return getTask(taskId);
+    if (photos.length > 10) throw const DailyTaskException('En fazla 10 fotoğraf ekleyebilirsiniz.');
 
     final token = _token();
     final client = HttpClient();
     final boundary = '----construction-monitor-${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 32)}';
-
     try {
       final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/photos'));
       request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
@@ -148,13 +138,9 @@ class DailyTaskService {
 
       for (final photo in photos) {
         final bytes = await photo.readAsBytes();
-        if (bytes.length > 10 * 1024 * 1024) {
-          throw DailyTaskException('${photo.name} 10 MB sınırını aşıyor.');
-        }
+        if (bytes.length > 10 * 1024 * 1024) throw DailyTaskException('${photo.name} 10 MB sınırını aşıyor.');
         request.add(utf8.encode('--$boundary\r\n'));
-        request.add(utf8.encode(
-          'Content-Disposition: form-data; name="files"; filename="${_safeFileName(photo.name)}"\r\n',
-        ));
+        request.add(utf8.encode('Content-Disposition: form-data; name="files"; filename="${_safeFileName(photo.name)}"\r\n'));
         request.add(utf8.encode('Content-Type: ${_contentType(photo.name)}\r\n\r\n'));
         request.add(bytes);
         request.add(utf8.encode('\r\n'));
@@ -176,7 +162,42 @@ class DailyTaskService {
     }
   }
 
+  Future<DailyTaskSummary> uploadAudioNote(int taskId, String filePath) async {
+    final file = File(filePath);
+    if (!await file.exists()) throw const DailyTaskException('Sesli not dosyası bulunamadı.');
+    final bytes = await file.readAsBytes();
+    if (bytes.length > 20 * 1024 * 1024) throw const DailyTaskException('Sesli not 20 MB sınırını aşıyor.');
+
+    final token = _token();
+    final client = HttpClient();
+    final boundary = '----construction-monitor-audio-${DateTime.now().microsecondsSinceEpoch}';
+    try {
+      final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/audio-note'));
+      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
+      request.headers.set(HttpHeaders.contentTypeHeader, 'multipart/form-data; boundary=$boundary');
+      final fileName = file.uri.pathSegments.isEmpty ? 'voice-note.m4a' : file.uri.pathSegments.last;
+      request.add(utf8.encode('--$boundary\r\n'));
+      request.add(utf8.encode('Content-Disposition: form-data; name="file"; filename="${_safeFileName(fileName)}"\r\n'));
+      request.add(utf8.encode('Content-Type: audio/mp4\r\n\r\n'));
+      request.add(bytes);
+      request.add(utf8.encode('\r\n--$boundary--\r\n'));
+
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return _taskFromApi(body, 'Sesli not yüklendi ancak görev bilgisi alınamadı.');
+      }
+      _throwForResponse(response.statusCode, body, 'Sesli not yüklenemedi.');
+    } on SocketException {
+      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   String photoUrl(int photoId) => '${ApiConfig.baseUrl}/tasks/photos/$photoId';
+  String audioUrl(int audioId) => '${ApiConfig.baseUrl}/tasks/audio/$audioId';
 
   Map<String, String> photoHeaders() => {
         HttpHeaders.authorizationHeader: 'Bearer ${_token()}',
@@ -193,17 +214,13 @@ class DailyTaskService {
 
   String _token() {
     final token = SessionManager.instance.accessToken;
-    if (token == null || token.isEmpty) {
-      throw const DailyTaskException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
-    }
+    if (token == null || token.isEmpty) throw const DailyTaskException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
     return token;
   }
 
   int _siteId() {
     final siteId = SessionManager.instance.selectedSiteId;
-    if (siteId == null || siteId <= 0) {
-      throw const DailyTaskException('Şantiye seçimi bulunamadı.');
-    }
+    if (siteId == null || siteId <= 0) throw const DailyTaskException('Şantiye seçimi bulunamadı.');
     return siteId;
   }
 
@@ -228,7 +245,6 @@ class DailyTaskService {
     if (statusCode == 401 || statusCode == 403) {
       throw const DailyTaskException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
     }
-
     String? message;
     try {
       final decoded = jsonDecode(body);
@@ -238,11 +254,8 @@ class DailyTaskService {
         message ??= decoded['error']?.toString();
       }
     } catch (_) {}
-
     throw DailyTaskException(
-      message != null && message.trim().isNotEmpty
-          ? message.trim()
-          : '$fallback Sunucu hatası: $statusCode',
+      message != null && message.trim().isNotEmpty ? message.trim() : '$fallback Sunucu hatası: $statusCode',
     );
   }
 }
