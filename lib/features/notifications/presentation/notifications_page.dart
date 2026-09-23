@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/app_header.dart';
 import '../models/notification_item.dart';
 import '../services/notification_service.dart';
 
@@ -78,6 +79,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       child: SafeArea(
         child: Column(
           children: [
+            const AppHeader(),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 8, 14, 7),
               child: Row(
