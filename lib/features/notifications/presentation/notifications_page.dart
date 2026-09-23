@@ -34,7 +34,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
       final cutoff = DateTime.now().subtract(const Duration(days: 15));
       final items = all
           .where((item) => !item.createdAt.toLocal().isBefore(cutoff))
-          .where((item) => item.isWorkItem || item.isDailyTask)
+          .where((item) => item.type == 'WORK_ITEM_UPDATED' || item.isDailyTask)
           .toList();
       if (!mounted) return;
       setState(() => _items = items);
@@ -63,7 +63,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (!mounted || item.referenceId == null) return;
     if (item.isDailyTask) {
       context.push('/daily-tasks/${item.referenceId}');
-    } else if (item.isWorkItem) {
+    } else if (item.type == 'WORK_ITEM_UPDATED') {
       context.push(
         '/process/Bildirimler/work/${item.referenceId}'
         '?title=${Uri.encodeQueryComponent(item.title)}',
