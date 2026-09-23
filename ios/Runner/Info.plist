@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Günlük işlere birden fazla saha fotoğrafı eklemek için fotoğraf arşivinize erişim gerekir.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Günlük işlere sesli not eklemek için mikrofon erişimi gerekir.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
