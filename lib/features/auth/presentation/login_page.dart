@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/brand.dart';
 import '../../../app/theme.dart';
@@ -94,39 +95,41 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       backgroundColor: c.bg,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
-                  const BrandLogo(height: 50),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 8),
+                  const Center(child: BrandLogo(height: 52)),
+                  const SizedBox(height: 14),
                   Text(
                     'Şantiye Takip Uygulaması',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: kBody,
-                      fontSize: 20,
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
                       color: c.sub,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 34),
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
                     decoration: BoxDecoration(
                       color: c.surface,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: c.border),
                       boxShadow: kLiftShadow,
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _LoginFieldRow(
+                        _Field(
                           label: 'Kullanıcı Adı',
                           child: TextField(
                             controller: _usernameController,
@@ -139,7 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        _LoginFieldRow(
+                        _Field(
                           label: 'Parola',
                           child: TextField(
                             controller: _passwordController,
@@ -157,19 +160,34 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         if (_errorMessage != null) ...[
                           const SizedBox(height: 18),
-                          Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontFamily: kBody,
-                              fontSize: 15,
-                              height: 1.4,
-                              fontWeight: FontWeight.w500,
-                              color: c.bad,
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                            decoration: BoxDecoration(
+                              color: c.bad.withValues(alpha: .08),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: TextStyle(
+                                      fontFamily: kBody,
+                                      fontSize: 14.5,
+                                      height: 1.4,
+                                      fontWeight: FontWeight.w500,
+                                      color: c.bad,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 26),
                         PrimaryButton(
                           label: 'GİRİŞ',
                           busy: _isLoading,
@@ -178,15 +196,16 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 22),
                   ValueListenableBuilder<BrandConfig>(
                     valueListenable: Brand.config,
                     builder: (context, brand, _) => Text(
                       '© Copyright 2026 ${brand.name} tüm hakları saklıdır.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: kBody, fontSize: 13, color: c.faint),
+                      style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
                     ),
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -206,7 +225,7 @@ class _LoginPageState extends State<LoginPage> {
     return InputDecoration(
       isDense: true,
       counterText: '',
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       filled: true,
       fillColor: c.surface2,
       border: border(c.border2),
@@ -217,30 +236,31 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
-class _LoginFieldRow extends StatelessWidget {
+/// Alan basligi kutunun ustunde - dar ekranda da kirilmiyor, uzun etiketler
+/// alani daraltmiyor.
+class _Field extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _LoginFieldRow({required this.label, required this.child});
+  const _Field({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 125,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: kBody,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: context.colors.ink,
-            ),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .2,
+            color: context.colors.ink,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: child),
+        const SizedBox(height: 9),
+        child,
       ],
     );
   }

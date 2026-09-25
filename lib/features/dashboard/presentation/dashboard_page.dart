@@ -80,19 +80,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 26),
+              const SizedBox(height: 18),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     // Üst iki kart kare dursun, seritler kalan yuksekligi
                     // esit paylassin - ekran boyu degisince de bozulmaz.
                     const gap = 14.0;
-                    final square = (constraints.maxWidth - gap) / 2;
+                    final square = ((constraints.maxWidth - gap) / 2) * 1.16;
                     final rest = constraints.maxHeight - square - gap;
-                    final strip = ((rest - gap * 2) / 3).clamp(86.0, 132.0);
+                    final strip = ((rest - gap * 2) / 3).clamp(104.0, 132.0);
 
                     return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(
                           height: square,
@@ -108,7 +107,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               const SizedBox(width: gap),
                               Expanded(
                                 child: _DashboardCard(
-                                  title: 'Günlük\nİşler',
+                                  title: 'Günlük İşler',
                                   icon: LucideIcons.list,
                                   onTap: () => context.go('/daily-tasks'),
                                 ),
@@ -307,15 +306,22 @@ class _DashboardCard extends StatelessWidget {
               child: Icon(icon, size: 30, color: c.accent),
             ),
             const Spacer(),
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 26,
-                fontWeight: FontWeight.w700,
-                height: 1.1,
-                letterSpacing: -.5,
-                color: c.ink,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                title,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.visible,
+                style: TextStyle(
+                  fontFamily: kDisplay,
+                  fontSize: 25,
+                  fontWeight: FontWeight.w700,
+                  height: 1.1,
+                  letterSpacing: -.5,
+                  color: c.ink,
+                ),
               ),
             ),
           ],
@@ -344,7 +350,7 @@ class _WideDashboardCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 0, 18, 0),
+        padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: BorderRadius.circular(20),
@@ -364,39 +370,53 @@ class _WideDashboardCard extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontFamily: kDisplay,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -.4,
-                  color: c.ink,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.4,
+                    color: c.ink,
+                  ),
                 ),
               ),
             ),
             if ((badgeCount ?? 0) > 0) ...[
+              const SizedBox(width: 10),
               Container(
-                constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 9),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: c.bad,
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
                   badgeCount! > 99 ? '99+' : '$badgeCount',
                   style: const TextStyle(
                     fontFamily: kBody,
                     color: Colors.white,
-                    fontSize: 13,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
             ],
-            Icon(LucideIcons.chevronRight, size: 20, color: c.muted),
+            const SizedBox(width: 12),
+            // Sag kenar bos kalmasin: ok kendi dairesinde dursun.
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: c.inset, shape: BoxShape.circle),
+              child: Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
+            ),
           ],
         ),
       ),

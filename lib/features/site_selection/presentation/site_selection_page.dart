@@ -94,47 +94,49 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
     return Scaffold(
       backgroundColor: c.bg,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
-                  const BrandLogo(height: 50),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 8),
+                  const Center(child: BrandLogo(height: 52)),
+                  const SizedBox(height: 14),
                   Text(
                     'Şantiye Takip Uygulaması',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: kBody,
-                      fontSize: 20,
+                      fontSize: 17,
                       fontWeight: FontWeight.w500,
                       color: c.sub,
                     ),
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 34),
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
                     decoration: BoxDecoration(
                       color: c.surface,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: c.border),
                       boxShadow: kLiftShadow,
                     ),
                     child: _buildSelectorContent(),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 22),
                   ValueListenableBuilder<BrandConfig>(
                     valueListenable: Brand.config,
                     builder: (context, brand, _) => Text(
                       '© Copyright 2026 ${brand.name} tüm hakları saklıdır.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: kBody, fontSize: 13, color: c.faint),
+                      style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
                     ),
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -149,7 +151,7 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
 
     if (_isLoading) {
       return SizedBox(
-        height: 150,
+        height: 140,
         child: Center(
           child: SizedBox(
             width: 26,
@@ -162,21 +164,43 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
 
     if (_errorMessage != null) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(LucideIcons.circleAlert, color: c.bad, size: 38),
-          const SizedBox(height: 12),
-          Text(
-            _errorMessage!,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: kBody, fontSize: 15, height: 1.45, color: c.ink),
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: c.bad.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 14.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      color: c.bad,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 18),
-          SmallButton(
-            label: 'Tekrar Dene',
-            icon: LucideIcons.refreshCw,
-            onTap: _loadSites,
+          const SizedBox(height: 20),
+          Center(
+            child: SmallButton(
+              label: 'Tekrar Dene',
+              icon: LucideIcons.refreshCw,
+              onTap: _loadSites,
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _BackToLogin(onTap: _goBackToLogin),
         ],
       );
@@ -184,13 +208,14 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
 
     if (_sites.isEmpty) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
             'Bu kullanıcıya atanmış şantiye bulunmuyor.',
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: kBody, fontSize: 15, height: 1.45, color: c.ink),
+            style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.sub),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           _BackToLogin(onTap: _goBackToLogin),
         ],
       );
@@ -203,65 +228,64 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
         );
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            SizedBox(
-              width: 125,
-              child: Text(
-                'Şantiye',
-                style: TextStyle(
-                  fontFamily: kBody,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: c.ink,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: DropdownButtonFormField<int>(
-                value: _selectedSite?.id,
-                isExpanded: true,
-                icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-                dropdownColor: c.surface,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                  filled: true,
-                  fillColor: c.surface2,
-                  border: border(c.border2),
-                  enabledBorder: border(c.border2),
-                  focusedBorder: border(c.accent, 1.8),
-                ),
-                items: _sites
-                    .map(
-                      (site) => DropdownMenuItem<int>(
-                        value: site.id,
-                        child: Text(
-                          site.name,
-                          style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (id) {
-                  if (id == null) return;
-                  setState(() {
-                    _selectedSite = _sites.firstWhere((site) => site.id == id);
-                  });
-                },
-              ),
-            ),
-          ],
+        Text(
+          'Şantiye',
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .2,
+            color: c.ink,
+          ),
         ),
-        const SizedBox(height: 36),
+        const SizedBox(height: 9),
+        DropdownButtonFormField<int>(
+          value: _selectedSite?.id,
+          isExpanded: true,
+          icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+          dropdownColor: c.surface,
+          borderRadius: BorderRadius.circular(16),
+          style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            filled: true,
+            fillColor: c.surface2,
+            border: border(c.border2),
+            enabledBorder: border(c.border2),
+            focusedBorder: border(c.accent, 1.8),
+          ),
+          items: _sites
+              .map(
+                (site) => DropdownMenuItem<int>(
+                  value: site.id,
+                  child: Text(
+                    site.name,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: c.ink,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (id) {
+            if (id == null) return;
+            setState(() {
+              _selectedSite = _sites.firstWhere((site) => site.id == id);
+            });
+          },
+        ),
+        const SizedBox(height: 26),
         PrimaryButton(
           label: 'DEVAM',
           onPressed: _selectedSite == null ? null : _continue,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
         _BackToLogin(onTap: _goBackToLogin),
       ],
     );
@@ -276,25 +300,27 @@ class _BackToLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Pressable(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(LucideIcons.chevronLeft, size: 17, color: c.accent),
-            const SizedBox(width: 4),
-            Text(
-              "GİRİŞ'e Dön",
-              style: TextStyle(
-                fontFamily: kBody,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: c.accent,
+    return Center(
+      child: Pressable(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.chevronLeft, size: 17, color: c.accent),
+              const SizedBox(width: 4),
+              Text(
+                "GİRİŞ'e Dön",
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                  color: c.accent,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
