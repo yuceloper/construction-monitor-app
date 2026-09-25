@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/brand.dart';
+import '../../../app/theme.dart';
+import '../../../core/widgets/brand_logo.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/site_summary.dart';
 import '../services/site_service.dart';
@@ -83,8 +89,10 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -94,23 +102,16 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
               child: Column(
                 children: [
                   const SizedBox(height: 40),
-                  const Text(
-                    'SefaTech',
-                    style: TextStyle(
-                      fontSize: 46,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1.5,
-                    ),
-                  ),
+                  const BrandLogo(height: 50),
                   const SizedBox(height: 40),
-                  const Text(
+                  Text(
                     'Şantiye Takip Uygulaması',
                     textAlign: TextAlign.center,
                     style: TextStyle(
+                      fontFamily: kBody,
                       fontSize: 20,
-                      color: Colors.black54,
                       fontWeight: FontWeight.w500,
+                      color: c.sub,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -118,16 +119,21 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE9E9E9),
+                      color: c.surface,
                       borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: c.border),
+                      boxShadow: kLiftShadow,
                     ),
                     child: _buildSelectorContent(),
                   ),
                   const SizedBox(height: 18),
-                  const Text(
-                    '© Copyright 2026 SefaTech tüm hakları saklıdır.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.black26),
+                  ValueListenableBuilder<BrandConfig>(
+                    valueListenable: Brand.config,
+                    builder: (context, brand, _) => Text(
+                      '© Copyright 2026 ${brand.name} tüm hakları saklıdır.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontFamily: kBody, fontSize: 13, color: c.faint),
+                    ),
                   ),
                 ],
               ),
@@ -139,30 +145,39 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
   }
 
   Widget _buildSelectorContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const SizedBox(
+      return SizedBox(
         height: 150,
-        child: Center(child: CircularProgressIndicator(color: Colors.black)),
+        child: Center(
+          child: SizedBox(
+            width: 26,
+            height: 26,
+            child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+          ),
+        ),
       );
     }
 
     if (_errorMessage != null) {
       return Column(
         children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 38),
+          Icon(LucideIcons.circleAlert, color: c.bad, size: 38),
           const SizedBox(height: 12),
-          Text(_errorMessage!, textAlign: TextAlign.center),
+          Text(
+            _errorMessage!,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: kBody, fontSize: 15, height: 1.45, color: c.ink),
+          ),
           const SizedBox(height: 18),
-          ElevatedButton(
-            onPressed: _loadSites,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Tekrar Dene'),
+          SmallButton(
+            label: 'Tekrar Dene',
+            icon: LucideIcons.refreshCw,
+            onTap: _loadSites,
           ),
           const SizedBox(height: 12),
-          TextButton(onPressed: _goBackToLogin, child: const Text("< GİRİŞ'e Dön")),
+          _BackToLogin(onTap: _goBackToLogin),
         ],
       );
     }
@@ -170,22 +185,37 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
     if (_sites.isEmpty) {
       return Column(
         children: [
-          const Text('Bu kullanıcıya atanmış şantiye bulunmuyor.'),
+          Text(
+            'Bu kullanıcıya atanmış şantiye bulunmuyor.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontFamily: kBody, fontSize: 15, height: 1.45, color: c.ink),
+          ),
           const SizedBox(height: 16),
-          TextButton(onPressed: _goBackToLogin, child: const Text("< GİRİŞ'e Dön")),
+          _BackToLogin(onTap: _goBackToLogin),
         ],
       );
     }
+
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
 
     return Column(
       children: [
         Row(
           children: [
-            const SizedBox(
-              width: 120,
+            SizedBox(
+              width: 125,
               child: Text(
                 'Şantiye',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: c.ink,
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -193,30 +223,26 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
               child: DropdownButtonFormField<int>(
                 value: _selectedSite?.id,
                 isExpanded: true,
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
+                icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+                dropdownColor: c.surface,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
                 decoration: InputDecoration(
                   isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
                   filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(2),
-                    borderSide: const BorderSide(color: Colors.black, width: 1.2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(2),
-                    borderSide: const BorderSide(color: Colors.black, width: 1.2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(2),
-                    borderSide: const BorderSide(color: Colors.black, width: 1.4),
-                  ),
+                  fillColor: c.surface2,
+                  border: border(c.border2),
+                  enabledBorder: border(c.border2),
+                  focusedBorder: border(c.accent, 1.8),
                 ),
                 items: _sites
                     .map(
                       (site) => DropdownMenuItem<int>(
                         value: site.id,
-                        child: Text(site.name, style: const TextStyle(fontSize: 14)),
+                        child: Text(
+                          site.name,
+                          style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                        ),
                       ),
                     )
                     .toList(),
@@ -231,37 +257,46 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
           ],
         ),
         const SizedBox(height: 36),
-        SizedBox(
-          width: double.infinity,
-          height: 58,
-          child: ElevatedButton(
-            onPressed: _selectedSite == null ? null : _continue,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-            ),
-            child: const Text(
-              'DEVAM',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: 0.5),
-            ),
-          ),
+        PrimaryButton(
+          label: 'DEVAM',
+          onPressed: _selectedSite == null ? null : _continue,
         ),
         const SizedBox(height: 16),
-        TextButton(
-          onPressed: _goBackToLogin,
-          style: TextButton.styleFrom(foregroundColor: const Color(0xFF0066AA)),
-          child: const Text(
-            "< GİRİŞ'e Dön",
-            style: TextStyle(
-              fontSize: 16,
-              decoration: TextDecoration.underline,
-              decorationColor: Color(0xFF0066AA),
-            ),
-          ),
-        ),
+        _BackToLogin(onTap: _goBackToLogin),
       ],
+    );
+  }
+}
+
+class _BackToLogin extends StatelessWidget {
+  const _BackToLogin({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(LucideIcons.chevronLeft, size: 17, color: c.accent),
+            const SizedBox(width: 4),
+            Text(
+              "GİRİŞ'e Dön",
+              style: TextStyle(
+                fontFamily: kBody,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: c.accent,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
