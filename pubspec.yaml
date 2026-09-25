@@ -16,6 +16,7 @@ dependencies:
   pdfrx: ^2.5.0
   record: ^6.1.2
   audioplayers: ^6.5.1
+  lucide_icons_flutter: ^3.1.19
 
 dev_dependencies:
   flutter_test:
@@ -24,3 +25,28 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Tasarim fontlari projeye gomulu - calisma aninda internetten indirilmez,
+  # uygulama cevrimdisi acildiginda da dogru yazi tipiyle acilir.
+  fonts:
+    # Basliklar ve rakamlar: sikistirilmis, yuksek kontrastli
+    - family: Barlow
+      fonts:
+        - asset: assets/fonts/Barlow-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Barlow-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Barlow-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Barlow-Bold.ttf
+          weight: 700
+    # Govde metni: uzun okumada yorulmayan, rakamlari net
+    - family: IBM Plex Sans
+      fonts:
+        - asset: assets/fonts/IBMPlexSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSans-SemiBold.ttf
+          weight: 600
+
