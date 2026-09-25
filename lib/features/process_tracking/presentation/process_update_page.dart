@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/progress_stage.dart';
 import '../models/work_item_summary.dart';
 import '../services/progress_service.dart';
@@ -97,28 +101,15 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: Colors.white,
+      color: context.colors.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.pop(),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 20),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${widget.blockName} > Güncelle',
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
+            ScreenTitleBar(
+              title: '${widget.blockName} > Güncelle',
+              onBack: () => context.pop(),
             ),
-            const Divider(height: 1),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -127,8 +118,16 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
@@ -138,17 +137,18 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              Icon(LucideIcons.circleAlert, size: 42, color: c.bad),
               const SizedBox(height: 12),
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: _loadStages,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Tekrar Dene'),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _loadStages,
               ),
             ],
           ),
@@ -157,10 +157,11 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
     }
 
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _loadStages,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
         itemCount: _stages.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (context, index) {
@@ -168,7 +169,7 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
           final items = _workItemsByStage[stage.id] ?? const <WorkItemSummary>[];
           return _StageUpdateCard(
             title: stage.name,
-            percentage: stage.percentage,
+            items: items,
             status: _statusForItems(items),
             onTap: () => _openStage(stage),
           );
@@ -191,64 +192,95 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
 
 class _StageUpdateCard extends StatelessWidget {
   final String title;
-  final double percentage;
+  final List<WorkItemSummary> items;
   final _StageStatus status;
   final VoidCallback onTap;
 
   const _StageUpdateCard({
     required this.title,
-    required this.percentage,
+    required this.items,
     required this.status,
     required this.onTap,
   });
 
-  Color get backgroundColor {
+  Color _statusColor(AppColors c) {
     switch (status) {
       case _StageStatus.completed:
-        return const Color(0xFFDCEED5);
+        return c.ok;
       case _StageStatus.active:
-        return const Color(0xFFFFE49A);
+        return c.warn;
       case _StageStatus.waiting:
-        return const Color(0xFFEDEDED);
+        return c.muted;
     }
   }
 
-  Icon get statusIcon {
+  IconData get _statusIcon {
     switch (status) {
       case _StageStatus.completed:
-        return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
+        return LucideIcons.check;
       case _StageStatus.active:
-        return const Icon(Icons.autorenew, color: Colors.black, size: 30);
+        return LucideIcons.refreshCw;
       case _StageStatus.waiting:
-        return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
+        return LucideIcons.clock;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-          child: Row(
-            children: [
-              statusIcon,
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
-                ),
+    final c = context.colors;
+    final color = _statusColor(c);
+    final done = items.where((item) => item.isCompleted).length;
+
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: c.border),
+          boxShadow: kLiftShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: .13),
+                borderRadius: BorderRadius.circular(13),
               ),
-              Text('%${percentage.round()}'),
-              const SizedBox(width: 10),
-              const Icon(Icons.edit_outlined, size: 30),
-            ],
-          ),
+              child: Icon(_statusIcon, size: 22, color: color),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                      letterSpacing: -.2,
+                      color: c.ink,
+                    ),
+                  ),
+                  if (items.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      '$done / ${items.length} iş kalemi tamamlandı',
+                      style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Icon(LucideIcons.pencil, size: 22, color: c.sub),
+          ],
         ),
       ),
     );

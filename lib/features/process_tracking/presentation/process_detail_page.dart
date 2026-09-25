@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/progress_stage.dart';
 import '../models/work_item_summary.dart';
 import '../services/progress_service.dart';
@@ -104,70 +108,74 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final roundedProgress = _overallProgress.round();
+
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.pop(true),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(widget.blockName, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600)),
-                ],
-              ),
+            ScreenTitleBar(
+              title: widget.blockName,
+              onBack: () => context.pop(true),
             ),
-            const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Genel İlerleme', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w500)),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: LinearProgressIndicator(
-                                value: _overallProgress / 100,
-                                minHeight: 11,
-                                backgroundColor: const Color(0xFFAECBE1),
-                                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF0066A6)),
-                              ),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: c.border),
+                  boxShadow: kLiftShadow,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Genel İlerleme',
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: c.ink,
                             ),
-                            const SizedBox(width: 8),
-                            Text('%$roundedProgress', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  SizedBox(
-                    height: 40,
-                    child: ElevatedButton(
-                      onPressed: _openUpdate,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0066A6),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ProgressRail(percent: roundedProgress, height: 9),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                '%$roundedProgress',
+                                style: TextStyle(
+                                  fontFamily: kDisplay,
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      child: const Text('Güncelle', style: TextStyle(fontSize: 16)),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 14),
+                    SmallButton(
+                      label: 'Güncelle',
+                      icon: LucideIcons.refreshCw,
+                      onTap: _openUpdate,
+                    ),
+                  ],
+                ),
               ),
             ),
             Expanded(child: _buildContent()),
@@ -178,7 +186,18 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
   }
 
   Widget _buildContent() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Colors.black));
+    final c = context.colors;
+
+    if (_isLoading) {
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
+    }
+
     if (_errorMessage != null) {
       return Center(
         child: Padding(
@@ -186,27 +205,46 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              Icon(LucideIcons.circleAlert, size: 42, color: c.bad),
               const SizedBox(height: 12),
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 18),
-              ElevatedButton(onPressed: _loadData, child: const Text('Tekrar Dene')),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _loadData,
+              ),
             ],
           ),
         ),
       );
     }
+
     if (_stages.isEmpty) {
       return RefreshIndicator(
+        color: c.ink,
         onRefresh: _loadData,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [SizedBox(height: 120), Center(child: Text('Bu proje için süreç aşaması bulunmuyor.'))],
+          children: [
+            const SizedBox(height: 120),
+            Center(
+              child: Text(
+                'Bu proje için süreç aşaması bulunmuyor.',
+                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
+              ),
+            ),
+          ],
         ),
       );
     }
 
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _loadData,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -243,85 +281,152 @@ class _StageCard extends StatelessWidget {
 
   const _StageCard({required this.stage, required this.expanded, required this.onTap});
 
-  Color get backgroundColor {
+  Color _statusColor(AppColors c) {
     switch (stage.status) {
       case _StageStatus.completed:
-        return const Color(0xFFDCEED5);
+        return c.ok;
       case _StageStatus.active:
-        return const Color(0xFFFFE49A);
+        return c.warn;
       case _StageStatus.waiting:
-        return const Color(0xFFEDEDED);
+        return c.muted;
     }
   }
 
-  Widget get statusIcon {
+  IconData get _statusIcon {
     switch (stage.status) {
       case _StageStatus.completed:
-        return const Icon(Icons.check, color: Color(0xFF00A52B), size: 30);
+        return LucideIcons.check;
       case _StageStatus.active:
-        return const Icon(Icons.autorenew, color: Colors.black, size: 30);
+        return LucideIcons.refreshCw;
       case _StageStatus.waiting:
-        return const Icon(Icons.hourglass_empty, color: Colors.black, size: 30);
+        return LucideIcons.clock;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+    final color = _statusColor(c);
+    final done = stage.items.where((item) => item.isCompleted).length;
+
     return Container(
-      decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(18)),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: c.border),
+        boxShadow: kLiftShadow,
+      ),
       child: Column(
         children: [
-          InkWell(
+          Pressable(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+              padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
               child: Row(
                 children: [
-                  statusIcon,
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(stage.title, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500))),
-                  Icon(expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 38),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: .13),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(_statusIcon, size: 22, color: color),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stage.title,
+                          style: TextStyle(
+                            fontFamily: kDisplay,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            height: 1.2,
+                            letterSpacing: -.2,
+                            color: c.ink,
+                          ),
+                        ),
+                        if (stage.items.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            '$done / ${stage.items.length} iş kalemi tamamlandı',
+                            style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: expanded ? .5 : 0,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    child: Icon(LucideIcons.chevronDown, size: 26, color: c.sub),
+                  ),
                 ],
               ),
             ),
           ),
-          if (expanded && stage.items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(left: 56, right: 20, bottom: 18),
-              child: Align(alignment: Alignment.centerLeft, child: Text('Bu aşama için alt iş bulunmuyor.')),
-            ),
-          if (expanded && stage.items.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(left: 56, right: 20, bottom: 18),
-              child: Column(
-                children: stage.items.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 26,
-                          child: item.isCompleted
-                              ? const Icon(Icons.check_rounded, color: Color(0xFF00A52B), size: 26)
-                              : const SizedBox.shrink(),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(item.title, style: const TextStyle(fontSize: 16))),
-                        if (item.hasWarning) ...[
-                          const SizedBox(width: 8),
-                          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
-                        ],
-                        if (item.hasDependency) ...[
-                          const SizedBox(width: 8),
-                          const Icon(Icons.link, color: Colors.red, size: 24),
-                        ],
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: !expanded
+                ? const SizedBox(width: double.infinity)
+                : Container(
+                    width: double.infinity,
+                    color: c.surface2,
+                    padding: const EdgeInsets.fromLTRB(20, 4, 18, 14),
+                    child: stage.items.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            child: Text(
+                              'Bu aşama için alt iş bulunmuyor.',
+                              style: TextStyle(fontFamily: kBody, fontSize: 15, color: c.muted),
+                            ),
+                          )
+                        : Column(
+                            children: stage.items.map((item) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 26,
+                                      child: item.isCompleted
+                                          ? Icon(LucideIcons.check, color: c.ok, size: 22)
+                                          : const SizedBox.shrink(),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        item.title,
+                                        style: TextStyle(
+                                          fontFamily: kBody,
+                                          fontSize: 16,
+                                          height: 1.35,
+                                          color: item.isCompleted ? c.sub : c.ink,
+                                        ),
+                                      ),
+                                    ),
+                                    if (item.hasWarning) ...[
+                                      const SizedBox(width: 8),
+                                      Icon(LucideIcons.triangleAlert, color: c.bad, size: 21),
+                                    ],
+                                    if (item.hasDependency) ...[
+                                      const SizedBox(width: 8),
+                                      Icon(LucideIcons.link, color: c.bad, size: 21),
+                                    ],
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                  ),
+          ),
         ],
       ),
     );

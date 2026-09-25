@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../features/notifications/services/notification_service.dart';
+import 'theme.dart';
 
 class MainShell extends StatefulWidget {
   final Widget child;
@@ -69,52 +71,57 @@ class _MainShellState extends State<MainShell> {
     final currentIndex = _currentIndex(context);
     _refreshUnreadCount(location);
 
+    final c = context.colors;
+
     return Scaffold(
+      backgroundColor: c.bg,
       body: widget.child,
       bottomNavigationBar: isDashboard
           ? null
           : ValueListenableBuilder<int>(
               valueListenable: NotificationUnreadCount.value,
               builder: (context, unreadCount, _) {
-                return BottomNavigationBar(
-                  currentIndex: currentIndex,
-                  onTap: (index) => _onTap(context, index),
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: const Color(0xFF0066A6),
-                  unselectedItemColor: Colors.black54,
-                  backgroundColor: Colors.white,
-                  selectedFontSize: 13,
-                  unselectedFontSize: 12,
-                  selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
-                  items: [
-                    const BottomNavigationBarItem(
-                      icon: Icon(Icons.home_outlined),
-                      activeIcon: Icon(Icons.home),
-                      label: 'Ana Sayfa',
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: c.border)),
+                  ),
+                  child: BottomNavigationBar(
+                    currentIndex: currentIndex,
+                    onTap: (index) => _onTap(context, index),
+                    type: BottomNavigationBarType.fixed,
+                    elevation: 0,
+                    selectedItemColor: c.accent,
+                    unselectedItemColor: c.muted,
+                    backgroundColor: c.surface,
+                    selectedFontSize: 13,
+                    unselectedFontSize: 12.5,
+                    selectedLabelStyle: const TextStyle(
+                      fontFamily: kBody,
+                      fontWeight: FontWeight.w700,
                     ),
-                    const BottomNavigationBarItem(
-                      icon: Icon(Icons.autorenew),
-                      activeIcon: Icon(Icons.autorenew, size: 30),
-                      label: 'Süreç Takip',
+                    unselectedLabelStyle: const TextStyle(
+                      fontFamily: kBody,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const BottomNavigationBarItem(
-                      icon: Icon(Icons.format_list_bulleted),
-                      activeIcon: Icon(Icons.format_list_bulleted, size: 30),
-                      label: 'Günlük İşler',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: _NotificationNavIcon(
-                        count: unreadCount,
-                        active: false,
+                    items: [
+                      const BottomNavigationBarItem(
+                        icon: Icon(LucideIcons.house, size: 24),
+                        label: 'Ana Sayfa',
                       ),
-                      activeIcon: _NotificationNavIcon(
-                        count: unreadCount,
-                        active: true,
+                      const BottomNavigationBarItem(
+                        icon: Icon(LucideIcons.refreshCw, size: 24),
+                        label: 'Süreç Takip',
                       ),
-                      label: 'Bildirimler',
-                    ),
-                  ],
+                      const BottomNavigationBarItem(
+                        icon: Icon(LucideIcons.list, size: 24),
+                        label: 'Günlük İşler',
+                      ),
+                      BottomNavigationBarItem(
+                        icon: _NotificationNavIcon(count: unreadCount),
+                        label: 'Bildirimler',
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -124,19 +131,16 @@ class _MainShellState extends State<MainShell> {
 
 class _NotificationNavIcon extends StatelessWidget {
   final int count;
-  final bool active;
 
-  const _NotificationNavIcon({required this.count, required this.active});
+  const _NotificationNavIcon({required this.count});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Icon(
-          active ? Icons.notifications : Icons.notifications_none,
-          size: active ? 30 : 24,
-        ),
+        const Icon(LucideIcons.bell, size: 24),
         if (count > 0)
           Positioned(
             right: -10,
@@ -145,15 +149,16 @@ class _NotificationNavIcon extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 19, minHeight: 19),
               padding: const EdgeInsets.symmetric(horizontal: 5),
               alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.all(Radius.circular(10)),
+              decoration: BoxDecoration(
+                color: c.bad,
+                borderRadius: const BorderRadius.all(Radius.circular(10)),
               ),
               child: Text(
                 count > 99 ? '99+' : '$count',
                 style: const TextStyle(
+                  fontFamily: kBody,
                   color: Colors.white,
-                  fontSize: 10,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.bold,
                 ),
               ),
