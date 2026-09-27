@@ -149,7 +149,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
                   Pressable(
                     onTap: () => context.pop(),
                     child: Padding(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(10),
                       child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
                     ),
                   ),

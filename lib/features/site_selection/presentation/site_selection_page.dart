@@ -202,7 +202,9 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 44),
+              constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 44).clamp(0.0, double.infinity),
+                ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

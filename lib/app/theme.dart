@@ -217,13 +217,13 @@ class AppTheme {
       ),
       bodySmall: TextStyle(
         fontFamily: kBody,
-        fontSize: 11,
+        fontSize: 12.5,
         height: 1.35,
         color: c.muted,
       ),
       labelSmall: TextStyle(
         fontFamily: kBody,
-        fontSize: 10.5,
+        fontSize: 12,
         fontWeight: FontWeight.w600,
         color: c.muted,
       ),

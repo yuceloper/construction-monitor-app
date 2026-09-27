@@ -158,7 +158,7 @@ class _StakeholderFormPageState extends State<StakeholderFormPage> {
                   Pressable(
                     onTap: () => context.pop(false),
                     child: Padding(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(10),
                       child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
                     ),
                   ),

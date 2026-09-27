@@ -95,9 +95,19 @@ class _DashboardPageState extends State<DashboardPage> {
                     // Üst iki kart kare dursun, seritler kalan yuksekligi
                     // esit paylassin - ekran boyu degisince de bozulmaz.
                     const gap = 14.0;
-                    final square = ((constraints.maxWidth - gap) / 2) * 1.3;
-                    final rest = constraints.maxHeight - square - gap;
-                    final strip = ((rest - gap * 2) / 3).clamp(108.0, 152.0);
+                    final available = constraints.maxHeight;
+
+                    // Kare kartlar + uc serit ekrana tam sigsin: once tercih
+                    // edilen olculer, sonra dar ekranda kuculterek duzeltme.
+                    var square = ((constraints.maxWidth - gap) / 2) * 1.3;
+                    var strip = (available - square - gap * 3) / 3;
+                    if (strip > 152) {
+                      strip = 152;
+                      square = available - gap * 3 - strip * 3;
+                    } else if (strip < 88) {
+                      strip = 88;
+                      square = available - gap * 3 - strip * 3;
+                    }
 
                     return Column(
                       children: [
@@ -188,7 +198,7 @@ class _DashboardCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
@@ -270,7 +280,7 @@ class _WideDashboardCard extends StatelessWidget {
                       height: 52,
                       decoration: BoxDecoration(
                         color: c.inset,
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(icon, size: 25, color: c.accent),
                     ),

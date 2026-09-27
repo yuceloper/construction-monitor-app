@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
@@ -91,7 +92,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: c.surface,
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: c.border),
                     ),
                     child: Row(
@@ -200,17 +201,10 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _loadTasks,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Text(
-                _showAll ? 'Henüz günlük iş bulunmuyor.' : 'Aktif günlük iş bulunmuyor.',
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
-              ),
-            ),
-          ],
+        child: CenteredScrollMessage(
+          message: _showAll
+              ? 'Henüz günlük iş bulunmuyor.'
+              : 'Aktif günlük iş bulunmuyor.',
         ),
       );
     }
@@ -251,7 +245,7 @@ class _TabButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? c.ink : Colors.transparent,
-          borderRadius: BorderRadius.circular(11),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           label,

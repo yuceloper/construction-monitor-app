@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/progress_stage.dart';
 import '../models/work_item_summary.dart';
@@ -228,17 +229,8 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _loadData,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Text(
-                'Bu proje için süreç aşaması bulunmuyor.',
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
-              ),
-            ),
-          ],
+        child: const CenteredScrollMessage(
+          message: 'Bu proje için süreç aşaması bulunmuyor.',
         ),
       );
     }
@@ -330,7 +322,7 @@ class _StageCard extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: .13),
-                      borderRadius: BorderRadius.circular(13),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(_statusIcon, size: 22, color: color),
                   ),

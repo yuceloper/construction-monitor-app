@@ -253,7 +253,7 @@ class _SectionCard extends StatelessWidget {
                     height: 52,
                     decoration: BoxDecoration(
                       color: c.inset,
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(icon, size: 25, color: c.accent),
                   ),

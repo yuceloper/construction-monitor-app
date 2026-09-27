@@ -265,3 +265,41 @@ class _RingsPainter extends CustomPainter {
   bool shouldRepaint(_RingsPainter old) =>
       old.ring != ring || old.fill != fill || old.stripe != stripe;
 }
+
+/// Liste bosken gosterilen tek satirlik mesaj: ekranin ortasinda durur ve
+/// asagi cekince yenileme yine calisir.
+class CenteredScrollMessage extends StatelessWidget {
+  const CenteredScrollMessage({super.key, required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return LayoutBuilder(
+      builder: (context, constraints) => ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          SizedBox(
+            height: constraints.maxHeight,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 16,
+                    height: 1.5,
+                    color: c.sub,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

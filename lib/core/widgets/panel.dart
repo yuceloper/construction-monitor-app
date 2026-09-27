@@ -114,7 +114,7 @@ class ModuleTile extends StatelessWidget {
               subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontFamily: kBody, fontSize: 10.5, color: c.sub),
+              style: TextStyle(fontFamily: kBody, fontSize: 12, color: c.sub),
             ),
           ],
         ),
@@ -270,7 +270,7 @@ class StatusChip extends StatelessWidget {
             label,
             style: TextStyle(
               fontFamily: kBody,
-              fontSize: 10.5,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,
             ),
@@ -406,7 +406,7 @@ class AttentionCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontFamily: kBody,
-                                fontSize: 10.5,
+                                fontSize: 12,
                                 color: c.muted,
                               ),
                             ),
@@ -584,7 +584,7 @@ class SmallButton extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(11, 9, 13, 9),
           decoration: BoxDecoration(
             color: c.ink,
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -756,7 +756,7 @@ class AppField extends StatelessWidget {
             fillColor: c.surface2,
             isDense: true,
             counterText: showCounter ? null : '',
-            counterStyle: TextStyle(fontFamily: kBody, fontSize: 10.5, color: c.muted),
+            counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 17,

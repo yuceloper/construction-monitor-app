@@ -240,7 +240,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                 checkColor: c.bg,
                                 side: BorderSide(color: c.border2, width: 1.8),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(7),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 onChanged: _isSaving
                                     ? null

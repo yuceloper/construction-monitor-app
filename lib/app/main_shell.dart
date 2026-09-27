@@ -158,7 +158,7 @@ class _NotificationNavIcon extends StatelessWidget {
                 style: const TextStyle(
                   fontFamily: kBody,
                   color: Colors.white,
-                  fontSize: 10.5,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.bold,
                 ),
               ),

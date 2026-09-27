@@ -250,7 +250,7 @@ class _StageUpdateCard extends StatelessWidget {
               height: 44,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: .13),
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(_statusIcon, size: 22, color: color),
             ),

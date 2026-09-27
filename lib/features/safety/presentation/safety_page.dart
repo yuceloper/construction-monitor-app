@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
@@ -103,16 +104,24 @@ class _SafetyPageState extends State<SafetyPage> {
                     ),
                   ),
                   Expanded(
-                    child: Text(
-                      'İSG Takip',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kDisplay,
-                        fontSize: 27,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.6,
-                        color: c.ink,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'İSG Takip',
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(
+                            fontFamily: kDisplay,
+                            fontSize: 27,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -.6,
+                            color: c.ink,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -171,18 +180,7 @@ class _SafetyPageState extends State<SafetyPage> {
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Text(
-                'İSG belgesi bulunmuyor.',
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
-              ),
-            ),
-          ],
-        ),
+        child: const CenteredScrollMessage(message: 'İSG belgesi bulunmuyor.'),
       );
     }
 

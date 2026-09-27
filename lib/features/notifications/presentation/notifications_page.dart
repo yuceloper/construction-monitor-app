@@ -94,7 +94,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: c.bad,
-                        borderRadius: BorderRadius.circular(15),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
                         unreadCount > 99 ? '99+' : '$unreadCount',

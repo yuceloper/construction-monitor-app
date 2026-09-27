@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../models/stakeholder_summary.dart';
 import '../services/stakeholder_service.dart';
 
@@ -209,17 +210,10 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _load,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 100),
-            Center(
-              child: Text(
-                _query.isEmpty ? 'Henüz paydaş bulunmuyor.' : 'Aramaya uygun paydaş bulunamadı.',
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
-              ),
-            ),
-          ],
+        child: CenteredScrollMessage(
+          message: _query.isEmpty
+              ? 'Henüz paydaş bulunmuyor.'
+              : 'Aramaya uygun paydaş bulunamadı.',
         ),
       );
     }
@@ -242,6 +236,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
               boxShadow: kLiftShadow,
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
