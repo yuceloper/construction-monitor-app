@@ -95,9 +95,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     // Üst iki kart kare dursun, seritler kalan yuksekligi
                     // esit paylassin - ekran boyu degisince de bozulmaz.
                     const gap = 14.0;
-                    final square = ((constraints.maxWidth - gap) / 2) * 1.16;
+                    final square = ((constraints.maxWidth - gap) / 2) * 1.3;
                     final rest = constraints.maxHeight - square - gap;
-                    final strip = ((rest - gap * 2) / 3).clamp(104.0, 132.0);
+                    final strip = ((rest - gap * 2) / 3).clamp(108.0, 152.0);
 
                     return Column(
                       children: [
@@ -192,34 +192,34 @@ class _DashboardCard extends StatelessWidget {
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        padding: const EdgeInsets.fromLTRB(16, 22, 16, 22),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 62,
-              height: 62,
+              width: 68,
+              height: 68,
               decoration: BoxDecoration(
                 color: c.inset,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, size: 30, color: c.accent),
+              child: Icon(icon, size: 32, color: c.accent),
             ),
-            const Spacer(),
+            const SizedBox(height: 18),
             FittedBox(
               fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
               child: Text(
                 title,
                 maxLines: 1,
                 softWrap: false,
                 overflow: TextOverflow.visible,
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: kDisplay,
-                  fontSize: 25,
+                  fontSize: 23,
                   fontWeight: FontWeight.w700,
                   height: 1.1,
-                  letterSpacing: -.5,
+                  letterSpacing: -.4,
                   color: c.ink,
                 ),
               ),
@@ -250,72 +250,91 @@ class _WideDashboardCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
-        child: Row(
+        child: Stack(
           children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: c.inset,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(icon, size: 25, color: c.accent),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: TextStyle(
-                    fontFamily: kDisplay,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.4,
-                    color: c.ink,
-                  ),
+            // Ikon ve baslik kartin ortasinda duruyor.
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 56),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: c.inset,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(icon, size: 25, color: c.accent),
+                    ),
+                    const SizedBox(width: 16),
+                    Flexible(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          title,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.visible,
+                          style: TextStyle(
+                            fontFamily: kDisplay,
+                            fontSize: 23,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -.4,
+                            color: c.ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            if ((badgeCount ?? 0) > 0) ...[
-              const SizedBox(width: 10),
-              Container(
-                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                padding: const EdgeInsets.symmetric(horizontal: 9),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: c.bad,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  badgeCount! > 99 ? '99+' : '$badgeCount',
-                  style: const TextStyle(
-                    fontFamily: kBody,
-                    color: Colors.white,
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
+            if ((badgeCount ?? 0) > 0)
+              Positioned(
+                right: 62,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: c.bad,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      badgeCount! > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(
+                        fontFamily: kBody,
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ],
-            const SizedBox(width: 12),
-            // Sag kenar bos kalmasin: ok kendi dairesinde dursun.
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(color: c.inset, shape: BoxShape.circle),
-              child: Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
+            Positioned(
+              right: 16,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: c.inset, shape: BoxShape.circle),
+                  child: Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
+                ),
+              ),
             ),
           ],
         ),

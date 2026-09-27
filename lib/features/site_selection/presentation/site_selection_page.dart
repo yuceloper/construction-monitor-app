@@ -87,6 +87,110 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
     context.go('/login');
   }
 
+  /// Santiye secimi: acilir liste yerine alttan acilan panel - telefonda
+  /// parmakla secmesi kolay, secili olan net gorunuyor.
+  Future<void> _openSitePicker() async {
+    final c = context.colors;
+    final selected = await showModalBottomSheet<SiteSummary>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .6,
+          ),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            16 + MediaQuery.paddingOf(sheetContext).bottom,
+          ),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.border2,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 10),
+                child: Text(
+                  'Şantiye',
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.3,
+                    color: c.ink,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _sites.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, index) {
+                    final site = _sites[index];
+                    final isSelected = site.id == _selectedSite?.id;
+                    return Pressable(
+                      onTap: () => Navigator.of(sheetContext).pop(site),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+                        decoration: BoxDecoration(
+                          color: isSelected ? c.accent.withValues(alpha: .08) : c.surface2,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? c.accent : c.border,
+                            width: isSelected ? 1.6 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                site.name,
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ),
+                            if (isSelected)
+                              Icon(LucideIcons.check, size: 20, color: c.accent),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null && mounted) {
+      setState(() => _selectedSite = selected);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -221,12 +325,6 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
       );
     }
 
-    OutlineInputBorder border(Color color, [double width = 1.5]) =>
-        OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Sizes.rField),
-          borderSide: BorderSide(color: color, width: width),
-        );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -241,28 +339,22 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
           ),
         ),
         const SizedBox(height: 9),
-        DropdownButtonFormField<int>(
-          value: _selectedSite?.id,
-          isExpanded: true,
-          icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-          dropdownColor: c.surface,
-          borderRadius: BorderRadius.circular(16),
-          style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
-          decoration: InputDecoration(
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            filled: true,
-            fillColor: c.surface2,
-            border: border(c.border2),
-            enabledBorder: border(c.border2),
-            focusedBorder: border(c.accent, 1.8),
-          ),
-          items: _sites
-              .map(
-                (site) => DropdownMenuItem<int>(
-                  value: site.id,
+        Pressable(
+          onTap: _openSitePicker,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 17, 14, 17),
+            decoration: BoxDecoration(
+              color: c.surface2,
+              borderRadius: BorderRadius.circular(Sizes.rField),
+              border: Border.all(color: c.border2, width: 1.5),
+            ),
+            child: Row(
+              children: [
+                Expanded(
                   child: Text(
-                    site.name,
+                    _selectedSite?.name ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontFamily: kBody,
                       fontSize: 17,
@@ -271,14 +363,10 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
                     ),
                   ),
                 ),
-              )
-              .toList(),
-          onChanged: (id) {
-            if (id == null) return;
-            setState(() {
-              _selectedSite = _sites.firstWhere((site) => site.id == id);
-            });
-          },
+                Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 26),
         PrimaryButton(
