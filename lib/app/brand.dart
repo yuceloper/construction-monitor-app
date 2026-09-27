@@ -15,6 +15,7 @@ class BrandConfig {
     required this.name,
     this.logoUrl,
     this.logoAsset,
+    this.logoMarkAsset,
   });
 
   /// Shown as the wordmark, and as the fallback when an image cannot load.
@@ -26,14 +27,23 @@ class BrandConfig {
   /// Bundled logo image, e.g. 'assets/images/logo.png'.
   final String? logoAsset;
 
+  /// Dar yerler icin (ust serit) sadece kelime isareti.
+  final String? logoMarkAsset;
+
   bool get hasImage =>
       (logoUrl?.isNotEmpty ?? false) || (logoAsset?.isNotEmpty ?? false);
 
-  BrandConfig copyWith({String? name, String? logoUrl, String? logoAsset}) {
+  BrandConfig copyWith({
+    String? name,
+    String? logoUrl,
+    String? logoAsset,
+    String? logoMarkAsset,
+  }) {
     return BrandConfig(
       name: name ?? this.name,
       logoUrl: logoUrl ?? this.logoUrl,
       logoAsset: logoAsset ?? this.logoAsset,
+      logoMarkAsset: logoMarkAsset ?? this.logoMarkAsset,
     );
   }
 }
@@ -41,15 +51,23 @@ class BrandConfig {
 class Brand {
   Brand._();
 
-  static const _name = String.fromEnvironment('BRAND_NAME', defaultValue: 'SefaTech');
+  static const _name = String.fromEnvironment('BRAND_NAME', defaultValue: 'SAHADA');
   static const _logoUrl = String.fromEnvironment('BRAND_LOGO_URL');
-  static const _logoAsset = String.fromEnvironment('BRAND_LOGO_ASSET');
+  static const _logoAsset = String.fromEnvironment(
+    'BRAND_LOGO_ASSET',
+    defaultValue: 'assets/images/logo.png',
+  );
+  static const _logoMarkAsset = String.fromEnvironment(
+    'BRAND_LOGO_MARK_ASSET',
+    defaultValue: 'assets/images/logo_mark.png',
+  );
 
   static final ValueNotifier<BrandConfig> config = ValueNotifier(
     const BrandConfig(
       name: _name,
       logoUrl: _logoUrl == '' ? null : _logoUrl,
       logoAsset: _logoAsset == '' ? null : _logoAsset,
+      logoMarkAsset: _logoMarkAsset == '' ? null : _logoMarkAsset,
     ),
   );
 

@@ -8,11 +8,13 @@ import '../../app/theme.dart';
 /// wordmark, so the header never shows a broken image.
 ///
 /// [height] sets the size: the wordmark's type size follows it, and an image
-/// is fitted inside it.
+/// is fitted inside it. [compact] picks the mark-only file where the full
+/// lock-up with its strapline would be too small to read - the top bars.
 class BrandLogo extends StatelessWidget {
-  const BrandLogo({super.key, this.height = 22});
+  const BrandLogo({super.key, this.height = 22, this.compact = false});
 
   final double height;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,9 @@ class BrandLogo extends StatelessWidget {
       builder: (context, brand, _) {
         final wordmark = _Wordmark(name: brand.name, height: height);
         final url = brand.logoUrl;
-        final asset = brand.logoAsset;
+        final asset = compact
+            ? (brand.logoMarkAsset ?? brand.logoAsset)
+            : brand.logoAsset;
 
         Widget image;
         if (url != null && url.isNotEmpty) {
@@ -36,6 +40,7 @@ class BrandLogo extends StatelessWidget {
             asset,
             height: height,
             fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
             errorBuilder: (context, error, stack) => wordmark,
           );
         } else {

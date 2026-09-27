@@ -18,11 +18,20 @@ class AppHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
       child: Row(
         children: [
-          Pressable(
-            onTap: () => context.go('/dashboard'),
-            child: const BrandLogo(height: 30),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Pressable(
+                  onTap: () => context.go('/dashboard'),
+                  child: const BrandLogo(height: 26, compact: true),
+                ),
+              ),
+            ),
           ),
-          const Spacer(),
+          const SizedBox(width: 10),
           const UserChip(),
         ],
       ),
@@ -55,7 +64,7 @@ class UserChip extends StatelessWidget {
         (letters.isEmpty ? displayName.substring(0, 1) : letters).toUpperCase();
 
     return Container(
-      constraints: const BoxConstraints(maxWidth: 215),
+      constraints: const BoxConstraints(maxWidth: 190),
       padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
       decoration: BoxDecoration(
         color: c.surface,

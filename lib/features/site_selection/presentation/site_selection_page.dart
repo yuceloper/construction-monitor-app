@@ -104,7 +104,7 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 8),
-                  const Center(child: BrandLogo(height: 52)),
+                  const Center(child: BrandLogo(height: 74)),
                   const SizedBox(height: 14),
                   Text(
                     'Şantiye Takip Uygulaması',

@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/pressable.dart';
-import '../../auth/services/session_manager.dart';
 import '../../notifications/services/notification_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -35,11 +35,6 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final session = SessionManager.instance;
-    final auth = session.auth;
-    final siteName = session.selectedSiteName ?? '';
-    final firstName = auth?.firstName.isNotEmpty == true ? auth!.firstName : auth?.username ?? '';
-    final lastName = auth?.lastName ?? '';
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -50,34 +45,47 @@ class _DashboardPageState extends State<DashboardPage> {
             children: [
               Row(
                 children: [
-                  Pressable(
-                    onTap: () => context.go('/dashboard'),
-                    child: const BrandLogo(height: 34),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: c.ink,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'TDS',
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        color: c.bg,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1,
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Pressable(
+                              onTap: () => context.go('/dashboard'),
+                              child: const BrandLogo(height: 26, compact: true),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: c.ink,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'TDS',
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  color: c.bg,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  _UserChip(
-                    firstName: firstName,
-                    lastName: lastName,
-                    siteName: siteName,
-                  ),
+                  const SizedBox(width: 10),
+                  const UserChip(),
                 ],
               ),
               const SizedBox(height: 18),
@@ -156,114 +164,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Signed-in user: initials, name, and the site being worked on.
-class _UserChip extends StatelessWidget {
-  const _UserChip({
-    required this.firstName,
-    required this.lastName,
-    required this.siteName,
-  });
-
-  final String firstName;
-  final String lastName;
-  final String siteName;
-
-  String get _initials {
-    final first = firstName.trim();
-    final last = lastName.trim();
-    final letters = [
-      if (first.isNotEmpty) first[0],
-      if (last.isNotEmpty) last[0],
-    ].join();
-    return letters.isEmpty ? '?' : letters.toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final fullName = [firstName, lastName]
-        .where((part) => part.trim().isNotEmpty)
-        .join(' ');
-
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 210),
-      padding: const EdgeInsets.fromLTRB(6, 6, 13, 6),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: c.border),
-        boxShadow: kLiftShadow,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: c.ink, shape: BoxShape.circle),
-            child: Text(
-              _initials,
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                letterSpacing: .3,
-                color: c.bg,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  fullName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    height: 1.15,
-                    color: c.ink,
-                  ),
-                ),
-                if (siteName.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(LucideIcons.mapPin, size: 11, color: c.accent),
-                      const SizedBox(width: 3),
-                      Flexible(
-                        child: Text(
-                          siteName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: kBody,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: .2,
-                            color: c.accent,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
