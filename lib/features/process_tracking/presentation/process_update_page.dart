@@ -169,6 +169,7 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
           final items = _workItemsByStage[stage.id] ?? const <WorkItemSummary>[];
           return _StageUpdateCard(
             title: stage.name,
+            percentage: stage.percentage,
             items: items,
             status: _statusForItems(items),
             onTap: () => _openStage(stage),
@@ -192,12 +193,14 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
 
 class _StageUpdateCard extends StatelessWidget {
   final String title;
+  final double percentage;
   final List<WorkItemSummary> items;
   final _StageStatus status;
   final VoidCallback onTap;
 
   const _StageUpdateCard({
     required this.title,
+    required this.percentage,
     required this.items,
     required this.status,
     required this.onTap,
@@ -229,7 +232,6 @@ class _StageUpdateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final color = _statusColor(c);
-    final done = items.where((item) => item.isCompleted).length;
 
     return Pressable(
       onTap: onTap,
@@ -268,17 +270,20 @@ class _StageUpdateCard extends StatelessWidget {
                       color: c.ink,
                     ),
                   ),
-                  if (items.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      '$done / ${items.length} iş kalemi tamamlandı',
-                      style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
-                    ),
-                  ],
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
+            Text(
+              '%${percentage.round()}',
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: c.ink,
+              ),
+            ),
+            const SizedBox(width: 12),
             Icon(LucideIcons.pencil, size: 22, color: c.sub),
           ],
         ),

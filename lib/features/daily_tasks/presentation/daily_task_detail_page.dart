@@ -2,8 +2,12 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -128,46 +132,62 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: c.border)),
+              ),
               child: Row(
                 children: [
-                  InkWell(
+                  Pressable(
                     onTap: () => context.pop(true),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.arrow_back_ios_new, size: 20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  InkWell(
+                  const SizedBox(width: 4),
+                  Pressable(
                     onTap: () => context.pop(true),
-                    child: const Text(
+                    child: Text(
                       'Günlük İşler',
                       style: TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF0066A6),
-                        decoration: TextDecoration.underline,
+                        fontFamily: kBody,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: c.accent,
                       ),
                     ),
                   ),
-                  const Text(' > ', style: TextStyle(fontSize: 20)),
-                  const Expanded(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    child: Icon(LucideIcons.chevronRight, size: 15, color: c.muted),
+                  ),
+                  Expanded(
                     child: Text(
                       'İş Detayı',
-                      style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: kDisplay,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.3,
+                        color: c.ink,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -176,8 +196,16 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading && _task == null) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
     if (_errorMessage != null && _task == null) {
       return Center(
@@ -186,32 +214,58 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _load,
+              ),
             ],
           ),
         ),
       );
     }
 
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     final task = _task!;
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFEDEDED),
+              color: c.surface,
               borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.border),
+              boxShadow: kLiftShadow,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Özet', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text(
+                  'Özet',
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.4,
+                    color: c.ink,
+                  ),
+                ),
                 const SizedBox(height: 14),
                 _SummaryLine(label: 'Blok', value: '${task.typeLabel} - ${task.projectName}'),
                 _SummaryLine(label: 'İlgili Kişi', value: task.assignedToName),
@@ -229,7 +283,16 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
           ),
           if (task.photoIds.isNotEmpty) ...[
             const SizedBox(height: 22),
-            const Text('Fotoğraflar', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            Text(
+              'Fotoğraflar',
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.3,
+                color: c.ink,
+              ),
+            ),
             const SizedBox(height: 10),
             SizedBox(
               height: 125,
@@ -240,7 +303,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                 itemBuilder: (_, index) {
                   final id = task.photoIds[index];
                   return ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                     child: SizedBox(
                       width: 145,
                       child: Image.network(
@@ -248,9 +311,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                         headers: _service.photoHeaders(),
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFFEDEDED),
+                          color: c.inset,
                           alignment: Alignment.center,
-                          child: const Icon(Icons.broken_image_outlined),
+                          child: Icon(LucideIcons.imageOff, color: c.faint),
                         ),
                       ),
                     ),
@@ -261,67 +324,121 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
           ],
           if (task.audioNoteId != null) ...[
             const SizedBox(height: 22),
-            const Text('Sesli Not', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            Text(
+              'Sesli Not',
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.3,
+                color: c.ink,
+              ),
+            ),
             const SizedBox(height: 10),
-            Material(
-              color: const Color(0xFFEAF4FA),
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: _toggleAudio,
-                borderRadius: BorderRadius.circular(14),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0066A6),
-                          shape: BoxShape.circle,
+            Pressable(
+              onTap: _toggleAudio,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: c.accent.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.accent.withValues(alpha: .22)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
+                      alignment: Alignment.center,
+                      child: _isAudioLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : Icon(
+                              _isAudioPlaying ? LucideIcons.pause : LucideIcons.play,
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                    ),
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Text(
+                        _isAudioPlaying ? 'Sesli not oynatılıyor' : 'Sesli notu dinle',
+                        style: TextStyle(
+                          fontFamily: kBody,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15.5,
+                          color: c.ink,
                         ),
-                        alignment: Alignment.center,
-                        child: _isAudioLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            : Icon(
-                                _isAudioPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 30,
-                              ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _isAudioPlaying ? 'Sesli not oynatılıyor' : 'Sesli notu dinle',
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                        ),
-                      ),
-                      const Icon(Icons.volume_up_outlined, color: Color(0xFF0066A6)),
-                    ],
-                  ),
+                    ),
+                    Icon(LucideIcons.volume2, color: c.accent, size: 21),
+                  ],
                 ),
               ),
             ),
           ],
           const SizedBox(height: 24),
-          const Text('Durum', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          Text(
+            'Durum',
+            style: TextStyle(
+              fontFamily: kDisplay,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: c.ink,
+            ),
+          ),
+          const SizedBox(height: 9),
           DropdownButtonFormField<String>(
             value: _status,
-            items: const [
-              DropdownMenuItem(value: 'IN_PROGRESS', child: Text('Devam Ediyor')),
-              DropdownMenuItem(value: 'COMPLETED', child: Text('Tamamlandı')),
+            isExpanded: true,
+            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+            dropdownColor: c.surface,
+            borderRadius: BorderRadius.circular(16),
+            style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+            items: [
+              DropdownMenuItem(
+                value: 'IN_PROGRESS',
+                child: Text(
+                  'Devam Ediyor',
+                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                ),
+              ),
+              DropdownMenuItem(
+                value: 'COMPLETED',
+                child: Text(
+                  'Tamamlandı',
+                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                ),
+              ),
             ],
             onChanged: _isSaving ? null : (value) => setState(() => _status = value ?? 'IN_PROGRESS'),
-            decoration: const InputDecoration(border: OutlineInputBorder()),
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+              filled: true,
+              fillColor: c.surface2,
+              border: border(c.border2),
+              enabledBorder: border(c.border2),
+              focusedBorder: border(c.accent, 1.8),
+            ),
           ),
-          const SizedBox(height: 18),
-          const Text('Not', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 8),
+          const SizedBox(height: 20),
+          Text(
+            'Not',
+            style: TextStyle(
+              fontFamily: kDisplay,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: c.ink,
+            ),
+          ),
+          const SizedBox(height: 9),
           TextField(
             controller: _noteController,
             enabled: !_isSaving,
@@ -329,29 +446,26 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             maxLines: 8,
             maxLength: 500,
             inputFormatters: [LengthLimitingTextInputFormatter(500)],
-            decoration: const InputDecoration(
+            style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.4, color: c.ink),
+            cursorColor: c.accent,
+            decoration: InputDecoration(
               hintText: 'Lütfen detay giriniz.',
-              border: OutlineInputBorder(),
+              hintStyle: TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
+              counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
+              filled: true,
+              fillColor: c.surface2,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              border: border(c.border2),
+              enabledBorder: border(c.border2),
+              disabledBorder: border(c.border),
+              focusedBorder: border(c.accent, 1.8),
             ),
           ),
           const SizedBox(height: 22),
-          SizedBox(
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('GÜNCELLE', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
-            ),
+          PrimaryButton(
+            label: 'GÜNCELLE',
+            busy: _isSaving,
+            onPressed: _isSaving ? null : _save,
           ),
         ],
       ),
@@ -367,16 +481,36 @@ class _SummaryLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.only(bottom: 11),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
-            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+            width: 116,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: kBody,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: c.muted,
+              ),
+            ),
           ),
-          Expanded(child: Text(value)),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: kBody,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                height: 1.35,
+                color: c.ink,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -2,8 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pdfrx/pdfrx.dart';
 
+import '../../../app/theme.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
@@ -119,61 +123,103 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_ios_new),
-        ),
-        title: Text(
-          widget.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
-      ),
-      body: Column(
-        children: [
-          if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: DropdownButtonFormField<int>(
-                value: _selectedDocumentId,
-                isExpanded: true,
-                items: _monthlyDocuments
-                    .map(
-                      (document) => DropdownMenuItem<int>(
-                        value: document.id,
-                        child: Text(_monthLabel(document)),
+      backgroundColor: c.bg,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 10, 20, 14),
+              decoration: BoxDecoration(
+                color: c.surface,
+                border: Border(bottom: BorderSide(color: c.border)),
+              ),
+              child: Row(
+                children: [
+                  Pressable(
+                    onTap: () => context.pop(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: kDisplay,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.3,
+                        color: c.ink,
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null && value != _selectedDocumentId) {
-                    _loadPdf(value);
-                  }
-                },
-                decoration: InputDecoration(
-                  labelText: 'Ay seçiniz',
-                  isDense: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          Expanded(child: _buildBody()),
-        ],
+            if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                child: DropdownButtonFormField<int>(
+                  value: _selectedDocumentId,
+                  isExpanded: true,
+                  icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+                  dropdownColor: c.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                  items: _monthlyDocuments
+                      .map(
+                        (document) => DropdownMenuItem<int>(
+                          value: document.id,
+                          child: Text(
+                            _monthLabel(document),
+                            style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value != null && value != _selectedDocumentId) {
+                      _loadPdf(value);
+                    }
+                  },
+                  decoration: InputDecoration(
+                    labelText: 'Ay seçiniz',
+                    labelStyle: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
+                    isDense: true,
+                    filled: true,
+                    fillColor: c.surface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                    border: border(c.border2),
+                    enabledBorder: border(c.border2),
+                    focusedBorder: border(c.accent, 1.8),
+                  ),
+                ),
+              ),
+            Expanded(child: ColoredBox(color: c.inset, child: _buildBody())),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildBody() {
+    final c = context.colors;
+
     if (_errorMessage != null) {
       return Center(
         child: Padding(
@@ -181,13 +227,18 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.picture_as_pdf_outlined, size: 52, color: Colors.redAccent),
+              Icon(LucideIcons.fileText, size: 52, color: c.bad),
               const SizedBox(height: 14),
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
-                child: const Text('Tekrar Dene'),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
               ),
             ],
           ),
@@ -197,15 +248,23 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
 
     final bytes = _pdfBytes;
     if (bytes == null) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
 
     return PdfViewer.data(
       bytes,
       sourceName: 'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
+      params: PdfViewerParams(backgroundColor: c.inset),
     );
   }
 }
+
 
 extension _FirstOrNullExtension<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;

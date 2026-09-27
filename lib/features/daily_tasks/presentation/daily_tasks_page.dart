@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -67,55 +71,47 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Stack(
       children: [
         ColoredBox(
-          color: Colors.white,
+          color: c.bg,
           child: SafeArea(
             child: Column(
               children: [
                 const AppHeader(),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-                  child: Row(
-                    children: [
-                      InkWell(
-                        onTap: () => context.go('/dashboard'),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(Icons.arrow_back_ios_new, size: 20),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Expanded(
-                        child: Text(
-                          'Günlük İşler',
-                          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
+                ScreenTitleBar(
+                  title: 'Günlük İşler',
+                  onBack: () => context.go('/dashboard'),
                 ),
-                const Divider(height: 1),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TabButton(
-                          label: 'AKTİF İŞLER',
-                          selected: !_showAll,
-                          onTap: () => _selectTab(false),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: c.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _TabButton(
+                            label: 'AKTİF İŞLER',
+                            selected: !_showAll,
+                            onTap: () => _selectTab(false),
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: _TabButton(
-                          label: 'TÜM İŞLER',
-                          selected: _showAll,
-                          onTap: () => _selectTab(true),
+                        Expanded(
+                          child: _TabButton(
+                            label: 'TÜM İŞLER',
+                            selected: _showAll,
+                            onTap: () => _selectTab(true),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(child: _buildContent()),
@@ -124,16 +120,36 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
           ),
         ),
         Positioned(
-          right: 22,
-          bottom: 22,
+          right: 20,
+          bottom: 20,
           child: SafeArea(
-            child: FloatingActionButton.extended(
-              heroTag: 'daily-task-add',
-              onPressed: _openCreate,
-              backgroundColor: const Color(0xFF0066A6),
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add_rounded, size: 28),
-              label: const Text('Ekle', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Pressable(
+              onTap: _openCreate,
+              child: Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: BoxDecoration(
+                  color: c.ink,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: kLiftShadow,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.plus, size: 22, color: c.bg),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ekle',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: c.bg,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -142,8 +158,16 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
@@ -153,11 +177,19 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, color: Colors.redAccent, size: 42),
+              Icon(LucideIcons.circleAlert, color: c.bad, size: 42),
               const SizedBox(height: 12),
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 18),
-              ElevatedButton(onPressed: _loadTasks, child: const Text('Tekrar Dene')),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _loadTasks,
+              ),
             ],
           ),
         ),
@@ -166,13 +198,17 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
 
     if (_tasks.isEmpty) {
       return RefreshIndicator(
+        color: c.ink,
         onRefresh: _loadTasks,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             const SizedBox(height: 120),
             Center(
-              child: Text(_showAll ? 'Henüz günlük iş bulunmuyor.' : 'Aktif günlük iş bulunmuyor.'),
+              child: Text(
+                _showAll ? 'Henüz günlük iş bulunmuyor.' : 'Aktif günlük iş bulunmuyor.',
+                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
+              ),
             ),
           ],
         ),
@@ -180,10 +216,11 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     }
 
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _loadTasks,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 92),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 96),
         itemCount: _tasks.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) => _TaskCard(
@@ -204,19 +241,27 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final c = context.colors;
+    return Pressable(
       onTap: onTap,
-      child: Container(
-        height: 42,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE7F0F3) : const Color(0xFFE4E4E4),
-          border: Border.all(color: Colors.black54),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+          color: selected ? c.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(11),
         ),
         child: Text(
           label,
-          style: TextStyle(fontSize: 14, fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: .3,
+            color: selected ? c.bg : c.sub,
+          ),
         ),
       ),
     );
@@ -229,68 +274,98 @@ class _TaskCard extends StatelessWidget {
 
   const _TaskCard({required this.task, required this.onTap});
 
-  Color get badgeColor {
+  Color badgeColor(AppColors c) {
     switch (task.priority) {
       case 'HIGH':
       case 'CRITICAL':
-        return const Color(0xFFE84949);
+        return c.bad;
       case 'LOW':
-        return const Color(0xFFBDBDBD);
+        return c.muted;
       default:
-        return const Color(0xFFF2C94C);
+        return c.warn;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFEDEDED),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${task.typeLabel} - ${task.projectName}',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF8A1111)),
+    final c = context.colors;
+    final badge = badgeColor(c);
+
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: c.border),
+          boxShadow: kLiftShadow,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${task.typeLabel} - ${task.projectName}',
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: c.accent,
                     ),
-                    const SizedBox(height: 7),
-                    Text(
-                      task.notes.isNotEmpty ? task.notes : task.title,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    task.notes.isNotEmpty ? task.notes : task.title,
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                      height: 1.25,
+                      color: c.ink,
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(Icons.account_box_outlined, size: 23),
-                        const SizedBox(width: 5),
-                        Expanded(child: Text(task.assignedToName, style: const TextStyle(fontSize: 14))),
-                        Container(
-                          constraints: const BoxConstraints(minWidth: 88),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(18)),
-                          child: Text(
-                            task.priorityLabel,
-                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(LucideIcons.user, size: 17, color: c.muted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          task.assignedToName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.sub),
+                        ),
+                      ),
+                      Container(
+                        constraints: const BoxConstraints(minWidth: 88),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: badge,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Text(
+                          task.priorityLabel,
+                          style: const TextStyle(
+                            fontFamily: kBody,
+                            color: Colors.white,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              const Icon(Icons.chevron_right, size: 46, color: Colors.black),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Icon(LucideIcons.chevronRight, size: 26, color: c.muted),
+          ],
         ),
       ),
     );

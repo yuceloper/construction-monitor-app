@@ -4,9 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:record/record.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../auth/services/session_manager.dart';
 import '../../process_tracking/models/project_summary.dart';
 import '../../process_tracking/services/project_service.dart';
@@ -186,31 +190,58 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: c.border)),
+              ),
               child: Row(
                 children: [
-                  InkWell(
+                  Pressable(
                     onTap: () => context.pop(false),
-                    child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.arrow_back_ios_new, size: 20)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  InkWell(
+                  const SizedBox(width: 4),
+                  Pressable(
                     onTap: () => context.pop(false),
-                    child: const Text('Günlük İşler', style: TextStyle(fontSize: 21, color: Color(0xFF0066A6), decoration: TextDecoration.underline)),
+                    child: Text(
+                      'Günlük İşler',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: c.accent,
+                      ),
+                    ),
                   ),
-                  const Text(' > ', style: TextStyle(fontSize: 20)),
-                  const Text('Ekle', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w600)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    child: Icon(LucideIcons.chevronRight, size: 15, color: c.muted),
+                  ),
+                  Text(
+                    'Ekle',
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -.3,
+                      color: c.ink,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const Divider(height: 1),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -218,61 +249,127 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     );
   }
 
+  InputDecoration _fieldDecoration(AppColors c) {
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
+    return InputDecoration(
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+      filled: true,
+      fillColor: c.surface2,
+      border: border(c.border2),
+      enabledBorder: border(c.border2),
+      disabledBorder: border(c.border),
+      focusedBorder: border(c.accent, 1.8),
+    );
+  }
+
   Widget _buildContent() {
-    if (_isLoading) return const Center(child: CircularProgressIndicator(color: Colors.black));
+    final c = context.colors;
+
+    if (_isLoading) {
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
+    }
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_errorMessage!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _loadFormData, child: const Text('Tekrar Dene')),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
+              const SizedBox(height: 16),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _loadFormData,
+              ),
+            ],
+          ),
         ),
       );
     }
 
+    final hint = TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint);
+    final value = TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink);
+
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
         _FormRow(
           label: 'Ev/Dükkan Blok',
           child: DropdownButtonFormField<int>(
             initialValue: _projectId,
-            hint: const Text('Seçiniz'),
+            hint: Text('Seçiniz', style: hint),
             isExpanded: true,
-            items: _projects.map((project) => DropdownMenuItem(
-              value: project.id,
-              child: Text('${project.isShop ? 'Dükkanlar' : 'Evler'} - ${project.name}'),
-            )).toList(),
+            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+            dropdownColor: c.surface,
+            borderRadius: BorderRadius.circular(16),
+            style: value,
+            items: _projects
+                .map((project) => DropdownMenuItem(
+                      value: project.id,
+                      child: Text(
+                        '${project.isShop ? 'Dükkanlar' : 'Evler'} - ${project.name}',
+                        style: value,
+                      ),
+                    ))
+                .toList(),
             onChanged: _isSaving ? null : (value) => setState(() => _projectId = value),
-            decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+            decoration: _fieldDecoration(c),
           ),
         ),
         _FormRow(
           label: 'Kritiklik Seviyesi',
           child: DropdownButtonFormField<String>(
             initialValue: _priority,
-            hint: const Text('Seçiniz'),
-            items: const [
-              DropdownMenuItem(value: 'LOW', child: Text('Düşük')),
-              DropdownMenuItem(value: 'MEDIUM', child: Text('Orta')),
-              DropdownMenuItem(value: 'HIGH', child: Text('Yüksek')),
+            hint: Text('Seçiniz', style: hint),
+            isExpanded: true,
+            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+            dropdownColor: c.surface,
+            borderRadius: BorderRadius.circular(16),
+            style: value,
+            items: [
+              DropdownMenuItem(value: 'LOW', child: Text('Düşük', style: value)),
+              DropdownMenuItem(value: 'MEDIUM', child: Text('Orta', style: value)),
+              DropdownMenuItem(value: 'HIGH', child: Text('Yüksek', style: value)),
             ],
             onChanged: _isSaving ? null : (value) => setState(() => _priority = value),
-            decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+            decoration: _fieldDecoration(c),
           ),
         ),
         _FormRow(
           label: 'İlgili Kişi',
           child: DropdownButtonFormField<int>(
             initialValue: _memberId,
-            hint: const Text('Seçiniz'),
+            hint: Text('Seçiniz', style: hint),
             isExpanded: true,
-            items: _members.map((member) => DropdownMenuItem(value: member.id, child: Text(member.fullName))).toList(),
+            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+            dropdownColor: c.surface,
+            borderRadius: BorderRadius.circular(16),
+            style: value,
+            items: _members
+                .map((member) => DropdownMenuItem(
+                      value: member.id,
+                      child: Text(member.fullName, style: value),
+                    ))
+                .toList(),
             onChanged: _isSaving ? null : (value) => setState(() => _memberId = value),
-            decoration: const InputDecoration(border: OutlineInputBorder(), isDense: true),
+            decoration: _fieldDecoration(c),
           ),
         ),
         _FormRow(
@@ -280,21 +377,26 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              OutlinedButton.icon(
-                onPressed: _isSaving ? null : _pickPhotos,
-                icon: const Icon(Icons.camera_alt_outlined),
-                label: Text(_photos.isEmpty ? 'Fotoğraf ekle' : '${_photos.length} fotoğraf seçildi'),
+              _OutlineAction(
+                icon: LucideIcons.camera,
+                label: _photos.isEmpty
+                    ? 'Fotoğraf ekle'
+                    : '${_photos.length} fotoğraf seçildi',
+                onTap: _isSaving ? null : _pickPhotos,
               ),
               if (_photos.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: _photos.asMap().entries.map((entry) => Chip(
-                    avatar: const Icon(Icons.image_outlined, size: 18),
-                    label: SizedBox(width: 92, child: Text(entry.value.name, overflow: TextOverflow.ellipsis)),
-                    onDeleted: _isSaving ? null : () => _removePhoto(entry.key),
-                  )).toList(),
+                  children: _photos
+                      .asMap()
+                      .entries
+                      .map((entry) => _FileChip(
+                            name: entry.value.name,
+                            onRemove: _isSaving ? null : () => _removePhoto(entry.key),
+                          ))
+                      .toList(),
                 ),
               ],
             ],
@@ -305,28 +407,80 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ElevatedButton.icon(
-                onPressed: _isSaving ? null : _toggleRecording,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isRecording ? Colors.red : const Color(0xFF0066A6),
-                  foregroundColor: Colors.white,
+              Pressable(
+                onTap: _isSaving ? null : _toggleRecording,
+                child: Container(
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _isRecording ? c.bad : c.accent,
+                    borderRadius: BorderRadius.circular(Sizes.rField),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _isRecording ? LucideIcons.square : LucideIcons.mic,
+                        size: 19,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(width: 9),
+                      Text(
+                        _isRecording
+                            ? 'Kaydı Durdur'
+                            : (_audioPath == null ? 'Sesli not kaydet' : 'Yeniden kaydet'),
+                        style: const TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                icon: Icon(_isRecording ? Icons.stop_rounded : Icons.mic_rounded),
-                label: Text(_isRecording ? 'Kaydı Durdur' : (_audioPath == null ? 'Sesli not kaydet' : 'Yeniden kaydet')),
               ),
               if (_audioPath != null && !_isRecording)
-                Row(
-                  children: [
-                    const Expanded(child: Text('Sesli not hazır', style: TextStyle(color: Color(0xFF11875D), fontWeight: FontWeight.w600))),
-                    IconButton(onPressed: _removeAudio, icon: const Icon(Icons.delete_outline, color: Colors.redAccent)),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Sesli not hazır',
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 14.5,
+                            color: c.ok,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Pressable(
+                        onTap: _removeAudio,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Icon(LucideIcons.trash2, size: 19, color: c.bad),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
             ],
           ),
         ),
         const SizedBox(height: 8),
-        const Text('Not', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
+        Text(
+          'Not',
+          style: TextStyle(
+            fontFamily: kDisplay,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -.2,
+            color: c.ink,
+          ),
+        ),
+        const SizedBox(height: 9),
         TextField(
           controller: _noteController,
           enabled: !_isSaving,
@@ -334,28 +488,27 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           maxLines: 7,
           maxLength: 500,
           inputFormatters: [LengthLimitingTextInputFormatter(500)],
-          decoration: const InputDecoration(hintText: 'Lütfen detay giriniz.', border: OutlineInputBorder()),
+          style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.4, color: c.ink),
+          cursorColor: c.accent,
+          decoration: _fieldDecoration(c).copyWith(
+            hintText: 'Lütfen detay giriniz.',
+            hintStyle: hint,
+            counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
         ),
         const SizedBox(height: 24),
-        SizedBox(
-          height: 58,
-          child: ElevatedButton(
-            onPressed: _isSaving ? null : _save,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            ),
-            child: _isSaving
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('KAYDET', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
-          ),
+        PrimaryButton(
+          label: 'KAYDET',
+          busy: _isSaving,
+          onPressed: _isSaving ? null : _save,
         ),
       ],
     );
   }
 }
 
+/// Alan basligi ustte, kutu altta.
 class _FormRow extends StatelessWidget {
   final String label;
   final Widget child;
@@ -365,15 +518,107 @@ class _FormRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 142,
-            child: Text(label, style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: kBody,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              letterSpacing: .2,
+              color: context.colors.ink,
+            ),
           ),
-          const SizedBox(width: 10),
-          Expanded(child: child),
+          const SizedBox(height: 9),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _OutlineAction extends StatelessWidget {
+  const _OutlineAction({required this.icon, required this.label, required this.onTap});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      onTap: onTap,
+      child: Opacity(
+        opacity: onTap == null ? .5 : 1,
+        child: Container(
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: c.surface2,
+            borderRadius: BorderRadius.circular(Sizes.rField),
+            border: Border.all(color: c.border2, width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 19, color: c.accent),
+              const SizedBox(width: 9),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                  color: c.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FileChip extends StatelessWidget {
+  const _FileChip({required this.name, required this.onRemove});
+
+  final String name;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(11, 8, 6, 8),
+      decoration: BoxDecoration(
+        color: c.inset,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: c.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(LucideIcons.image, size: 17, color: c.muted),
+          const SizedBox(width: 7),
+          SizedBox(
+            width: 92,
+            child: Text(
+              name,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontFamily: kBody, fontSize: 13.5, color: c.ink),
+            ),
+          ),
+          Pressable(
+            onTap: onRemove,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              child: Icon(LucideIcons.x, size: 16, color: c.sub),
+            ),
+          ),
         ],
       ),
     );

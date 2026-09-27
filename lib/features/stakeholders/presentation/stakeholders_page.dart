@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
 import '../models/stakeholder_summary.dart';
 import '../services/stakeholder_service.dart';
 
@@ -109,44 +112,36 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.go('/dashboard'),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.arrow_back_ios_new, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Paydaşlar',
-                      style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
+            ScreenTitleBar(
+              title: 'Paydaşlar',
+              onBack: () => context.go('/dashboard'),
             ),
-            const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) => setState(() => _query = value),
+                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                cursorColor: c.accent,
                 decoration: InputDecoration(
                   hintText: 'Paydaş ara',
-                  prefixIcon: const Icon(Icons.search_rounded),
+                  hintStyle: TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
+                  prefixIcon: Icon(LucideIcons.search, size: 20, color: c.muted),
                   suffixIcon: _query.isEmpty
                       ? null
                       : IconButton(
@@ -154,15 +149,15 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                             _searchController.clear();
                             setState(() => _query = '');
                           },
-                          icon: const Icon(Icons.close),
+                          icon: Icon(LucideIcons.x, size: 19, color: c.sub),
                         ),
                   filled: true,
-                  fillColor: const Color(0xFFF2F2F2),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
+                  fillColor: c.surface,
                   isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                  border: border(c.border2),
+                  enabledBorder: border(c.border2),
+                  focusedBorder: border(c.accent, 1.8),
                 ),
               ),
             ),
@@ -174,18 +169,37 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_errorMessage!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
+              const SizedBox(height: 16),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _load,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -193,73 +207,109 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     final items = _filteredItems;
     if (items.isEmpty) {
       return RefreshIndicator(
+        color: c.ink,
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             const SizedBox(height: 100),
-            Center(child: Text(_query.isEmpty ? 'Henüz paydaş bulunmuyor.' : 'Aramaya uygun paydaş bulunamadı.')),
+            Center(
+              child: Text(
+                _query.isEmpty ? 'Henüz paydaş bulunmuyor.' : 'Aramaya uygun paydaş bulunamadı.',
+                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
+              ),
+            ),
           ],
         ),
       );
     }
 
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _load,
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         itemCount: items.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) {
           final item = items[index];
-          return Material(
-            color: const Color(0xFFEDEDED),
-            borderRadius: BorderRadius.circular(18),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.companyName,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          return Container(
+            padding: const EdgeInsets.fromLTRB(16, 15, 10, 15),
+            decoration: BoxDecoration(
+              color: c.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.border),
+              boxShadow: kLiftShadow,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.companyName,
+                        style: TextStyle(
+                          fontFamily: kDisplay,
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -.2,
+                          color: c.ink,
                         ),
-                        if (item.detail.isNotEmpty) ...[
-                          const SizedBox(height: 5),
-                          Text(item.detail, style: const TextStyle(fontSize: 14)),
-                        ],
-                        if (item.contactPerson.isNotEmpty) ...[
-                          const SizedBox(height: 9),
-                          Row(
-                            children: [
-                              const Icon(Icons.person_outline, size: 20),
-                              const SizedBox(width: 5),
-                              Expanded(child: Text(item.contactPerson)),
-                            ],
+                      ),
+                      if (item.detail.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          item.detail,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 14.5,
+                            height: 1.35,
+                            color: c.sub,
                           ),
-                        ],
-                        if (item.phoneNumber.isNotEmpty) ...[
-                          const SizedBox(height: 5),
-                          Text(item.phoneNumber, style: const TextStyle(fontSize: 14, color: Colors.black54)),
-                        ],
+                        ),
                       ],
-                    ),
+                      if (item.contactPerson.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Icon(LucideIcons.user, size: 17, color: c.muted),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                item.contactPerson,
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (item.phoneNumber.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          item.phoneNumber,
+                          style: TextStyle(fontFamily: kBody, fontSize: 14.5, color: c.muted),
+                        ),
+                      ],
+                    ],
                   ),
-                  IconButton(
-                    tooltip: 'Ara',
-                    onPressed: () => _call(item),
-                    icon: const Icon(Icons.call_rounded, size: 30, color: Color(0xFF0077B5)),
-                  ),
-                  IconButton(
-                    tooltip: 'WhatsApp',
-                    onPressed: () => _openWhatsApp(item),
-                    icon: const _WhatsAppIcon(size: 34),
-                  ),
-                ],
-              ),
+                ),
+                IconButton(
+                  tooltip: 'Ara',
+                  onPressed: () => _call(item),
+                  icon: Icon(LucideIcons.phone, size: 24, color: c.accent),
+                ),
+                IconButton(
+                  tooltip: 'WhatsApp',
+                  onPressed: () => _openWhatsApp(item),
+                  icon: const _WhatsAppIcon(size: 30),
+                ),
+              ],
             ),
           );
         },
@@ -267,6 +317,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     );
   }
 }
+
 
 class _WhatsAppIcon extends StatelessWidget {
   final double size;

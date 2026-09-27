@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../auth/services/session_manager.dart';
+import '../../../app/theme.dart';
+import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
@@ -50,11 +54,11 @@ class _SafetyPageState extends State<SafetyPage> {
   IconData _iconFor(SafetyDocumentSummary document) {
     switch (document.documentType) {
       case 'DAILY_SITE_CONTROL_FORM':
-        return Icons.checklist_rounded;
+        return LucideIcons.clipboardCheck;
       case 'MONTHLY_SITE_REPORT':
-        return Icons.outlined_flag;
+        return LucideIcons.flag;
       default:
-        return Icons.picture_as_pdf_outlined;
+        return LucideIcons.fileText;
     }
   }
 
@@ -79,50 +83,44 @@ class _SafetyPageState extends State<SafetyPage> {
     return nonMonthly;
   }
 
-  @override
   Widget build(BuildContext context) {
-    final session = SessionManager.instance;
-    final auth = session.auth;
-    final displayName = auth?.fullName.isNotEmpty == true
-        ? auth!.fullName
-        : (auth?.username.isNotEmpty == true ? auth!.username : 'Kullanıcı');
-    final siteName = session.selectedSiteName ?? '-';
+    final c = context.colors;
 
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
           child: Column(
             children: [
               Row(
                 children: [
-                  InkWell(
+                  Pressable(
                     onTap: () => context.go('/dashboard'),
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 10, top: 8, bottom: 8),
-                      child: Icon(Icons.arrow_back_ios_new, size: 24),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 8, 10, 8),
+                      child: Icon(LucideIcons.chevronLeft, size: 26, color: c.ink),
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'İSG Takip',
-                      style: TextStyle(fontSize: 29, fontWeight: FontWeight.w800),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: kDisplay,
+                        fontSize: 27,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.6,
+                        color: c.ink,
+                      ),
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(displayName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 2),
-                      Text(siteName, style: const TextStyle(fontSize: 12, color: Colors.redAccent)),
-                    ],
-                  ),
                   const SizedBox(width: 10),
-                  const Icon(Icons.account_circle_outlined, size: 42, color: Colors.black54),
+                  const UserChip(),
                 ],
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
               Expanded(child: _buildContent()),
             ],
           ),
@@ -132,19 +130,38 @@ class _SafetyPageState extends State<SafetyPage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
       return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_errorMessage!, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
+              const SizedBox(height: 16),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _load,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -152,23 +169,30 @@ class _SafetyPageState extends State<SafetyPage> {
     final menuDocuments = _menuDocuments;
     if (menuDocuments.isEmpty) {
       return RefreshIndicator(
+        color: c.ink,
         onRefresh: _load,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 120),
-            Center(child: Text('İSG belgesi bulunmuyor.')),
+          children: [
+            const SizedBox(height: 120),
+            Center(
+              child: Text(
+                'İSG belgesi bulunmuyor.',
+                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.sub),
+              ),
+            ),
           ],
         ),
       );
     }
 
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _load,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: menuDocuments.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 20),
+        separatorBuilder: (_, __) => const SizedBox(height: 14),
         itemBuilder: (_, index) {
           final document = menuDocuments[index];
           final isMonthly = document.documentType == 'MONTHLY_SITE_REPORT';
@@ -195,30 +219,51 @@ class _SafetyMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFF7E3F7),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: SizedBox(
-          height: 108,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              children: [
-                Icon(icon, size: 36, color: Colors.black),
-                const SizedBox(width: 24),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                const Icon(Icons.chevron_right, size: 34),
-              ],
+    final c = context.colors;
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        height: 104,
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c.border),
+          boxShadow: kLiftShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: c.inset,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 27, color: c.accent),
             ),
-          ),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontFamily: kDisplay,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                  letterSpacing: -.3,
+                  color: c.ink,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: c.inset, shape: BoxShape.circle),
+              child: Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
+            ),
+          ],
         ),
       ),
     );
