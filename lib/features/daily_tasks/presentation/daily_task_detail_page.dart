@@ -140,53 +140,11 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
         child: Column(
           children: [
             const AppHeader(),
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: c.border)),
-              ),
-              child: Row(
-                children: [
-                  Pressable(
-                    onTap: () => context.pop(true),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Pressable(
-                    onTap: () => context.pop(true),
-                    child: Text(
-                      'Günlük İşler',
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: c.accent,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 7),
-                    child: Icon(LucideIcons.chevronRight, size: 15, color: c.muted),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'İş Detayı',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kDisplay,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.3,
-                        color: c.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            BreadcrumbBar(
+              parent: 'Günlük İşler',
+              title: 'İş Detayı',
+              onBack: () => context.pop(true),
+              onParentTap: () => context.pop(true),
             ),
             Expanded(child: _buildContent()),
           ],

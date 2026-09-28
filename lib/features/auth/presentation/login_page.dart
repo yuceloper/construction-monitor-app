@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../app/brand.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/panel.dart';
@@ -108,17 +107,6 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 8),
                   const Center(child: BrandLogo(height: 74)),
-                  const SizedBox(height: 14),
-                  Text(
-                    'Şantiye Takip Uygulaması',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: kBody,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w500,
-                      color: c.sub,
-                    ),
-                  ),
                   const SizedBox(height: 34),
                   Container(
                     padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
@@ -199,13 +187,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 22),
-                  ValueListenableBuilder<BrandConfig>(
-                    valueListenable: Brand.config,
-                    builder: (context, brand, _) => Text(
-                      '© Copyright 2026 ${brand.name} tüm hakları saklıdır.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
-                    ),
+                  Text(
+                    '© Copyright 2026 SefaTech tüm hakları saklıdır.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
                   ),
                   const SizedBox(height: 8),
                 ],

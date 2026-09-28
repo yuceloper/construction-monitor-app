@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
-import '../../../core/widgets/pressable.dart';
 import '../models/work_item_detail.dart';
 import '../services/work_item_service.dart';
 
@@ -159,50 +158,11 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
         child: Column(
           children: [
             const AppHeader(),
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: c.border)),
-              ),
-              child: Row(
-                children: [
-                  Pressable(
-                    onTap: () => context.pop(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    widget.blockName,
-                    style: TextStyle(
-                      fontFamily: kBody,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: c.accent,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 7),
-                    child: Icon(LucideIcons.chevronRight, size: 15, color: c.muted),
-                  ),
-                  Expanded(
-                    child: Text(
-                      _detail?.title ?? widget.workTitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kDisplay,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.3,
-                        color: c.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            BreadcrumbBar(
+              parent: widget.blockName,
+              title: _detail?.title ?? widget.workTitle,
+              onBack: () => context.pop(),
+              onParentTap: () => context.pop(),
             ),
             Expanded(child: _buildContent()),
           ],

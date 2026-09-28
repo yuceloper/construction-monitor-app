@@ -125,56 +125,53 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
               child: Container(
-                padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                 decoration: BoxDecoration(
                   color: c.surface,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: c.border),
                   boxShadow: kLiftShadow,
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Genel İlerleme',
-                            style: TextStyle(
-                              fontFamily: kBody,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: c.ink,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: ProgressRail(percent: roundedProgress, height: 9),
+                              Text(
+                                'Genel İlerleme',
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: .3,
+                                  color: c.muted,
+                                ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(height: 2),
                               Text(
                                 '%$roundedProgress',
                                 style: TextStyle(
                                   fontFamily: kDisplay,
-                                  fontSize: 19,
+                                  fontSize: 38,
                                   fontWeight: FontWeight.w700,
+                                  height: 1.1,
+                                  letterSpacing: -1.2,
                                   color: c.ink,
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
+                        ),
+                        SmallButton(label: 'Güncelle', onTap: _openUpdate),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    SmallButton(
-                      label: 'Güncelle',
-                      icon: LucideIcons.refreshCw,
-                      onTap: _openUpdate,
-                    ),
+                    const SizedBox(height: 14),
+                    ProgressRail(percent: roundedProgress, height: 10),
                   ],
                 ),
               ),
@@ -345,7 +342,7 @@ class _StageCard extends StatelessWidget {
                         if (stage.items.isNotEmpty) ...[
                           const SizedBox(height: 3),
                           Text(
-                            '$done / ${stage.items.length} iş kalemi tamamlandı',
+                            '$done / ${stage.items.length}',
                             style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
                           ),
                         ],
@@ -406,11 +403,17 @@ class _StageCard extends StatelessWidget {
                                     ),
                                     if (item.hasWarning) ...[
                                       const SizedBox(width: 8),
-                                      Icon(LucideIcons.triangleAlert, color: c.bad, size: 21),
+                                      _StatusBadge(
+                                        icon: LucideIcons.triangleAlert,
+                                        color: c.bad,
+                                      ),
                                     ],
                                     if (item.hasDependency) ...[
-                                      const SizedBox(width: 8),
-                                      Icon(LucideIcons.link, color: c.bad, size: 21),
+                                      const SizedBox(width: 6),
+                                      _StatusBadge(
+                                        icon: LucideIcons.link,
+                                        color: c.warn,
+                                      ),
                                     ],
                                   ],
                                 ),
@@ -433,4 +436,26 @@ class _ProcessStage {
   final List<WorkItemSummary> items;
 
   const _ProcessStage({required this.title, required this.status, required this.items});
+}
+
+/// Iş kalemi göstergesi: bagimli is (sari) ve uyari (kirmizi) icin ayni
+/// olcude, yuvarlatilmis rozet.
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 16, color: color),
+    );
+  }
 }

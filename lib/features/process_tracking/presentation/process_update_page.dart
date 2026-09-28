@@ -106,9 +106,11 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
         child: Column(
           children: [
             const AppHeader(),
-            ScreenTitleBar(
-              title: '${widget.blockName} > Güncelle',
+            BreadcrumbBar(
+              parent: widget.blockName,
+              title: 'Güncelle',
               onBack: () => context.pop(),
+              onParentTap: () => context.pop(),
             ),
             Expanded(child: _buildContent()),
           ],
@@ -271,16 +273,6 @@ class _StageUpdateCard extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              '%${percentage.round()}',
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: c.ink,
               ),
             ),
             const SizedBox(width: 12),

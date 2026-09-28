@@ -31,6 +31,8 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.anchorTop,
     required this.anchorMid,
     required this.anchorBottom,
+    required this.teal,
+    required this.violet,
   });
 
   final Color bg; //        page background
@@ -52,6 +54,8 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color anchorTop; // the dark hero card, top to bottom
   final Color anchorMid;
   final Color anchorBottom;
+  final Color teal; //      modul rengi
+  final Color violet; //    modul rengi
 
   static const light = AppColors(
     bg: Color(0xFFE9EDF0),
@@ -73,6 +77,8 @@ class AppColors extends ThemeExtension<AppColors> {
     anchorTop: Color(0xFF232C38),
     anchorMid: Color(0xFF141A22),
     anchorBottom: Color(0xFF0D1218),
+    teal: Color(0xFF1F7A6B),
+    violet: Color(0xFF6B5CA5),
   );
 
   static const dark = AppColors(
@@ -95,6 +101,8 @@ class AppColors extends ThemeExtension<AppColors> {
     anchorTop: Color(0xFF232C38),
     anchorMid: Color(0xFF141A22),
     anchorBottom: Color(0xFF0D1218),
+    teal: Color(0xFF57BCA8),
+    violet: Color(0xFF9C8FE0),
   );
 
   @override
@@ -126,6 +134,8 @@ class AppColors extends ThemeExtension<AppColors> {
       anchorTop: m(anchorTop, other.anchorTop),
       anchorMid: m(anchorMid, other.anchorMid),
       anchorBottom: m(anchorBottom, other.anchorBottom),
+      teal: m(teal, other.teal),
+      violet: m(violet, other.violet),
     );
   }
 }

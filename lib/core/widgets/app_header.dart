@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../app/active_site.dart';
 import '../../app/theme.dart';
 import '../../features/auth/services/session_manager.dart';
 import '../../features/site_selection/models/site_summary.dart';
@@ -61,11 +62,19 @@ class UserChip extends StatelessWidget {
     if (selected.id == SessionManager.instance.selectedSiteId) return;
 
     SessionManager.instance.setSelectedSite(selected);
+    ActiveSite.changed();
     context.go('/dashboard');
   }
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: ActiveSite.revision,
+      builder: (context, _, __) => _buildChip(context),
+    );
+  }
+
+  Widget _buildChip(BuildContext context) {
     final c = context.colors;
     final session = SessionManager.instance;
     final auth = session.auth;
@@ -412,6 +421,91 @@ class ScreenTitleBar extends StatelessWidget {
                 letterSpacing: -.4,
                 color: c.ink,
               ),
+            ),
+          ),
+          ?trailing,
+        ],
+      ),
+    );
+  }
+}
+
+/// Alt ekranlarin basligi: geri oku, ust sayfanin adi ve bulunulan yer.
+/// Butun alt ekranlarda ayni hizada ve ayni olculerde duruyor.
+class BreadcrumbBar extends StatelessWidget {
+  const BreadcrumbBar({
+    super.key,
+    required this.title,
+    required this.onBack,
+    this.parent,
+    this.onParentTap,
+    this.trailing,
+  });
+
+  final String title;
+  final VoidCallback onBack;
+  final String? parent;
+  final VoidCallback? onParentTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final parentLabel = parent;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 4, 20, 14),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: c.border)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Pressable(
+            onTap: onBack,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (parentLabel != null && parentLabel.isNotEmpty)
+                  Pressable(
+                    onTap: onParentTap,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Text(
+                        parentLabel.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .6,
+                          color: c.accent,
+                        ),
+                      ),
+                    ),
+                  ),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    letterSpacing: -.4,
+                    color: c.ink,
+                  ),
+                ),
+              ],
             ),
           ),
           ?trailing,

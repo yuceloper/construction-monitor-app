@@ -88,6 +88,13 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
     if (_isSaving) return;
 
     final changedWorks = _works.where((work) => work.changed).toList();
+    if (changedWorks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Herhangi bir güncelleme yapılmadı.')),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
       _errorMessage = null;
@@ -240,8 +247,9 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                 checkColor: c.bg,
                                 side: BorderSide(color: c.border2, width: 1.8),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(5),
                                 ),
+                                visualDensity: VisualDensity.compact,
                                 onChanged: _isSaving
                                     ? null
                                     : (value) {
@@ -276,14 +284,20 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                       const SizedBox(width: 8),
                                       Tooltip(
                                         message: 'Bağımlı iş var',
-                                        child: Icon(LucideIcons.link, size: 21, color: c.bad),
+                                        child: _StatusBadge(
+                                          icon: LucideIcons.link,
+                                          color: c.warn,
+                                        ),
                                       ),
                                     ],
                                     if (work.hasWarning) ...[
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: 6),
                                       Tooltip(
                                         message: 'Uyarı var',
-                                        child: Icon(LucideIcons.triangleAlert, size: 21, color: c.bad),
+                                        child: _StatusBadge(
+                                          icon: LucideIcons.triangleAlert,
+                                          color: c.bad,
+                                        ),
                                       ),
                                     ],
                                     const SizedBox(width: 8),
@@ -352,6 +366,27 @@ class _EditableWork {
       hasDependency: hasDependency,
       hasWarning: hasWarning,
       hasCriticalWarning: hasCriticalWarning,
+    );
+  }
+}
+
+/// Bagimli is / uyari gostergesi - blok detayindakiyle ayni bicim.
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 16, color: color),
     );
   }
 }

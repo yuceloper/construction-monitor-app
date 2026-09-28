@@ -19,7 +19,7 @@ class ProcessTrackingPage extends StatefulWidget {
 class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   final _projectService = ProjectService();
 
-  bool _housesExpanded = true;
+  bool _housesExpanded = false;
   bool _shopsExpanded = false;
   bool _isLoading = true;
   String? _errorMessage;
@@ -144,12 +144,14 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
       if (_houses.isNotEmpty)
         _SectionCard(
           title: 'Evler',
-          countLabel: '${_houses.length} ev',
+          countLabel: '${_houses.length} Ev',
           icon: LucideIcons.house,
           expanded: _housesExpanded,
           onTap: () {
+            // Ayni anda tek panel acik kalsin.
             setState(() {
               _housesExpanded = !_housesExpanded;
+              if (_housesExpanded) _shopsExpanded = false;
             });
           },
           child: _buildProjectList(projects: _houses),
@@ -157,12 +159,13 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
       if (_shops.isNotEmpty)
         _SectionCard(
           title: 'Dükkanlar',
-          countLabel: '${_shops.length} dükkan',
+          countLabel: '${_shops.length} Dükkan',
           icon: LucideIcons.store,
           expanded: _shopsExpanded,
           onTap: () {
             setState(() {
               _shopsExpanded = !_shopsExpanded;
+              if (_shopsExpanded) _housesExpanded = false;
             });
           },
           child: _buildProjectList(projects: _shops),

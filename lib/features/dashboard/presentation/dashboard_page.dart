@@ -40,8 +40,9 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: c.bg,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 children: [
@@ -51,35 +52,9 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.centerLeft,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Pressable(
-                              onTap: () => context.go('/dashboard'),
-                              child: const BrandLogo(height: 26, compact: true),
-                            ),
-                            const SizedBox(width: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: c.ink,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'TDS',
-                                style: TextStyle(
-                                  fontFamily: kBody,
-                                  color: c.bg,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                            ),
-                          ],
+                        child: Pressable(
+                          onTap: () => context.go('/dashboard'),
+                          child: const BrandLogo(height: 28, compact: true),
                         ),
                       ),
                     ),
@@ -88,46 +63,52 @@ class _DashboardPageState extends State<DashboardPage> {
                   const UserChip(),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // Üst iki kart kare dursun, seritler kalan yuksekligi
-                    // esit paylassin - ekran boyu degisince de bozulmaz.
-                    const gap = 14.0;
+                    const gap = 13.0;
                     final available = constraints.maxHeight;
 
-                    // Kare kartlar + uc serit ekrana tam sigsin: once tercih
-                    // edilen olculer, sonra dar ekranda kuculterek duzeltme.
-                    var square = ((constraints.maxWidth - gap) / 2) * 1.3;
-                    var strip = (available - square - gap * 3) / 3;
-                    if (strip > 152) {
-                      strip = 152;
-                      square = available - gap * 3 - strip * 3;
-                    } else if (strip < 88) {
-                      strip = 88;
-                      square = available - gap * 3 - strip * 3;
-                    }
+                    // Ustteki genis kart ile alttaki dortlu izgara ekrana
+                    // birlikte sigsin; dar ekranda oranlar korunarak kuculur.
+                    var hero = available * .28;
+                    if (hero > 190) hero = 190;
+                    if (hero < 140) hero = 140;
+                    final tile = (available - hero - gap * 2) / 2;
 
                     return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(
-                          height: square,
+                          height: hero,
+                          child: _HeroModuleCard(
+                            title: 'Süreç Takip',
+                            icon: LucideIcons.workflow,
+                            color: c.accent,
+                            onTap: () => context.go('/process'),
+                          ),
+                        ),
+                        const SizedBox(height: gap),
+                        SizedBox(
+                          height: tile,
                           child: Row(
                             children: [
                               Expanded(
-                                child: _DashboardCard(
-                                  title: 'Süreç Takip',
-                                  icon: LucideIcons.refreshCw,
-                                  onTap: () => context.go('/process'),
+                                child: _ModuleCard(
+                                  title: 'Günlük İşler',
+                                  icon: LucideIcons.clipboardList,
+                                  color: c.teal,
+                                  onTap: () => context.go('/daily-tasks'),
                                 ),
                               ),
                               const SizedBox(width: gap),
                               Expanded(
-                                child: _DashboardCard(
-                                  title: 'Günlük İşler',
-                                  icon: LucideIcons.list,
-                                  onTap: () => context.go('/daily-tasks'),
+                                child: _ModuleCard(
+                                  title: 'Paydaşlar',
+                                  icon: LucideIcons.users,
+                                  color: c.violet,
+                                  onTap: () => context.go('/stakeholders'),
                                 ),
                               ),
                             ],
@@ -135,35 +116,34 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         const SizedBox(height: gap),
                         SizedBox(
-                          height: strip,
-                          child: _WideDashboardCard(
-                            title: 'Paydaşlar',
-                            icon: LucideIcons.handshake,
-                            onTap: () => context.go('/stakeholders'),
-                          ),
-                        ),
-                        const SizedBox(height: gap),
-                        SizedBox(
-                          height: strip,
-                          child: _WideDashboardCard(
-                            title: 'İSG Takip',
-                            icon: LucideIcons.shield,
-                            onTap: () => context.go('/safety'),
-                          ),
-                        ),
-                        const SizedBox(height: gap),
-                        SizedBox(
-                          height: strip,
-                          child: ValueListenableBuilder<int>(
-                            valueListenable: NotificationUnreadCount.value,
-                            builder: (context, unreadCount, _) {
-                              return _WideDashboardCard(
-                                title: 'Bildirimler',
-                                icon: LucideIcons.bell,
-                                badgeCount: unreadCount,
-                                onTap: () => context.go('/notifications'),
-                              );
-                            },
+                          height: tile,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _ModuleCard(
+                                  title: 'İSG Takip',
+                                  icon: LucideIcons.hardHat,
+                                  color: c.warn,
+                                  onTap: () => context.go('/safety'),
+                                ),
+                              ),
+                              const SizedBox(width: gap),
+                              Expanded(
+                                child: ValueListenableBuilder<int>(
+                                  valueListenable:
+                                      NotificationUnreadCount.value,
+                                  builder: (context, unreadCount, _) =>
+                                      _ModuleCard(
+                                        title: 'Bildirimler',
+                                        icon: LucideIcons.bellRing,
+                                        color: c.bad,
+                                        badgeCount: unreadCount,
+                                        onTap: () =>
+                                            context.go('/notifications'),
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -179,16 +159,106 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
+/// Markanin mavi yayindan tureyen dekoratif cizgi - kartlarin kosesinde
+/// hafif bir doku birakiyor.
+class _ArcMotif extends StatelessWidget {
+  const _ArcMotif({required this.color, this.opacity = .13});
 
-  const _DashboardCard({
+  final Color color;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _ArcPainter(color: color.withValues(alpha: opacity)),
+    );
+  }
+}
+
+class _ArcPainter extends CustomPainter {
+  _ArcPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (var i = 0; i < 3; i++) {
+      paint.strokeWidth = 3.5 - i * .8;
+      final inset = i * 16.0;
+      final path = Path()
+        ..moveTo(size.width * .02 + inset, size.height * .86)
+        ..quadraticBezierTo(
+          size.width * .52,
+          size.height * .42 + inset * .7,
+          size.width * 1.02,
+          size.height * .86,
+        );
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ArcPainter old) => old.color != color;
+}
+
+/// Ikon plakasi: renk gecisli kare, ustunde beyaz ikon.
+class _IconPlate extends StatelessWidget {
+  const _IconPlate({
+    required this.icon,
+    required this.color,
+    required this.size,
+  });
+
+  final IconData icon;
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(color, Colors.white, .18)!,
+            Color.lerp(color, Colors.black, .12)!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(size * .3),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: .32),
+            blurRadius: 16,
+            offset: const Offset(0, 7),
+          ),
+        ],
+      ),
+      child: Icon(icon, size: size * .46, color: Colors.white),
+    );
+  }
+}
+
+/// Ana giris: genis kart, sol tarafta plaka ve baslik, sagda yay motifi.
+class _HeroModuleCard extends StatelessWidget {
+  const _HeroModuleCard({
     required this.title,
     required this.icon,
+    required this.color,
     required this.onTap,
   });
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -196,41 +266,54 @@ class _DashboardCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [c.surface, Color.lerp(c.surface, color, .07)!],
+          ),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
-        padding: const EdgeInsets.fromLTRB(16, 22, 16, 22),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                color: c.inset,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(icon, size: 32, color: c.accent),
+            Positioned(
+              right: -30,
+              bottom: -30,
+              width: 230,
+              height: 150,
+              child: _ArcMotif(color: color, opacity: .16),
             ),
-            const SizedBox(height: 18),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                title,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.visible,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: kDisplay,
-                  fontSize: 23,
-                  fontWeight: FontWeight.w700,
-                  height: 1.1,
-                  letterSpacing: -.4,
-                  color: c.ink,
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _IconPlate(icon: icon, color: color, size: 64),
+                    const SizedBox(height: 16),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: kDisplay,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          height: 1.05,
+                          letterSpacing: -.7,
+                          color: c.ink,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -241,18 +324,21 @@ class _DashboardCard extends StatelessWidget {
   }
 }
 
-class _WideDashboardCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final VoidCallback onTap;
-  final int? badgeCount;
-
-  const _WideDashboardCard({
+/// Alttaki dort modul: plaka ustte, baslik altta, kosede yay motifi.
+class _ModuleCard extends StatelessWidget {
+  const _ModuleCard({
     required this.title,
     required this.icon,
+    required this.color,
     required this.onTap,
     this.badgeCount,
   });
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final int? badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -260,75 +346,83 @@ class _WideDashboardCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [c.surface, Color.lerp(c.surface, color, .06)!],
+          ),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            // Okunmamis sayisi ikonun kosesinde - kartin dengesi bozulmuyor.
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: c.inset,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, size: 25, color: c.accent),
-                ),
-                if ((badgeCount ?? 0) > 0)
-                  Positioned(
-                    right: -8,
-                    top: -8,
-                    child: Container(
-                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: c.bad,
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: c.surface, width: 2),
-                      ),
+            Positioned(
+              right: -24,
+              bottom: -26,
+              width: 170,
+              height: 110,
+              child: _ArcMotif(color: color),
+            ),
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 16, 14, 18),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _IconPlate(icon: icon, color: color, size: 54),
+                    const SizedBox(height: 14),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
-                        badgeCount! > 99 ? '99+' : '$badgeCount',
-                        style: const TextStyle(
-                          fontFamily: kBody,
-                          color: Colors.white,
-                          fontSize: 12.5,
+                        title,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: kDisplay,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
+                          height: 1.05,
+                          letterSpacing: -.35,
+                          color: c.ink,
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  softWrap: false,
-                  overflow: TextOverflow.visible,
-                  style: TextStyle(
-                    fontFamily: kDisplay,
-                    fontSize: 23,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.4,
-                    color: c.ink,
-                  ),
+                  ],
                 ),
               ),
             ),
+            if ((badgeCount ?? 0) > 0)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 9),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: c.bad,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    badgeCount! > 99 ? '99+' : '$badgeCount',
+                    style: const TextStyle(
+                      fontFamily: kBody,
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
