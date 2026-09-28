@@ -403,11 +403,26 @@ class _StageCard extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(vertical: 9),
                                 child: Row(
                                   children: [
+                                    // Tamamlanan is kaleminde tik, tamamlanmayanda
+                                    // ayni eksene oturan sade bir madde noktasi.
                                     SizedBox(
                                       width: 26,
-                                      child: item.isCompleted
-                                          ? Icon(LucideIcons.check, color: c.ok, size: 22)
-                                          : const SizedBox.shrink(),
+                                      child: Center(
+                                        child: item.isCompleted
+                                            ? Icon(
+                                                LucideIcons.check,
+                                                color: c.ok,
+                                                size: 22,
+                                              )
+                                            : Container(
+                                                width: 7,
+                                                height: 7,
+                                                decoration: BoxDecoration(
+                                                  color: c.muted,
+                                                  shape: BoxShape.circle,
+                                                ),
+                                              ),
+                                      ),
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
