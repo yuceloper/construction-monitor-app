@@ -15,14 +15,32 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with SingleTickerProviderStateMixin {
   final _notificationService = NotificationService();
+
+  /// Drives the opening sequence: the cards rise into place one after the
+  /// other instead of all appearing at once.
+  late final AnimationController _entrance = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 820),
+  )..forward();
 
   @override
   void initState() {
     super.initState();
     _refreshUnreadCount();
   }
+
+  @override
+  void dispose() {
+    _entrance.dispose();
+    super.dispose();
+  }
+
+  /// Wraps [child] so it fades and rises in; [order] places it in the queue.
+  Widget _entering(int order, Widget child) =>
+      _Entering(controller: _entrance, order: order, child: child);
 
   Future<void> _refreshUnreadCount() async {
     try {
@@ -44,24 +62,27 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
+              _entering(
+                0,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Pressable(
-                          onTap: () => context.go('/dashboard'),
-                          child: const BrandLogo(height: 28, compact: true),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Pressable(
+                            onTap: () => context.go('/dashboard'),
+                            child: const BrandLogo(height: 28, compact: true),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  const UserChip(),
-                ],
+                    const SizedBox(width: 10),
+                    const UserChip(),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               Expanded(
@@ -80,13 +101,16 @@ class _DashboardPageState extends State<DashboardPage> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(
-                          height: hero,
-                          child: _HeroModuleCard(
-                            title: 'Süreç Takip',
-                            icon: LucideIcons.workflow,
-                            color: c.accent,
-                            onTap: () => context.go('/process'),
+                        _entering(
+                          1,
+                          SizedBox(
+                            height: hero,
+                            child: _HeroModuleCard(
+                              title: 'Süreç Takip',
+                              icon: LucideIcons.workflow,
+                              color: c.accent,
+                              onTap: () => context.go('/process'),
+                            ),
                           ),
                         ),
                         const SizedBox(height: gap),
@@ -95,20 +119,26 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: _ModuleCard(
-                                  title: 'Günlük İşler',
-                                  icon: LucideIcons.clipboardList,
-                                  color: c.teal,
-                                  onTap: () => context.go('/daily-tasks'),
+                                child: _entering(
+                                  2,
+                                  _ModuleCard(
+                                    title: 'Günlük İşler',
+                                    icon: LucideIcons.clipboardList,
+                                    color: c.teal,
+                                    onTap: () => context.go('/daily-tasks'),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: gap),
                               Expanded(
-                                child: _ModuleCard(
-                                  title: 'Paydaşlar',
-                                  icon: LucideIcons.users,
-                                  color: c.violet,
-                                  onTap: () => context.go('/stakeholders'),
+                                child: _entering(
+                                  3,
+                                  _ModuleCard(
+                                    title: 'Paydaşlar',
+                                    icon: LucideIcons.users,
+                                    color: c.violet,
+                                    onTap: () => context.go('/stakeholders'),
+                                  ),
                                 ),
                               ),
                             ],
@@ -120,27 +150,33 @@ class _DashboardPageState extends State<DashboardPage> {
                           child: Row(
                             children: [
                               Expanded(
-                                child: _ModuleCard(
-                                  title: 'İSG Takip',
-                                  icon: LucideIcons.hardHat,
-                                  color: c.warn,
-                                  onTap: () => context.go('/safety'),
+                                child: _entering(
+                                  4,
+                                  _ModuleCard(
+                                    title: 'İSG Takip',
+                                    icon: LucideIcons.hardHat,
+                                    color: c.warn,
+                                    onTap: () => context.go('/safety'),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: gap),
                               Expanded(
-                                child: ValueListenableBuilder<int>(
-                                  valueListenable:
-                                      NotificationUnreadCount.value,
-                                  builder: (context, unreadCount, _) =>
-                                      _ModuleCard(
-                                        title: 'Bildirimler',
-                                        icon: LucideIcons.bellRing,
-                                        color: c.bad,
-                                        badgeCount: unreadCount,
-                                        onTap: () =>
-                                            context.go('/notifications'),
-                                      ),
+                                child: _entering(
+                                  5,
+                                  ValueListenableBuilder<int>(
+                                    valueListenable:
+                                        NotificationUnreadCount.value,
+                                    builder: (context, unreadCount, _) =>
+                                        _ModuleCard(
+                                          title: 'Bildirimler',
+                                          icon: LucideIcons.bellRing,
+                                          color: c.bad,
+                                          badgeCount: unreadCount,
+                                          onTap: () =>
+                                              context.go('/notifications'),
+                                        ),
+                                  ),
                                 ),
                               ),
                             ],
@@ -155,6 +191,46 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One item of the opening sequence: fades in while rising into place.
+///
+/// [order] is its place in the queue - each item starts 90ms after the one
+/// before it, so the screen assembles itself rather than snapping into view.
+class _Entering extends StatelessWidget {
+  const _Entering({
+    required this.controller,
+    required this.order,
+    required this.child,
+  });
+
+  final AnimationController controller;
+  final int order;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final begin = (order * .09).clamp(0.0, 1.0);
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Interval(
+        begin,
+        (begin + .55).clamp(0.0, 1.0),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, inner) => Opacity(
+        opacity: animation.value,
+        child: Transform.translate(
+          offset: Offset(0, 26 * (1 - animation.value)),
+          child: inner,
+        ),
+      ),
+      child: child,
     );
   }
 }
