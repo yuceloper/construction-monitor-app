@@ -27,10 +27,16 @@ class _BrandSplashState extends State<BrandSplash>
     duration: const Duration(milliseconds: 1100),
   )..repeat();
 
+  /// The logo settling into place as the screen appears.
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 620),
+  )..forward();
+
   /// The fade that hands the screen over to the app.
   late final AnimationController _fade = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 420),
+    duration: const Duration(milliseconds: 460),
     value: 1,
   );
 
@@ -39,11 +45,14 @@ class _BrandSplashState extends State<BrandSplash>
   @override
   void initState() {
     super.initState();
-    _start();
+    // Counted from the first painted frame, not from when the widget is
+    // created: Android draws its own launch screen on top until then, and a
+    // timer started earlier would spend itself behind it.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
   Future<void> _start() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1150));
+    await Future<void>.delayed(const Duration(milliseconds: 1900));
     if (!mounted) return;
     await _fade.reverse();
     if (!mounted) return;
@@ -54,6 +63,7 @@ class _BrandSplashState extends State<BrandSplash>
   @override
   void dispose() {
     _sweep.dispose();
+    _enter.dispose();
     _fade.dispose();
     super.dispose();
   }
@@ -95,31 +105,51 @@ class _BrandSplashState extends State<BrandSplash>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const BrandLogo(height: 74),
+                          FadeTransition(
+                            opacity: CurvedAnimation(
+                              parent: _enter,
+                              curve: const Interval(0, .7, curve: Curves.easeOut),
+                            ),
+                            child: ScaleTransition(
+                              scale: Tween<double>(begin: .94, end: 1).animate(
+                                CurvedAnimation(
+                                  parent: _enter,
+                                  curve: Curves.easeOutCubic,
+                                ),
+                              ),
+                              child: const BrandLogo(height: 74),
+                            ),
+                          ),
                           const SizedBox(height: 40),
-                          SizedBox(
-                            width: 120,
-                            height: 3,
-                            child: AnimatedBuilder(
-                              animation: _sweep,
-                              builder: (context, _) => Stack(
-                                children: [
-                                  Container(color: c.track),
-                                  Align(
-                                    alignment: Alignment(
-                                      _sweep.value * 2 - 1,
-                                      0,
-                                    ),
-                                    child: Container(
-                                      width: 44,
-                                      height: 3,
-                                      decoration: BoxDecoration(
-                                        color: c.accent,
-                                        borderRadius: BorderRadius.circular(2),
+                          FadeTransition(
+                            opacity: CurvedAnimation(
+                              parent: _enter,
+                              curve: const Interval(.45, 1, curve: Curves.easeOut),
+                            ),
+                            child: SizedBox(
+                              width: 120,
+                              height: 3,
+                              child: AnimatedBuilder(
+                                animation: _sweep,
+                                builder: (context, _) => Stack(
+                                  children: [
+                                    Container(color: c.track),
+                                    Align(
+                                      alignment: Alignment(
+                                        _sweep.value * 2 - 1,
+                                        0,
+                                      ),
+                                      child: Container(
+                                        width: 44,
+                                        height: 3,
+                                        decoration: BoxDecoration(
+                                          color: c.accent,
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
