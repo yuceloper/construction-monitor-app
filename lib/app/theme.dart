@@ -31,6 +31,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.anchorTop,
     required this.anchorMid,
     required this.anchorBottom,
+    required this.anchorAccent,
     required this.teal,
     required this.violet,
   });
@@ -54,6 +55,10 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color anchorTop; // the dark hero card, top to bottom
   final Color anchorMid;
   final Color anchorBottom;
+
+  /// The accent used on top of the anchor card, lightened so it reads
+  /// against the dark gradient.
+  final Color anchorAccent;
   final Color teal; //      modul rengi
   final Color violet; //    modul rengi
 
@@ -77,6 +82,7 @@ class AppColors extends ThemeExtension<AppColors> {
     anchorTop: Color(0xFF232C38),
     anchorMid: Color(0xFF141A22),
     anchorBottom: Color(0xFF0D1218),
+    anchorAccent: Color(0xFF3E9BD8),
     teal: Color(0xFF1F7A6B),
     violet: Color(0xFF6B5CA5),
   );
@@ -101,6 +107,7 @@ class AppColors extends ThemeExtension<AppColors> {
     anchorTop: Color(0xFF232C38),
     anchorMid: Color(0xFF141A22),
     anchorBottom: Color(0xFF0D1218),
+    anchorAccent: Color(0xFF3E9BD8),
     teal: Color(0xFF57BCA8),
     violet: Color(0xFF9C8FE0),
   );
@@ -134,6 +141,7 @@ class AppColors extends ThemeExtension<AppColors> {
       anchorTop: m(anchorTop, other.anchorTop),
       anchorMid: m(anchorMid, other.anchorMid),
       anchorBottom: m(anchorBottom, other.anchorBottom),
+      anchorAccent: m(anchorAccent, other.anchorAccent),
       teal: m(teal, other.teal),
       violet: m(violet, other.violet),
     );

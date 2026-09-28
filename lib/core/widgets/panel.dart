@@ -566,6 +566,7 @@ class SmallButton extends StatelessWidget {
     this.icon,
     this.onTap,
     this.busy = false,
+    this.onDark = false,
   });
 
   final String label;
@@ -573,9 +574,14 @@ class SmallButton extends StatelessWidget {
   final VoidCallback? onTap;
   final bool busy;
 
+  /// Inverts the button for use on the dark anchor card.
+  final bool onDark;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final faceColor = onDark ? Colors.white : c.ink;
+    final labelColor = onDark ? c.anchorMid : c.bg;
     return Pressable(
       onTap: busy ? null : onTap,
       child: Opacity(
@@ -583,7 +589,7 @@ class SmallButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(11, 9, 13, 9),
           decoration: BoxDecoration(
-            color: c.ink,
+            color: faceColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -593,10 +599,13 @@ class SmallButton extends StatelessWidget {
                 SizedBox(
                   width: 13,
                   height: 13,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: c.bg),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: labelColor,
+                  ),
                 )
               else if (icon != null)
-                Icon(icon, size: 13, color: c.bg),
+                Icon(icon, size: 13, color: labelColor),
               if (busy || icon != null) const SizedBox(width: 6),
               Text(
                 label,
@@ -604,7 +613,7 @@ class SmallButton extends StatelessWidget {
                   fontFamily: kBody,
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: c.bg,
+                  color: labelColor,
                 ),
               ),
             ],

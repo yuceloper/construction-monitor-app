@@ -124,13 +124,24 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+              // The summary sits on the dark anchor card so it reads as the
+              // header of the screen rather than as one more stage row.
               child: Container(
-                padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                 decoration: BoxDecoration(
-                  color: c.surface,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [c.anchorTop, c.anchorMid, c.anchorBottom],
+                  ),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: c.border),
-                  boxShadow: kLiftShadow,
+                  boxShadow: [
+                    BoxShadow(
+                      color: c.anchorMid.withValues(alpha: .30),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,29 +160,38 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: .3,
-                                  color: c.muted,
+                                  color: Colors.white.withValues(alpha: .62),
                                 ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 '%$roundedProgress',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontFamily: kDisplay,
-                                  fontSize: 38,
+                                  fontSize: 40,
                                   fontWeight: FontWeight.w700,
                                   height: 1.1,
                                   letterSpacing: -1.2,
-                                  color: c.ink,
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SmallButton(label: 'Güncelle', onTap: _openUpdate),
+                        SmallButton(
+                          label: 'Güncelle',
+                          onTap: _openUpdate,
+                          onDark: true,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
-                    ProgressRail(percent: roundedProgress, height: 10),
+                    ProgressRail(
+                      percent: roundedProgress,
+                      height: 10,
+                      onDark: true,
+                      color: c.anchorAccent,
+                    ),
                   ],
                 ),
               ),
