@@ -320,43 +320,47 @@ class _WhatsAppIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(width: size, height: size, child: CustomPaint(painter: _WhatsAppPainter()));
+    // Yesil baloncuk + beyaz ahize: elle cizilen eski sekil kucuk boyutta
+    // bozuluyordu, temiz bir bicime alindi.
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned.fill(
+            child: CustomPaint(painter: _WhatsAppBubblePainter()),
+          ),
+          Padding(
+            padding: EdgeInsets.only(bottom: size * .08),
+            child: Icon(
+              LucideIcons.phone,
+              size: size * .44,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-class _WhatsAppPainter extends CustomPainter {
+/// Yesil konusma baloncugu: daire + sol alt kuyruk.
+class _WhatsAppBubblePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final green = Paint()..color = const Color(0xFF25D366);
-    final whiteBorder = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.09;
-    final whitePhone = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.10
-      ..strokeCap = StrokeCap.round;
-
-    final center = Offset(size.width * 0.5, size.height * 0.46);
-    final radius = size.width * 0.36;
-    canvas.drawCircle(center, radius + size.width * 0.055, whiteBorder);
-    canvas.drawCircle(center, radius, green);
+    final center = Offset(size.width * .5, size.height * .46);
+    final radius = size.width * .42;
 
     final tail = Path()
-      ..moveTo(size.width * 0.27, size.height * 0.69)
-      ..lineTo(size.width * 0.18, size.height * 0.91)
-      ..lineTo(size.width * 0.40, size.height * 0.80)
+      ..moveTo(size.width * .30, size.height * .74)
+      ..lineTo(size.width * .14, size.height * .96)
+      ..lineTo(size.width * .46, size.height * .86)
       ..close();
-    canvas.drawPath(tail, green);
 
-    final phone = Path()
-      ..moveTo(size.width * 0.36, size.height * 0.31)
-      ..cubicTo(size.width * 0.28, size.height * 0.39, size.width * 0.38, size.height * 0.59,
-          size.width * 0.48, size.height * 0.67)
-      ..cubicTo(size.width * 0.58, size.height * 0.75, size.width * 0.70, size.height * 0.76,
-          size.width * 0.76, size.height * 0.66);
-    canvas.drawPath(phone, whitePhone);
+    canvas.drawPath(tail, green);
+    canvas.drawCircle(center, radius, green);
   }
 
   @override

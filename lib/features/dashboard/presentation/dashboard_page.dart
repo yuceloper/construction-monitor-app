@@ -260,89 +260,72 @@ class _WideDashboardCard extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
-        child: Stack(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ikon ve baslik kartin ortasinda duruyor.
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 56),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
+            // Okunmamis sayisi ikonun kosesinde - kartin dengesi bozulmuyor.
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: c.inset,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, size: 25, color: c.accent),
+                ),
+                if ((badgeCount ?? 0) > 0)
+                  Positioned(
+                    right: -8,
+                    top: -8,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: c.inset,
+                        color: c.bad,
+                        shape: BoxShape.rectangle,
                         borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: c.surface, width: 2),
                       ),
-                      child: Icon(icon, size: 25, color: c.accent),
-                    ),
-                    const SizedBox(width: 16),
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(
-                            fontFamily: kDisplay,
-                            fontSize: 23,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -.4,
-                            color: c.ink,
-                          ),
+                      child: Text(
+                        badgeCount! > 99 ? '99+' : '$badgeCount',
+                        style: const TextStyle(
+                          fontFamily: kBody,
+                          color: Colors.white,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
-            if ((badgeCount ?? 0) > 0)
-              Positioned(
-                right: 62,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                    padding: const EdgeInsets.symmetric(horizontal: 9),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: c.bad,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      badgeCount! > 99 ? '99+' : '$badgeCount',
-                      style: const TextStyle(
-                        fontFamily: kBody,
-                        color: Colors.white,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
                   ),
-                ),
-              ),
-            Positioned(
-              right: 16,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(color: c.inset, shape: BoxShape.circle),
-                  child: Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.visible,
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.4,
+                    color: c.ink,
+                  ),
                 ),
               ),
             ),
