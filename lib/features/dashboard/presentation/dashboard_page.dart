@@ -4,7 +4,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
-import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../notifications/services/notification_service.dart';
 
@@ -57,35 +56,15 @@ class _DashboardPageState extends State<DashboardPage>
     return Scaffold(
       backgroundColor: c.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _entering(
-                0,
-                Row(
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Pressable(
-                            onTap: () => context.go('/dashboard'),
-                            child: const BrandLogo(height: 28, compact: true),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const UserChip(),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Ust serit her ekranda ayni bilesen: logo boyutu ve kenar
+            // bosluklari sayfadan sayfaya degismiyor.
+            _entering(0, const AppHeader()),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     const gap = 13.0;
@@ -187,8 +166,8 @@ class _DashboardPageState extends State<DashboardPage>
                   },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
