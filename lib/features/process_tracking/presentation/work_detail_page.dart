@@ -210,194 +210,163 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
       onRefresh: _loadDetail,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         children: [
-          _SectionTitle(icon: LucideIcons.paperclip, title: 'Bağımlı İşler'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(44, 10, 0, 22),
+          _Section(
+            icon: LucideIcons.paperclip,
+            title: 'Bağımlı İşler',
+            color: c.warn,
             child: detail.dependencies.isEmpty
-                ? Text(
-                    'Bağımlı iş bulunmuyor.',
-                    style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.muted),
+                ? const EmptyState(
+                    message: 'Bağımlı iş bulunmuyor.',
+                    icon: LucideIcons.paperclip,
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: detail.dependencies
-                        .map((item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: Text(
-                                item,
-                                style: TextStyle(
-                                  fontFamily: kBody,
-                                  fontSize: 18,
-                                  height: 1.35,
-                                  color: c.ink,
-                                ),
-                              ),
-                            ))
-                        .toList(),
+                    children: [
+                      for (final item in detail.dependencies)
+                        _DependencyRow(
+                          text: item,
+                          last: item == detail.dependencies.last,
+                        ),
+                    ],
                   ),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: _SectionTitle(icon: LucideIcons.triangleAlert, title: 'Uyarılar'),
-              ),
-              SmallButton(
-                label: 'Ekle',
-                icon: LucideIcons.plus,
-                busy: _isAddingWarning,
-                onTap: _addWarning,
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          if (detail.warnings.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                'Bu iş için uyarı bulunmuyor.',
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.muted),
-              ),
-            )
-          else
-            ...detail.warnings.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _WarningCard(
-                    item: item,
-                    createdDate: _date(item.createdAt),
+          const SizedBox(height: 12),
+          _Section(
+            icon: LucideIcons.triangleAlert,
+            title: 'Uyarılar',
+            color: c.bad,
+            action: SmallButton(
+              label: 'Ekle',
+              icon: LucideIcons.plus,
+              busy: _isAddingWarning,
+              onTap: _addWarning,
+            ),
+            child: detail.warnings.isEmpty
+                ? const EmptyState(
+                    message: 'Bu iş için uyarı bulunmuyor.',
+                    icon: LucideIcons.triangleAlert,
+                  )
+                : Column(
+                    children: [
+                      for (final item in detail.warnings)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            bottom: item == detail.warnings.last ? 0 : 10,
+                          ),
+                          child: _WarningCard(
+                            item: item,
+                            createdDate: _date(item.createdAt),
+                          ),
+                        ),
+                    ],
                   ),
-                )),
-          const SizedBox(height: 18),
-          _SectionTitle(icon: LucideIcons.history, title: 'Tarihçe'),
-          const SizedBox(height: 14),
-          if (detail.history.isEmpty)
-            Text(
-              'Henüz tarihçe kaydı bulunmuyor.',
-              style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.muted),
-            )
-          else
-            ...detail.history.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _HistoryCard(item: item, date: _date(item.createdAt)),
-                )),
+          ),
+          const SizedBox(height: 12),
+          _Section(
+            icon: LucideIcons.history,
+            title: 'Tarihçe',
+            color: c.accent,
+            child: detail.history.isEmpty
+                ? const EmptyState(
+                    message: 'Henüz tarihçe kaydı bulunmuyor.',
+                    icon: LucideIcons.history,
+                  )
+                : Column(
+                    children: [
+                      for (final item in detail.history)
+                        _HistoryEntry(
+                          item: item,
+                          date: _date(item.createdAt),
+                          last: item == detail.history.last,
+                        ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.icon, required this.title});
+/// Ekranin uc bolumu icin ortak kart.
+///
+/// Bolum dolu da olsa bos da olsa ayni kart icinde duruyor; boylece ekran
+/// veri geldikce sekil degistirmiyor.
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.child,
+    this.action,
+  });
 
   final IconData icon;
   final String title;
+  final Color color;
+  final Widget child;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Row(
-      children: [
-        Icon(icon, size: 28, color: c.ink),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: TextStyle(
-            fontFamily: kDisplay,
-            fontSize: 26,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -.5,
-            color: c.ink,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WarningCard extends StatelessWidget {
-  final WorkItemWarning item;
-  final String createdDate;
-
-  const _WarningCard({
-    required this.item,
-    required this.createdDate,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    final overdue = item.isOverdue;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
-      decoration: BoxDecoration(
-        color: overdue ? c.bad.withValues(alpha: .08) : c.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: overdue ? c.bad.withValues(alpha: .35) : c.border),
-      ),
-      child: Row(
+    return Panel(
+      padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              item.text,
-              style: TextStyle(
-                fontFamily: kBody,
-                fontSize: 16,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-                color: c.ink,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          Row(
             children: [
-              Text(
-                'Eklenme: $createdDate',
-                style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.muted),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                item.user,
-                style: TextStyle(
-                  fontFamily: kBody,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: c.sub,
+              IconBox(icon: icon, color: color, size: 34),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.3,
+                    color: c.ink,
+                  ),
                 ),
               ),
+              ?action,
             ],
           ),
+          const SizedBox(height: 14),
+          child,
         ],
       ),
     );
   }
 }
 
-class _HistoryCard extends StatelessWidget {
-  final WorkItemHistory item;
-  final String date;
-  const _HistoryCard({required this.item, required this.date});
+/// Bagimli is satiri: kucuk bir baglanti isareti ve isin adi.
+class _DependencyRow extends StatelessWidget {
+  const _DependencyRow({required this.text, required this.last});
+
+  final String text;
+  final bool last;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(15, 13, 15, 13),
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.border),
-      ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: last ? 0 : 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(LucideIcons.link, size: 16, color: c.warn),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
-              item.text,
+              text,
               style: TextStyle(
                 fontFamily: kBody,
                 fontSize: 15.5,
@@ -407,27 +376,178 @@ class _HistoryCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                date,
-                style: TextStyle(
-                  fontFamily: kBody,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: c.ink,
+        ],
+      ),
+    );
+  }
+}
+
+/// Tarihce girdisi: solda zaman cizgisi, sagda kayit ve alti bilgisi.
+class _HistoryEntry extends StatelessWidget {
+  const _HistoryEntry({
+    required this.item,
+    required this.date,
+    required this.last,
+  });
+
+  final WorkItemHistory item;
+  final String date;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            width: 10,
+            child: Column(
+              children: [
+                const SizedBox(height: 5),
+                Container(
+                  width: 9,
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: c.accent,
+                    shape: BoxShape.circle,
+                  ),
                 ),
+                if (!last)
+                  Expanded(
+                    child: Container(
+                      width: 1.5,
+                      margin: const EdgeInsets.symmetric(vertical: 3),
+                      color: c.border2,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: last ? 0 : 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.text,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 15,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      color: c.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      Text(
+                        date,
+                        style: TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: c.sub,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          item.user,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 12.5,
+                            color: c.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                item.user,
-                style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.sub),
-              ),
-            ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WarningCard extends StatelessWidget {
+  final WorkItemWarning item;
+  final String createdDate;
+
+  const _WarningCard({required this.item, required this.createdDate});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final overdue = item.isOverdue;
+    final edge = overdue ? c.bad : c.border2;
+
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: overdue ? c.bad.withValues(alpha: .06) : c.inset,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: overdue ? c.bad.withValues(alpha: .28) : c.line),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 4, color: edge),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.text,
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 15.5,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                        color: c.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Row(
+                      children: [
+                        Text(
+                          'Eklenme: $createdDate',
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 12.5,
+                            color: c.muted,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item.user,
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: c.sub,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
