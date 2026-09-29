@@ -334,6 +334,8 @@ class _ProjectRow extends StatelessWidget {
             Expanded(
               child: Text(
                 project.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: kDisplay,
                   fontSize: 19,

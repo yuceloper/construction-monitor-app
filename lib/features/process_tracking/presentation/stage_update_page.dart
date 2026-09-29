@@ -275,6 +275,8 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                     Expanded(
                                       child: Text(
                                         work.title,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontFamily: kBody,
                                           fontSize: 18,

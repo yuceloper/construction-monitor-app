@@ -163,6 +163,8 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
                             Expanded(
                               child: Text(
                                 site.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontFamily: kBody,
                                   fontSize: 17,

@@ -274,6 +274,8 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                             Expanded(
                               child: Text(
                                 item.contactPerson,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontFamily: kBody,
                                   fontSize: 15,

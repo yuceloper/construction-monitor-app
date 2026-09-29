@@ -416,6 +416,8 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                       Expanded(
                         child: Text(
                           'Sesli not hazır',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 14.5,

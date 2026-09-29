@@ -428,6 +428,8 @@ class _StageCard extends StatelessWidget {
                                     Expanded(
                                       child: Text(
                                         item.title,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontFamily: kBody,
                                           fontSize: 16,

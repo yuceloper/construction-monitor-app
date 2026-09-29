@@ -328,6 +328,8 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                     Expanded(
                       child: Text(
                         _isAudioPlaying ? 'Sesli not oynatılıyor' : 'Sesli notu dinle',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: kBody,
                           fontWeight: FontWeight.w700,
@@ -479,6 +481,8 @@ class _SummaryLine extends StatelessWidget {
           Expanded(
             child: Text(
               value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: kBody,
                 fontSize: 15,

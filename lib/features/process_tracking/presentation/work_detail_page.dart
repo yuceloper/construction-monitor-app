@@ -324,6 +324,8 @@ class _Section extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontFamily: kDisplay,
                     fontSize: 19,
@@ -367,6 +369,8 @@ class _DependencyRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: kBody,
                 fontSize: 15.5,
@@ -458,6 +462,8 @@ class _HistoryEntry extends StatelessWidget {
                       Expanded(
                         child: Text(
                           item.user,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 12.5,
@@ -532,6 +538,8 @@ class _WarningCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             item.user,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontFamily: kBody,
                               fontSize: 12.5,

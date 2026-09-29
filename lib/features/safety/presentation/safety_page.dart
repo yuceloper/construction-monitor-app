@@ -231,6 +231,8 @@ class _SafetyMenuCard extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: kDisplay,
                   fontSize: 21,
