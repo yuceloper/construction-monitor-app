@@ -64,17 +64,21 @@ class _DashboardPageState extends State<DashboardPage>
             _entering(0, const AppHeader()),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    const gap = 20.0;
-                    const row = 64.0;
+                    const gap = 18.0;
 
-                    // Iki ana giris ekranin yarisini gecmez; kalan yer ustte
-                    // ve altta esit bolunur, boylece blok dikeyde ortalanir.
-                    var primary = constraints.maxHeight * .42;
-                    if (primary > 320) primary = 320;
-                    if (primary < 210) primary = 210;
+                    // Kartlar ekranin buyuk kismini doldurur; geriye kalan
+                    // pay ustte ve altta esit bolunur, boylece ne serit ile
+                    // kartlar arasinda ne de altta tek bir olu bosluk kalir.
+                    // Satirlar sabit ve derli toplu; artan yukseklik ana
+                    // kartlara gider, boylece ekran altinda bosluk kalmaz.
+                    const row = 68.0;
+                    var primary =
+                        constraints.maxHeight - gap - 4 - row * 3;
+                    if (primary > 430) primary = 430;
+                    if (primary < 230) primary = 230;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -134,7 +138,7 @@ class _DashboardPageState extends State<DashboardPage>
                                     onTap: () => context.go('/stakeholders'),
                                   ),
                                 ),
-                                Divider(height: 1, thickness: 1, color: c.line),
+                                _RowDivider(color: c.line),
                                 SizedBox(
                                   height: row,
                                   child: _SecondaryRow(
@@ -144,7 +148,7 @@ class _DashboardPageState extends State<DashboardPage>
                                     onTap: () => context.go('/safety'),
                                   ),
                                 ),
-                                Divider(height: 1, thickness: 1, color: c.line),
+                                _RowDivider(color: c.line),
                                 SizedBox(
                                   height: row,
                                   child: ValueListenableBuilder<int>(
@@ -174,6 +178,22 @@ class _DashboardPageState extends State<DashboardPage>
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Gruplu listenin ayiricisi: ikon sutununu gecip basliklarin hizasindan
+/// basliyor, boylece uc satir tek bir nesne gibi okunuyor.
+class _RowDivider extends StatelessWidget {
+  const _RowDivider({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 51),
+      child: Divider(height: 1, thickness: 1, color: color),
     );
   }
 }
@@ -228,7 +248,7 @@ class _ArcMotif extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _ArcPainter(color: color.withValues(alpha: .16)),
+      painter: _ArcPainter(color: color.withValues(alpha: .11)),
     );
   }
 }
@@ -292,10 +312,10 @@ class _PrimaryCard extends StatelessWidget {
             left: 10,
             right: 10,
             bottom: 0,
-            height: 52,
+            height: 40,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Color.lerp(color, c.surface, .55),
+                color: Color.lerp(color, c.surface, .62),
                 borderRadius: BorderRadius.circular(22),
               ),
             ),
@@ -304,7 +324,7 @@ class _PrimaryCard extends StatelessWidget {
             left: 0,
             right: 0,
             top: 0,
-            bottom: 24,
+            bottom: 20,
             child: Container(
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
@@ -322,10 +342,10 @@ class _PrimaryCard extends StatelessWidget {
               child: Stack(
                 children: [
                   Positioned(
-                    right: -26,
-                    bottom: -30,
-                    width: 200,
-                    height: 128,
+                    right: -30,
+                    bottom: -26,
+                    width: 190,
+                    height: 118,
                     child: _ArcMotif(color: color),
                   ),
                   Positioned.fill(
@@ -333,14 +353,14 @@ class _PrimaryCard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          width: 58,
-                          height: 58,
+                          width: 64,
+                          height: 64,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: Color.lerp(c.surface, color, .14),
                             borderRadius: BorderRadius.circular(18),
                           ),
-                          child: Icon(icon, size: 27, color: color),
+                          child: Icon(icon, size: 30, color: color),
                         ),
                         const SizedBox(height: 14),
                         Padding(
@@ -355,7 +375,7 @@ class _PrimaryCard extends StatelessWidget {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontFamily: kDisplay,
-                                fontSize: 21,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w700,
                                 height: 1.05,
                                 letterSpacing: -.5,
