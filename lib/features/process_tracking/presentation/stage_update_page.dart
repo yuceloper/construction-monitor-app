@@ -132,9 +132,13 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
         child: Column(
           children: [
             const AppHeader(),
-            ScreenTitleBar(
+            // Hangi blogun asamasinda olundugu basliktan okunuyor; diger alt
+            // ekranlarla ayni serit kullaniliyor.
+            BreadcrumbBar(
+              parent: widget.blockName,
               title: widget.stageTitle,
               onBack: () => context.pop(false),
+              onParentTap: () => context.pop(false),
             ),
             Expanded(child: _buildContent()),
           ],
