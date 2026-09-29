@@ -74,9 +74,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   Widget build(BuildContext context) {
     final c = context.colors;
 
-    return Stack(
-      children: [
-        ColoredBox(
+    return ColoredBox(
           color: c.bg,
           child: SafeArea(
             child: Column(
@@ -85,6 +83,13 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                 ScreenTitleBar(
                   title: 'Günlük İşler',
                   onBack: () => context.go('/dashboard'),
+                  // Buton listenin ustunde yuzerken alttaki kartlarin
+                  // onceligini ortuyordu; basligin yaninda sabit duruyor.
+                  trailing: SmallButton(
+                    label: 'Ekle',
+                    icon: LucideIcons.plus,
+                    onTap: _openCreate,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
@@ -119,42 +124,6 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
               ],
             ),
           ),
-        ),
-        Positioned(
-          right: 20,
-          bottom: 20,
-          child: SafeArea(
-            child: Pressable(
-              onTap: _openCreate,
-              child: Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: BoxDecoration(
-                  color: c.ink,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: kLiftShadow,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(LucideIcons.plus, size: 22, color: c.bg),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Ekle',
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: c.bg,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -214,7 +183,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       onRefresh: _loadTasks,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 96),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
         itemCount: _tasks.length,
         separatorBuilder: (_, __) => const SizedBox(height: 12),
         itemBuilder: (_, index) => _TaskCard(
