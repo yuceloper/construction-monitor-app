@@ -67,40 +67,39 @@ class _DashboardPageState extends State<DashboardPage>
                 padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    const gap = 13.0;
-                    final available = constraints.maxHeight;
+                    const gap = 20.0;
+                    const row = 64.0;
 
-                    // Ustteki genis kart ile alttaki dortlu izgara ekrana
-                    // birlikte sigsin; dar ekranda oranlar korunarak kuculur.
-                    var hero = available * .28;
-                    if (hero > 190) hero = 190;
-                    if (hero < 140) hero = 140;
-                    final tile = (available - hero - gap * 2) / 2;
+                    // Iki ana giris ekranin yarisini gecmez; kalan yer ustte
+                    // ve altta esit bolunur, boylece blok dikeyde ortalanir.
+                    var primary = constraints.maxHeight * .42;
+                    if (primary > 320) primary = 320;
+                    if (primary < 210) primary = 210;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _entering(
-                          1,
-                          SizedBox(
-                            height: hero,
-                            child: _HeroModuleCard(
-                              title: 'Süreç Takip',
-                              icon: LucideIcons.workflow,
-                              color: c.accent,
-                              onTap: () => context.go('/process'),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: gap),
                         SizedBox(
-                          height: tile,
+                          height: primary,
                           child: Row(
                             children: [
                               Expanded(
                                 child: _entering(
+                                  1,
+                                  _PrimaryCard(
+                                    title: 'Süreç Takip',
+                                    icon: LucideIcons.chartGantt,
+                                    color: c.accent,
+                                    onTap: () => context.go('/process'),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _entering(
                                   2,
-                                  _ModuleCard(
+                                  _PrimaryCard(
                                     title: 'Günlük İşler',
                                     icon: LucideIcons.clipboardList,
                                     color: c.teal,
@@ -108,46 +107,51 @@ class _DashboardPageState extends State<DashboardPage>
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: gap),
-                              Expanded(
-                                child: _entering(
-                                  3,
-                                  _ModuleCard(
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: gap),
+                        // Ikincil uc giris ayri kart degil, tek kutuda bolunmus
+                        // satirlar: tek nesneye inince ana ikili one cikiyor.
+                        _entering(
+                          3,
+                          Container(
+                            clipBehavior: Clip.antiAlias,
+                            decoration: BoxDecoration(
+                              color: c.surface,
+                              borderRadius: BorderRadius.circular(22),
+                              border: Border.all(color: c.border),
+                              boxShadow: kLiftShadow,
+                            ),
+                            child: Column(
+                              children: [
+                                SizedBox(
+                                  height: row,
+                                  child: _SecondaryRow(
                                     title: 'Paydaşlar',
                                     icon: LucideIcons.users,
                                     color: c.violet,
                                     onTap: () => context.go('/stakeholders'),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: gap),
-                        SizedBox(
-                          height: tile,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _entering(
-                                  4,
-                                  _ModuleCard(
+                                Divider(height: 1, thickness: 1, color: c.line),
+                                SizedBox(
+                                  height: row,
+                                  child: _SecondaryRow(
                                     title: 'İSG Takip',
                                     icon: LucideIcons.hardHat,
                                     color: c.warn,
                                     onTap: () => context.go('/safety'),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: gap),
-                              Expanded(
-                                child: _entering(
-                                  5,
-                                  ValueListenableBuilder<int>(
+                                Divider(height: 1, thickness: 1, color: c.line),
+                                SizedBox(
+                                  height: row,
+                                  child: ValueListenableBuilder<int>(
                                     valueListenable:
                                         NotificationUnreadCount.value,
                                     builder: (context, unreadCount, _) =>
-                                        _ModuleCard(
+                                        _SecondaryRow(
                                           title: 'Bildirimler',
                                           icon: LucideIcons.bellRing,
                                           color: c.bad,
@@ -157,8 +161,8 @@ class _DashboardPageState extends State<DashboardPage>
                                         ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -217,15 +221,14 @@ class _Entering extends StatelessWidget {
 /// Markanin mavi yayindan tureyen dekoratif cizgi - kartlarin kosesinde
 /// hafif bir doku birakiyor.
 class _ArcMotif extends StatelessWidget {
-  const _ArcMotif({required this.color, this.opacity = .13});
+  const _ArcMotif({required this.color});
 
   final Color color;
-  final double opacity;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _ArcPainter(color: color.withValues(alpha: opacity)),
+      painter: _ArcPainter(color: color.withValues(alpha: .16)),
     );
   }
 }
@@ -261,49 +264,12 @@ class _ArcPainter extends CustomPainter {
   bool shouldRepaint(_ArcPainter old) => old.color != color;
 }
 
-/// Ikon plakasi: renk gecisli kare, ustunde beyaz ikon.
-class _IconPlate extends StatelessWidget {
-  const _IconPlate({
-    required this.icon,
-    required this.color,
-    required this.size,
-  });
-
-  final IconData icon;
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(color, Colors.white, .18)!,
-            Color.lerp(color, Colors.black, .12)!,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(size * .3),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: .32),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Icon(icon, size: size * .46, color: Colors.white),
-    );
-  }
-}
-
-/// Ana giris: genis kart, sol tarafta plaka ve baslik, sagda yay motifi.
-class _HeroModuleCard extends StatelessWidget {
-  const _HeroModuleCard({
+/// Ana giris: beyaz kart, arkasinda kendi renginde bir raf.
+///
+/// Raf kartin altindan gorunuyor; derinlik renkle degil katmanla veriliyor,
+/// boylece kart beyaz kalirken asagidaki listeden ayrilabiliyor.
+class _PrimaryCard extends StatelessWidget {
+  const _PrimaryCard({
     required this.title,
     required this.icon,
     required this.color,
@@ -320,68 +286,104 @@ class _HeroModuleCard extends StatelessWidget {
     final c = context.colors;
     return Pressable(
       onTap: onTap,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [c.surface, Color.lerp(c.surface, color, .07)!],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -30,
-              bottom: -30,
-              width: 230,
-              height: 150,
-              child: _ArcMotif(color: color, opacity: .16),
-            ),
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _IconPlate(icon: icon, color: color, size: 64),
-                    const SizedBox(height: 16),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: kDisplay,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          letterSpacing: -.7,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 10,
+            right: 10,
+            bottom: 0,
+            height: 52,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Color.lerp(color, c.surface, .55),
+                borderRadius: BorderRadius.circular(22),
               ),
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 24,
+            child: Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: c.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: .24),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -26,
+                    bottom: -30,
+                    width: 200,
+                    height: 128,
+                    child: _ArcMotif(color: color),
+                  ),
+                  Positioned.fill(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Color.lerp(c.surface, color, .14),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Icon(icon, size: 27, color: color),
+                        ),
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: kDisplay,
+                                fontSize: 21,
+                                fontWeight: FontWeight.w700,
+                                height: 1.05,
+                                letterSpacing: -.5,
+                                color: c.ink,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-/// Alttaki dort modul: plaka ustte, baslik altta, kosede yay motifi.
-class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({
+/// Ikincil giris satiri.
+///
+/// Basliklar ana kartlarla ayni yazi tipinde, ayni kalinlikta ve ayni renkte;
+/// aradaki tek fark boyut, boylece liste ikinci planda kaliyor ama sonradan
+/// eklenmis gibi durmuyor.
+class _SecondaryRow extends StatelessWidget {
+  const _SecondaryRow({
     required this.title,
     required this.icon,
     required this.color,
@@ -400,81 +402,41 @@ class _ModuleCard extends StatelessWidget {
     final c = context.colors;
     return Pressable(
       onTap: onTap,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [c.surface, Color.lerp(c.surface, color, .06)!],
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
-        ),
-        child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(
           children: [
-            Positioned(
-              right: -24,
-              bottom: -26,
-              width: 170,
-              height: 110,
-              child: _ArcMotif(color: color),
-            ),
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 16, 14, 18),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    _IconPlate(icon: icon, color: color, size: 54),
-                    const SizedBox(height: 14),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: kDisplay,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          height: 1.05,
-                          letterSpacing: -.35,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                  ],
+            Icon(icon, size: 21, color: color),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontFamily: kDisplay,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.3,
+                  color: c.ink,
                 ),
               ),
             ),
             if ((badgeCount ?? 0) > 0)
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  constraints: const BoxConstraints(
-                    minWidth: 28,
-                    minHeight: 28,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 9),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: c.bad,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    badgeCount! > 99 ? '99+' : '$badgeCount',
-                    style: const TextStyle(
-                      fontFamily: kBody,
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                    ),
+              Container(
+                height: 26,
+                constraints: const BoxConstraints(minWidth: 26),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: c.bad,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Text(
+                  badgeCount! > 99 ? '99+' : '$badgeCount',
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    color: c.surface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
