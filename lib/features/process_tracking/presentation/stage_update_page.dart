@@ -288,7 +288,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                       const SizedBox(width: 8),
                                       Tooltip(
                                         message: 'Bağımlı iş var',
-                                        child: _StatusBadge(
+                                        child: StatusBadge(
                                           icon: LucideIcons.link,
                                           color: c.warn,
                                         ),
@@ -298,7 +298,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                       const SizedBox(width: 6),
                                       Tooltip(
                                         message: 'Uyarı var',
-                                        child: _StatusBadge(
+                                        child: StatusBadge(
                                           icon: LucideIcons.triangleAlert,
                                           color: c.bad,
                                         ),
@@ -370,27 +370,6 @@ class _EditableWork {
       hasDependency: hasDependency,
       hasWarning: hasWarning,
       hasCriticalWarning: hasCriticalWarning,
-    );
-  }
-}
-
-/// Bagimli is / uyari gostergesi - blok detayindakiyle ayni bicim.
-class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.icon, required this.color});
-
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 30,
-      height: 30,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(icon, size: 16, color: color),
     );
   }
 }

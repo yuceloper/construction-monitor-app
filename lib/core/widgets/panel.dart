@@ -511,6 +511,29 @@ class CheckMark extends StatelessWidget {
   }
 }
 
+/// Bir is kaleminin yanindaki kucuk gosterge: bagimli is, uyari gibi.
+///
+/// Renk anlami tasir, bicim her ekranda ayni: tonlu kare icinde ince ikon.
+class StatusBadge extends StatelessWidget {
+  const StatusBadge({super.key, required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, size: 16, color: color),
+    );
+  }
+}
+
 enum StageState { done, active, waiting }
 
 /// Round status mark for a stage: filled tick, ringed dot or empty ring.
