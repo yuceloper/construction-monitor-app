@@ -401,10 +401,13 @@ class ScreenTitleBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Yazi kutusunun ustunde altindan daha cok bosluk var; kutular
+          // ortalandiginda ok, harflerin gorsel merkezinin 1.5dp uzerinde
+          // kaliyordu. Ok o kadar asagi alindi, dokunma alani 44 kaldi.
           Pressable(
             onTap: onBack,
             child: Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.fromLTRB(10, 11.5, 10, 8.5),
               child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
             ),
           ),
