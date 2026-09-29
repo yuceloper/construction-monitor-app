@@ -126,8 +126,13 @@ class WorkItemService {
   }
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
-    if (statusCode == 401 || statusCode == 403) {
+    if (statusCode == 401) {
       throw const WorkItemException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+    if (statusCode == 403) {
+      throw const WorkItemException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
 
     String? message;

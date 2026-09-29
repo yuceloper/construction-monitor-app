@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/notification_item.dart';
 import '../services/notification_service.dart';
@@ -163,18 +164,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
-            return Padding(
-              padding: const EdgeInsets.only(top: 90),
-              child: Center(
-                child: Text(
-                  'Son 15 günde bildirim bulunmuyor.',
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: c.sub,
-                  ),
-                ),
+            return const Padding(
+              padding: EdgeInsets.only(top: 40),
+              child: EmptyView(
+                icon: LucideIcons.bellRing,
+                title: 'Son 15 günde bildirim bulunmuyor.',
               ),
             );
           }
@@ -215,7 +209,7 @@ class _NotificationCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 8, color: accent),
+              Container(width: 5, color: accent),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -257,14 +251,14 @@ class _NotificationCard extends StatelessWidget {
                         const SizedBox(height: 5),
                         Text(
                           content.detail,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 13.5,
-                            height: 1.3,
-                            fontWeight: isDaily ? FontWeight.w400 : FontWeight.w600,
-                            color: isDaily ? c.sub : c.accent,
+                            height: 1.35,
+                            fontWeight: FontWeight.w400,
+                            color: c.sub,
                           ),
                         ),
                       ],

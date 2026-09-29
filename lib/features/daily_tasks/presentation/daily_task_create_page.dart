@@ -369,14 +369,20 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Kayit yokken bu buton "Fotograf ekle" ile ayni agirlikta
+              // duruyor; ekranin birincil eylemi KAYDET. Kayit basladiginda
+              // dolu kirmiziya donuyor, cunku o an devam eden bir durum var.
               Pressable(
                 onTap: _isSaving ? null : _toggleRecording,
                 child: Container(
                   height: 52,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _isRecording ? c.bad : c.accent,
+                    color: _isRecording ? c.bad : c.surface2,
                     borderRadius: BorderRadius.circular(Sizes.rField),
+                    border: _isRecording
+                        ? null
+                        : Border.all(color: c.border2, width: 1.5),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -384,18 +390,18 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                       Icon(
                         _isRecording ? LucideIcons.square : LucideIcons.mic,
                         size: 19,
-                        color: Colors.white,
+                        color: _isRecording ? c.surface : c.accent,
                       ),
                       const SizedBox(width: 9),
                       Text(
                         _isRecording
                             ? 'Kaydı Durdur'
                             : (_audioPath == null ? 'Sesli not kaydet' : 'Yeniden kaydet'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: kBody,
                           fontSize: 15.5,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: _isRecording ? c.surface : c.ink,
                         ),
                       ),
                     ],

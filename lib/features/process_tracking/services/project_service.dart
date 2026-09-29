@@ -54,8 +54,13 @@ class ProjectService {
             .toList();
       }
 
-      if (response.statusCode == 401 || response.statusCode == 403) {
+      if (response.statusCode == 401) {
         throw const ProjectException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+      }
+      if (response.statusCode == 403) {
+        throw const ProjectException(
+          'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+        );
       }
 
       throw ProjectException(_readErrorMessage(responseBody, response.statusCode));

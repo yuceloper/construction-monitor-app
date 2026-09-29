@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/project_summary.dart';
 import '../services/project_service.dart';
@@ -180,12 +181,11 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
         padding: const EdgeInsets.all(16),
         children: [
           if (sections.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 40),
-              child: Text(
-                'Bu şantiyede tanımlı blok bulunmamaktadır.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.5, color: c.sub),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: EmptyView(
+                icon: LucideIcons.house,
+                title: 'Bu şantiyede tanımlı blok bulunmamaktadır.',
               ),
             )
           else

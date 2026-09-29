@@ -90,49 +90,23 @@ class _SafetyPageState extends State<SafetyPage> {
     return ColoredBox(
       color: c.bg,
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Pressable(
-                    onTap: () => context.go('/dashboard'),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 8, 10, 8),
-                      child: Icon(LucideIcons.chevronLeft, size: 26, color: c.ink),
-                    ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'İSG Takip',
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.visible,
-                          style: TextStyle(
-                            fontFamily: kDisplay,
-                            fontSize: 27,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -.6,
-                            color: c.ink,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const UserChip(),
-                ],
+        child: Column(
+          children: [
+            // Bu ekran kendi baslik satirini kuruyordu: logo yoktu, kullanici
+            // kutusu baslikla ayni hizada duruyordu. Artik butun ekranlarla
+            // ayni ust serit ve ayni baslik seridi kullaniliyor.
+            const AppHeader(),
+            ScreenTitleBar(
+              title: 'İSG Takip',
+              onBack: () => context.go('/dashboard'),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: _buildContent(),
               ),
-              const SizedBox(height: 24),
-              Expanded(child: _buildContent()),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -180,7 +154,20 @@ class _SafetyPageState extends State<SafetyPage> {
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _load,
-        child: const CenteredScrollMessage(message: 'İSG belgesi bulunmuyor.'),
+        child: LayoutBuilder(
+          builder: (context, constraints) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: constraints.maxHeight,
+                child: const EmptyView(
+                  icon: LucideIcons.shieldCheck,
+                  title: 'İSG belgesi bulunmuyor.',
+                ),
+              ),
+            ],
+          ),
+        ),
       );
     }
 

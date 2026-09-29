@@ -98,7 +98,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                     const SizedBox(height: 10),
                     Text(
                       validationMessage!,
-                      style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+                      style: TextStyle(color: context.colors.bad, fontSize: 13),
                     ),
                   ],
                 ],

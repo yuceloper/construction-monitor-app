@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/site_summary.dart';
@@ -301,10 +302,9 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Bu kullanıcıya atanmış şantiye bulunmuyor.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.sub),
+          const EmptyView(
+            icon: LucideIcons.mapPin,
+            title: 'Bu kullanıcıya atanmış şantiye bulunmuyor.',
           ),
           const SizedBox(height: 14),
           _BackToLogin(onTap: _goBackToLogin),

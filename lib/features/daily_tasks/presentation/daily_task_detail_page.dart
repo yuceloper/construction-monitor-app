@@ -310,14 +310,17 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                       decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
                       alignment: Alignment.center,
                       child: _isAudioLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: c.surface,
+                              ),
                             )
                           : Icon(
                               _isAudioPlaying ? LucideIcons.pause : LucideIcons.play,
-                              color: Colors.white,
+                              color: c.surface,
                               size: 22,
                             ),
                     ),
@@ -339,84 +342,100 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               ),
             ),
           ],
-          const SizedBox(height: 24),
-          Text(
-            'Durum',
-            style: TextStyle(
-              fontFamily: kDisplay,
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -.2,
-              color: c.ink,
+          const SizedBox(height: 14),
+          // Ozet karttaydi, hemen altindaki alanlar sayfaya serbest
+          // oturuyordu. Duzenlenebilir alanlar da kendi kartinda.
+          Container(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            decoration: BoxDecoration(
+              color: c.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.border),
+              boxShadow: kLiftShadow,
             ),
-          ),
-          const SizedBox(height: 9),
-          DropdownButtonFormField<String>(
-            value: _status,
-            isExpanded: true,
-            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            dropdownColor: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-            items: [
-              DropdownMenuItem(
-                value: 'IN_PROGRESS',
-                child: Text(
-                  'Devam Ediyor',
-                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+            Text(
+              'Durum',
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.2,
+                color: c.ink,
               ),
-              DropdownMenuItem(
-                value: 'COMPLETED',
-                child: Text(
-                  'Tamamlandı',
-                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+            ),
+            const SizedBox(height: 9),
+            DropdownButtonFormField<String>(
+              value: _status,
+              isExpanded: true,
+              icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+              dropdownColor: c.surface,
+              borderRadius: BorderRadius.circular(16),
+              style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+              items: [
+                DropdownMenuItem(
+                  value: 'IN_PROGRESS',
+                  child: Text(
+                    'Devam Ediyor',
+                    style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                  ),
                 ),
+                DropdownMenuItem(
+                  value: 'COMPLETED',
+                  child: Text(
+                    'Tamamlandı',
+                    style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                  ),
+                ),
+              ],
+              onChanged: _isSaving ? null : (value) => setState(() => _status = value ?? 'IN_PROGRESS'),
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
+                filled: true,
+                fillColor: c.surface2,
+                border: border(c.border2),
+                enabledBorder: border(c.border2),
+                focusedBorder: border(c.accent, 1.8),
               ),
-            ],
-            onChanged: _isSaving ? null : (value) => setState(() => _status = value ?? 'IN_PROGRESS'),
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-              filled: true,
-              fillColor: c.surface2,
-              border: border(c.border2),
-              enabledBorder: border(c.border2),
-              focusedBorder: border(c.accent, 1.8),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Not',
-            style: TextStyle(
-              fontFamily: kDisplay,
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -.2,
-              color: c.ink,
+            const SizedBox(height: 20),
+            Text(
+              'Not',
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.2,
+                color: c.ink,
+              ),
             ),
-          ),
-          const SizedBox(height: 9),
-          TextField(
-            controller: _noteController,
-            enabled: !_isSaving,
-            minLines: 5,
-            maxLines: 8,
-            maxLength: 500,
-            inputFormatters: [LengthLimitingTextInputFormatter(500)],
-            style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.4, color: c.ink),
-            cursorColor: c.accent,
-            decoration: InputDecoration(
-              hintText: 'Lütfen detay giriniz.',
-              hintStyle: TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
-              counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
-              filled: true,
-              fillColor: c.surface2,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              border: border(c.border2),
-              enabledBorder: border(c.border2),
-              disabledBorder: border(c.border),
-              focusedBorder: border(c.accent, 1.8),
+            const SizedBox(height: 9),
+            TextField(
+              controller: _noteController,
+              enabled: !_isSaving,
+              minLines: 5,
+              maxLines: 8,
+              maxLength: 500,
+              inputFormatters: [LengthLimitingTextInputFormatter(500)],
+              style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.4, color: c.ink),
+              cursorColor: c.accent,
+              decoration: InputDecoration(
+                hintText: 'Lütfen detay giriniz.',
+                hintStyle: TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
+                counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
+                filled: true,
+                fillColor: c.surface2,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                border: border(c.border2),
+                enabledBorder: border(c.border2),
+                disabledBorder: border(c.border),
+                focusedBorder: border(c.accent, 1.8),
+              ),
+            ),
+              ],
             ),
           ),
           const SizedBox(height: 22),

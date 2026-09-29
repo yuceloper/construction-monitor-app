@@ -217,11 +217,11 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
             boxShadow: kLiftShadow,
           ),
           child: _works.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
-                  child: Text(
-                    'Bu süreç için alt iş bulunmuyor.',
-                    style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.muted),
+              ? const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: EmptyState(
+                    message: 'Bu süreç için alt iş bulunmuyor.',
+                    icon: LucideIcons.listTodo,
                   ),
                 )
               : Column(

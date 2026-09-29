@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/state_views.dart';
 import '../models/stakeholder_summary.dart';
 import '../services/stakeholder_service.dart';
@@ -268,7 +269,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(LucideIcons.user, size: 17, color: c.muted),
+                            Icon(LucideIcons.user, size: 18, color: c.muted),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
@@ -285,24 +286,41 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         ),
                       ],
                       if (item.phoneNumber.isNotEmpty) ...[
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 4),
                         Text(
                           item.phoneNumber,
-                          style: TextStyle(fontFamily: kBody, fontSize: 14.5, color: c.muted),
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: .2,
+                            color: c.sub,
+                          ),
                         ),
                       ],
                     ],
                   ),
                 ),
-                IconButton(
+                // Iki eylem de ayni capta yuvarlak dugme: biri markanin
+                // mavisi, digeri WhatsApp'in kendi yesili.
+                _ContactAction(
                   tooltip: 'Ara',
-                  onPressed: () => _call(item),
-                  icon: Icon(LucideIcons.phone, size: 24, color: c.accent),
+                  onTap: () => _call(item),
+                  background: Color.lerp(c.surface, c.accent, .12)!,
+                  child: Icon(LucideIcons.phone, size: 21, color: c.accent),
                 ),
-                IconButton(
+                const SizedBox(width: 8),
+                _ContactAction(
                   tooltip: 'WhatsApp',
-                  onPressed: () => _openWhatsApp(item),
-                  icon: const _WhatsAppIcon(size: 30),
+                  onTap: () => _openWhatsApp(item),
+                  background: const Color(0xFF25D366),
+                  // Mesaj balonu: ayni capta dursalar da hangisinin arama
+                  // hangisinin WhatsApp oldugu sekilden anlasiliyor.
+                  child: const Icon(
+                    LucideIcons.messageCircle,
+                    size: 22,
+                    color: Colors.white,
+                  ),
                 ),
               ],
             ),
@@ -314,55 +332,44 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
 }
 
 
-class _WhatsAppIcon extends StatelessWidget {
-  final double size;
-  const _WhatsAppIcon({required this.size});
+/// Paydas kartinin sag ucundaki eylem dugmesi. Gorsel cap 42, dokunma
+/// alani 48: eldivenli parmakla da rahat basiliyor.
+class _ContactAction extends StatelessWidget {
+  const _ContactAction({
+    required this.tooltip,
+    required this.onTap,
+    required this.background,
+    required this.child,
+  });
+
+  final String tooltip;
+  final VoidCallback onTap;
+  final Color background;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    // Yesil baloncuk + beyaz ahize: elle cizilen eski sekil kucuk boyutta
-    // bozuluyordu, temiz bir bicime alindi.
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(
-            child: CustomPaint(painter: _WhatsAppBubblePainter()),
-          ),
-          Padding(
-            padding: EdgeInsets.only(bottom: size * .08),
-            child: Icon(
-              LucideIcons.phone,
-              size: size * .44,
-              color: Colors.white,
+    return Tooltip(
+      message: tooltip,
+      child: Pressable(
+        onTap: onTap,
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(
+            child: Container(
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: background,
+                shape: BoxShape.circle,
+              ),
+              child: child,
             ),
           ),
-        ],
+        ),
       ),
     );
   }
-}
-
-/// Yesil konusma baloncugu: daire + sol alt kuyruk.
-class _WhatsAppBubblePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final green = Paint()..color = const Color(0xFF25D366);
-    final center = Offset(size.width * .5, size.height * .46);
-    final radius = size.width * .42;
-
-    final tail = Path()
-      ..moveTo(size.width * .30, size.height * .74)
-      ..lineTo(size.width * .14, size.height * .96)
-      ..lineTo(size.width * .46, size.height * .86)
-      ..close();
-
-    canvas.drawPath(tail, green);
-    canvas.drawCircle(center, radius, green);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -265,8 +265,15 @@ class DailyTaskService {
   }
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
-    if (statusCode == 401 || statusCode == 403) {
+    if (statusCode == 401) {
       throw const DailyTaskException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+    // 403 oturumun degil, sunucunun yetki cevabi: kullaniciya tekrar giris
+    // yaptirmak yerine gecici bir aksaklik oldugunu soylemek dogru olan.
+    if (statusCode == 403) {
+      throw const DailyTaskException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
     String? message;
     try {

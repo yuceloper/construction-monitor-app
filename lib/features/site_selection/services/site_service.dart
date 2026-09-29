@@ -84,8 +84,13 @@ class SiteService {
   }
 
   Never _throwForStatus(int statusCode, String fallback) {
-    if (statusCode == 401 || statusCode == 403) {
+    if (statusCode == 401) {
       throw const SiteException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+    if (statusCode == 403) {
+      throw const SiteException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
     throw SiteException('$fallback Sunucu hatası: $statusCode');
   }
