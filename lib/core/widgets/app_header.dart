@@ -457,8 +457,10 @@ class BreadcrumbBar extends StatelessWidget {
     final c = context.colors;
     final parentLabel = parent;
 
+    final hasParent = parentLabel != null && parentLabel.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 4, 20, 14),
+      padding: const EdgeInsets.fromLTRB(10, 2, 18, 12),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: c.border2)),
       ),
@@ -467,54 +469,76 @@ class BreadcrumbBar extends StatelessWidget {
         children: [
           Pressable(
             onTap: onBack,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
+            child: const Padding(
+              // Harflerin gorsel merkezi kutunun biraz altinda kaldigi icin
+              // ok 1.5dp asagi aliniyor.
+              padding: EdgeInsets.fromLTRB(10, 11.5, 10, 8.5),
+              child: _BackChevron(),
             ),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (parentLabel != null && parentLabel.isNotEmpty)
-                  Pressable(
-                    onTap: onParentTap,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Text(
-                        parentLabel.toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: .6,
-                          color: c.accent,
-                        ),
-                      ),
-                    ),
-                  ),
-                Text(
-                  title,
+          if (hasParent) ...[
+            // Ust sayfa adi basliktan once, ayni satirda. Marka renginde
+            // oldugu icin dokunulabilir oldugu anlasiliyor.
+            Pressable(
+              onTap: onParentTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  parentLabel,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontFamily: kDisplay,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                    letterSpacing: -.4,
-                    color: c.ink,
+                    fontFamily: kBody,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: c.accent,
                   ),
                 ),
-              ],
+              ),
+            ),
+            // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7),
+              child: Text(
+                '/',
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 17,
+                  color: c.border2,
+                ),
+              ),
+            ),
+          ],
+          Flexible(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 21,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.4,
+                color: c.ink,
+              ),
             ),
           ),
-          ?trailing,
+          if (trailing != null) ...[const Spacer(), trailing!],
         ],
       ),
+    );
+  }
+}
+
+/// Geri oku; rengini temadan kendisi okuyor.
+class _BackChevron extends StatelessWidget {
+  const _BackChevron();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      LucideIcons.chevronLeft,
+      size: 24,
+      color: context.colors.ink,
     );
   }
 }
