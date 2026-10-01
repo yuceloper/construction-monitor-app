@@ -80,7 +80,7 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Süreç aşamaları yüklenirken beklenmeyen bir hata oluştu.';
+        _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.';
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);

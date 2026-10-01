@@ -69,7 +69,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Alt işler yüklenirken beklenmeyen bir hata oluştu.');
+      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -119,7 +119,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       await _loadWorks();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Değişiklikler kaydedilirken beklenmeyen bir hata oluştu.');
+      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

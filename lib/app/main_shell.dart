@@ -109,11 +109,11 @@ class _MainShellState extends State<MainShell> {
                         label: 'Ana Sayfa',
                       ),
                       const BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.refreshCw, size: 24),
+                        icon: Icon(LucideIcons.chartGantt, size: 24),
                         label: 'Süreç Takip',
                       ),
                       const BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.list, size: 24),
+                        icon: Icon(LucideIcons.clipboardList, size: 24),
                         label: 'Günlük İşler',
                       ),
                       BottomNavigationBarItem(
@@ -140,7 +140,7 @@ class _NotificationNavIcon extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        const Icon(LucideIcons.bell, size: 24),
+        const Icon(LucideIcons.bellRing, size: 24),
         if (count > 0)
           Positioned(
             right: -10,

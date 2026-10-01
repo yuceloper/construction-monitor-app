@@ -82,7 +82,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
-      if (mounted) setState(() => _errorMessage = 'PDF açılırken beklenmeyen bir hata oluştu.');
+      if (mounted) setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     }
   }
 
@@ -100,7 +100,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
-      if (mounted) setState(() => _errorMessage = 'PDF açılırken beklenmeyen bir hata oluştu.');
+      if (mounted) setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     }
   }
 

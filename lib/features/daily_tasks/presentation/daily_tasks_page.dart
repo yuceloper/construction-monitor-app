@@ -46,7 +46,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Günlük işler yüklenirken beklenmeyen bir hata oluştu.');
+      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

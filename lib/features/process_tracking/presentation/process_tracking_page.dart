@@ -59,7 +59,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Projeler yüklenirken beklenmeyen bir hata oluştu.';
+        _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.';
       });
     } finally {
       if (mounted) {
@@ -336,7 +336,7 @@ class _ProjectRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 15, 16, 15),
         decoration: BoxDecoration(
           color: c.surface2,
-          border: Border(top: BorderSide(color: first ? c.border : c.line)),
+          border: Border(top: BorderSide(color: first ? c.border : c.border2)),
         ),
         child: Row(
           children: [
