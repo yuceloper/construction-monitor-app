@@ -251,16 +251,19 @@ class _SectionCard extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
               child: Row(
                 children: [
+                  // Kutu, yanindaki iki satirlik yazi blogu ile ayni
+                  // yukseklikte; simge de kutunun yarisini doldurarak
+                  // basligin agirligina denk geliyor.
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: c.inset,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(13),
                     ),
-                    child: Icon(icon, size: 25, color: c.accent),
+                    child: Icon(icon, size: 24, color: c.accent),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 13),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,16 +272,22 @@ class _SectionCard extends StatelessWidget {
                           title,
                           style: TextStyle(
                             fontFamily: kDisplay,
-                            fontSize: 24,
+                            fontSize: 21,
                             fontWeight: FontWeight.w700,
+                            height: 1.15,
                             letterSpacing: -.4,
                             color: c.ink,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 1),
                         Text(
                           countLabel,
-                          style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 13.5,
+                            height: 1.3,
+                            color: c.muted,
+                          ),
                         ),
                       ],
                     ),
@@ -287,7 +296,7 @@ class _SectionCard extends StatelessWidget {
                     turns: expanded ? .5 : 0,
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOut,
-                    child: Icon(LucideIcons.chevronDown, size: 26, color: c.sub),
+                    child: Icon(LucideIcons.chevronDown, size: 22, color: c.sub),
                   ),
                 ],
               ),
