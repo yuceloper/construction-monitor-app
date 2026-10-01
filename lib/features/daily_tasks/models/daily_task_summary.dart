@@ -50,6 +50,17 @@ class DailyTaskSummary {
   bool get isCompleted => status == 'COMPLETED';
   String get typeLabel => projectType == 'SHOP' ? 'Dükkanlar' : 'Evler';
 
+  String get statusLabel {
+    switch (status) {
+      case 'COMPLETED':
+        return 'Tamamlandı';
+      case 'IN_PROGRESS':
+        return 'Devam Ediyor';
+      default:
+        return 'Başlanacak';
+    }
+  }
+
   String get priorityLabel {
     switch (priority) {
       case 'HIGH':

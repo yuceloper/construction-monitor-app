@@ -83,13 +83,6 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                 ScreenTitleBar(
                   title: 'Günlük İşler',
                   onBack: () => context.go('/dashboard'),
-                  // Buton listenin ustunde yuzerken alttaki kartlarin
-                  // onceligini ortuyordu; basligin yaninda sabit duruyor.
-                  trailing: SmallButton(
-                    label: 'Ekle',
-                    icon: LucideIcons.plus,
-                    onTap: _openCreate,
-                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
@@ -118,6 +111,21 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                         ),
                       ],
                     ),
+                  ),
+                ),
+                // Ekle butonu sekmelerin hemen altinda, listenin ustunde:
+                // listeyi ortmuyor ve kaydirmadan hep elde.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
+                  child: Row(
+                    children: [
+                      const Spacer(),
+                      SmallButton(
+                        label: 'Ekle',
+                        icon: LucideIcons.plus,
+                        onTap: _openCreate,
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(child: _buildContent()),
@@ -189,6 +197,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
         itemBuilder: (_, index) => _TaskCard(
           task: _tasks[index],
           onTap: () => _openTask(_tasks[index]),
+          showStatus: _showAll,
         ),
       ),
     );
@@ -235,7 +244,15 @@ class _TaskCard extends StatelessWidget {
   final DailyTaskSummary task;
   final VoidCallback onTap;
 
-  const _TaskCard({required this.task, required this.onTap});
+  /// Tum Isler sekmesinde tamamlanmis isler de listelendigi icin
+  /// karttan hangi durumda oldugu okunabiliyor.
+  final bool showStatus;
+
+  const _TaskCard({
+    required this.task,
+    required this.onTap,
+    this.showStatus = false,
+  });
 
   Color badgeColor(AppColors c) {
     switch (task.priority) {
@@ -303,6 +320,29 @@ class _TaskCard extends StatelessWidget {
                           style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.sub),
                         ),
                       ),
+                      if (showStatus) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: c.inset,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: c.border2),
+                          ),
+                          child: Text(
+                            task.statusLabel,
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              color: c.sub,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       Container(
                         constraints: const BoxConstraints(minWidth: 88),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

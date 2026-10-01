@@ -119,6 +119,11 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       if (!mounted) return;
       setState(() => _task = task);
       _show('Günlük iş güncellendi.');
+      // Guncellemeden sonra listeye donuluyor ki yapilan degisiklik
+      // listede goruneblisin.
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (!mounted) return;
+      context.pop(true);
     } on DailyTaskException catch (error) {
       if (mounted) _show(error.message);
     } finally {
