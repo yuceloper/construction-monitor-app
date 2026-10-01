@@ -67,18 +67,18 @@ class _DashboardPageState extends State<DashboardPage>
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    const gap = 18.0;
+                    const gap = 14.0;
 
-                    // Kartlar ekranin buyuk kismini doldurur; geriye kalan
-                    // pay ustte ve altta esit bolunur, boylece ne serit ile
-                    // kartlar arasinda ne de altta tek bir olu bosluk kalir.
-                    // Satirlar sabit ve derli toplu; artan yukseklik ana
-                    // kartlara gider, boylece ekran altinda bosluk kalmaz.
-                    const row = 68.0;
-                    var primary =
-                        constraints.maxHeight - gap - 4 - row * 3;
-                    if (primary > 430) primary = 430;
-                    if (primary < 230) primary = 230;
+                    // Ana kartlar kisaldi; alttaki uc giris ayri birer panel
+                    // oldugu icin aralarinda bosluk var. Artan pay ustte ve
+                    // altta esit bolunur.
+                    const row = 72.0;
+                    var primary = constraints.maxHeight -
+                        gap -
+                        (row * 3 + gap * 2) -
+                        gap;
+                    if (primary > 300) primary = 300;
+                    if (primary < 210) primary = 210;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,57 +115,47 @@ class _DashboardPageState extends State<DashboardPage>
                           ),
                         ),
                         const SizedBox(height: gap),
-                        // Ikincil uc giris ayri kart degil, tek kutuda bolunmus
-                        // satirlar: tek nesneye inince ana ikili one cikiyor.
+                        // Her giris kendi panelinde duruyor.
                         _entering(
                           3,
-                          Container(
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              color: c.surface,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(color: c.border),
-                              boxShadow: kLiftShadow,
+                          SizedBox(
+                            height: row,
+                            child: _SecondaryCard(
+                              title: 'Paydaşlar',
+                              icon: LucideIcons.users,
+                              color: c.violet,
+                              onTap: () => context.go('/stakeholders'),
                             ),
-                            child: Column(
-                              children: [
-                                SizedBox(
-                                  height: row,
-                                  child: _SecondaryRow(
-                                    title: 'Paydaşlar',
-                                    icon: LucideIcons.users,
-                                    color: c.violet,
-                                    onTap: () => context.go('/stakeholders'),
+                          ),
+                        ),
+                        const SizedBox(height: gap),
+                        _entering(
+                          4,
+                          SizedBox(
+                            height: row,
+                            child: _SecondaryCard(
+                              title: 'İSG Takip',
+                              icon: LucideIcons.shieldCheck,
+                              color: c.warn,
+                              onTap: () => context.go('/safety'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: gap),
+                        _entering(
+                          5,
+                          SizedBox(
+                            height: row,
+                            child: ValueListenableBuilder<int>(
+                              valueListenable: NotificationUnreadCount.value,
+                              builder: (context, unreadCount, _) =>
+                                  _SecondaryCard(
+                                    title: 'Bildirimler',
+                                    icon: LucideIcons.bellRing,
+                                    color: c.bad,
+                                    badgeCount: unreadCount,
+                                    onTap: () => context.go('/notifications'),
                                   ),
-                                ),
-                                _RowDivider(color: c.line),
-                                SizedBox(
-                                  height: row,
-                                  child: _SecondaryRow(
-                                    title: 'İSG Takip',
-                                    icon: LucideIcons.hardHat,
-                                    color: c.warn,
-                                    onTap: () => context.go('/safety'),
-                                  ),
-                                ),
-                                _RowDivider(color: c.line),
-                                SizedBox(
-                                  height: row,
-                                  child: ValueListenableBuilder<int>(
-                                    valueListenable:
-                                        NotificationUnreadCount.value,
-                                    builder: (context, unreadCount, _) =>
-                                        _SecondaryRow(
-                                          title: 'Bildirimler',
-                                          icon: LucideIcons.bellRing,
-                                          color: c.bad,
-                                          badgeCount: unreadCount,
-                                          onTap: () =>
-                                              context.go('/notifications'),
-                                        ),
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                         ),
@@ -178,22 +168,6 @@ class _DashboardPageState extends State<DashboardPage>
           ],
         ),
       ),
-    );
-  }
-}
-
-/// Gruplu listenin ayiricisi: ikon sutununu gecip basliklarin hizasindan
-/// basliyor, boylece uc satir tek bir nesne gibi okunuyor.
-class _RowDivider extends StatelessWidget {
-  const _RowDivider({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 51),
-      child: Divider(height: 1, thickness: 1, color: color),
     );
   }
 }
@@ -397,13 +371,12 @@ class _PrimaryCard extends StatelessWidget {
   }
 }
 
-/// Ikincil giris satiri.
+/// Ikincil giris: kendi panelinde, ana kartlarla ayni ikon yapisiyla.
 ///
-/// Basliklar ana kartlarla ayni yazi tipinde, ayni kalinlikta ve ayni renkte;
-/// aradaki tek fark boyut, boylece liste ikinci planda kaliyor ama sonradan
-/// eklenmis gibi durmuyor.
-class _SecondaryRow extends StatelessWidget {
-  const _SecondaryRow({
+/// Ikon ana kartlardaki gibi tonlu bir karenin icinde; aradaki tek fark
+/// olculer, boylece bes giris ayni dili konusuyor.
+class _SecondaryCard extends StatelessWidget {
+  const _SecondaryCard({
     required this.title,
     required this.icon,
     required this.color,
@@ -422,12 +395,28 @@ class _SecondaryRow extends StatelessWidget {
     final c = context.colors;
     return Pressable(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c.border),
+          boxShadow: kLiftShadow,
+        ),
         child: Row(
           children: [
-            Icon(icon, size: 21, color: color),
-            const SizedBox(width: 14),
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Color.lerp(c.surface, color, .14),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, size: 21, color: color),
+            ),
+            const SizedBox(width: 13),
             Expanded(
               child: Text(
                 title,
