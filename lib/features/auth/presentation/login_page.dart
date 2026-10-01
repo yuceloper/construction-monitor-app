@@ -125,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                             controller: _usernameController,
                             enabled: !_isLoading,
                             textInputAction: TextInputAction.next,
-                            inputFormatters: [LengthLimitingTextInputFormatter(50)],
+                            inputFormatters: [LengthLimitingTextInputFormatter(25)],
                             style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
                             cursorColor: c.accent,
                             decoration: _inputDecoration(c),
