@@ -269,8 +269,8 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         const SizedBox(height: 10),
                         Row(
                           children: [
-                            Icon(LucideIcons.user, size: 18, color: c.muted),
-                            const SizedBox(width: 6),
+                            Icon(LucideIcons.user, size: 17, color: c.muted),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 item.contactPerson,
@@ -288,16 +288,24 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         ),
                       ],
                       if (item.phoneNumber.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          item.phoneNumber,
-                          style: TextStyle(
-                            fontFamily: kBody,
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: .2,
-                            color: c.sub,
-                          ),
+                        const SizedBox(height: 5),
+                        // Numara tek basina bosta duruyordu; ustundeki kisi
+                        // satiriyla ayni ritme girdi.
+                        Row(
+                          children: [
+                            Icon(LucideIcons.phone, size: 17, color: c.muted),
+                            const SizedBox(width: 8),
+                            Text(
+                              item.phoneNumber,
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: .3,
+                                color: c.sub,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],
