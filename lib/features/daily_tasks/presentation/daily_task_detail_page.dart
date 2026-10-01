@@ -61,7 +61,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       setState(() {
         _task = task;
         _noteController.text = task.notes.isNotEmpty ? task.notes : task.title;
-        _status = task.status == 'COMPLETED' ? 'COMPLETED' : 'IN_PROGRESS';
+        _status = const {'TODO', 'IN_PROGRESS', 'COMPLETED'}.contains(task.status)
+            ? task.status
+            : 'TODO';
       });
     } on DailyTaskException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
@@ -383,6 +385,13 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
               items: [
                 DropdownMenuItem(
+                  value: 'TODO',
+                  child: Text(
+                    'Başlanacak',
+                    style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
+                  ),
+                ),
+                DropdownMenuItem(
                   value: 'IN_PROGRESS',
                   child: Text(
                     'Devam Ediyor',
@@ -397,7 +406,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   ),
                 ),
               ],
-              onChanged: _isSaving ? null : (value) => setState(() => _status = value ?? 'IN_PROGRESS'),
+              onChanged: _isSaving
+                  ? null
+                  : (value) => setState(() => _status = value ?? _status),
               decoration: InputDecoration(
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
