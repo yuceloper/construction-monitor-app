@@ -286,23 +286,23 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                         ),
                                       ),
                                     ),
-                                    if (work.hasDependency) ...[
-                                      const SizedBox(width: 8),
-                                      Tooltip(
-                                        message: 'Bağımlı iş var',
-                                        child: StatusBadge(
-                                          icon: LucideIcons.link,
-                                          color: c.warn,
-                                        ),
-                                      ),
-                                    ],
                                     if (work.hasWarning) ...[
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 8),
                                       Tooltip(
                                         message: 'Uyarı var',
                                         child: StatusBadge(
                                           icon: LucideIcons.triangleAlert,
                                           color: c.bad,
+                                        ),
+                                      ),
+                                    ],
+                                    if (work.hasDependency) ...[
+                                      const SizedBox(width: 6),
+                                      Tooltip(
+                                        message: 'Bağımlı iş var',
+                                        child: StatusBadge(
+                                          icon: LucideIcons.link,
+                                          color: c.warn,
                                         ),
                                       ),
                                     ],

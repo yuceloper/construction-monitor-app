@@ -97,7 +97,10 @@ class EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Center(
+    // Blok dikeyde ortalanmiyor; ekranin ust bolumunde duruyor ki
+    // basligin hemen altindan okunmaya baslasin.
+    return Align(
+      alignment: const Alignment(0, -.45),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
         child: FadeSlideIn(
@@ -112,12 +115,11 @@ class EmptyView extends StatelessWidget {
                   title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: kDisplay,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.3,
-                    height: 1.15,
-                    color: c.ink,
+                    fontFamily: kBody,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                    color: c.sub,
                   ),
                 ),
                 if (message != null) ...[

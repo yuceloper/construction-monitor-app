@@ -99,6 +99,16 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
     }
   }
 
+  /// Blok detayindaki bir is kaleminden o isin detayina gidiyor.
+  Future<void> _openWorkDetail(WorkItemSummary item) async {
+    await context.push(
+      '/process/${Uri.encodeComponent(widget.blockName)}/work/${item.id}'
+      '?title=${Uri.encodeComponent(item.title)}',
+    );
+    if (!mounted) return;
+    await _loadData();
+  }
+
   Future<void> _openUpdate() async {
     await context.push(
       '/process/${Uri.encodeComponent(widget.blockName)}/update?projectId=${widget.projectId}',
@@ -269,6 +279,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
             stage: stage,
             expanded: expanded,
             onTap: () => setState(() => _expandedIndex = expanded ? null : index),
+            onItemTap: _openWorkDetail,
           );
         },
       ),
@@ -287,8 +298,14 @@ class _StageCard extends StatelessWidget {
   final _ProcessStage stage;
   final bool expanded;
   final VoidCallback onTap;
+  final ValueChanged<WorkItemSummary> onItemTap;
 
-  const _StageCard({required this.stage, required this.expanded, required this.onTap});
+  const _StageCard({
+    required this.stage,
+    required this.expanded,
+    required this.onTap,
+    required this.onItemTap,
+  });
 
   Color _statusColor(AppColors c) {
     switch (stage.status) {
@@ -399,7 +416,10 @@ class _StageCard extends StatelessWidget {
                           )
                         : Column(
                             children: stage.items.map((item) {
-                              return Padding(
+                              // Is kalemine dokununca kendi detayina gidiliyor.
+                              return Pressable(
+                                onTap: () => onItemTap(item),
+                                child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 9),
                                 child: Row(
                                   children: [
@@ -453,6 +473,7 @@ class _StageCard extends StatelessWidget {
                                       ),
                                     ],
                                   ],
+                                ),
                                 ),
                               );
                             }).toList(),

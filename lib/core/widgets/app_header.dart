@@ -397,7 +397,8 @@ class ScreenTitleBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: c.border)),
+        // Ayni tonda oldugu icin zeminde kayboluyordu.
+        border: Border(bottom: BorderSide(color: c.border2)),
       ),
       child: Row(
         children: [
@@ -459,7 +460,7 @@ class BreadcrumbBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(10, 4, 20, 14),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: c.border)),
+        border: Border(bottom: BorderSide(color: c.border2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,

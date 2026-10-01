@@ -184,7 +184,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: EmptyView(
-                icon: LucideIcons.house,
+                icon: LucideIcons.blocks,
                 title: 'Bu şantiyede tanımlı blok bulunmamaktadır.',
               ),
             )
