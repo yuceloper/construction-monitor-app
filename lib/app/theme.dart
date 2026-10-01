@@ -19,6 +19,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.border,
     required this.border2,
     required this.line,
+    required this.headerLine,
     required this.ink,
     required this.sub,
     required this.muted,
@@ -43,6 +44,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color border; //    card edge
   final Color border2; //   strong edge, input outline
   final Color line; //      row divider
+  final Color headerLine; // baslik seridinin alt ayraci
   final Color ink; //       primary text and primary button
   final Color sub; //       secondary text
   final Color muted; //     helper text
@@ -70,6 +72,7 @@ class AppColors extends ThemeExtension<AppColors> {
     border: Color(0xFFE0E6EA),
     border2: Color(0xFFD2DAE0),
     line: Color(0xFFEDF1F4),
+    headerLine: Color(0xFFC3CCD4),
     ink: Color(0xFF10141A),
     sub: Color(0xFF545D67),
     muted: Color(0xFF8B949D),
@@ -95,6 +98,7 @@ class AppColors extends ThemeExtension<AppColors> {
     border: Color(0xFF242C36),
     border2: Color(0xFF2E3742),
     line: Color(0xFF1F262F),
+    headerLine: Color(0xFF39434F),
     ink: Color(0xFFF0F4F8),
     sub: Color(0xFFA8B2BD),
     muted: Color(0xFF77828F),
@@ -129,6 +133,7 @@ class AppColors extends ThemeExtension<AppColors> {
       border: m(border, other.border),
       border2: m(border2, other.border2),
       line: m(line, other.line),
+      headerLine: m(headerLine, other.headerLine),
       ink: m(ink, other.ink),
       sub: m(sub, other.sub),
       muted: m(muted, other.muted),

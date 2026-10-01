@@ -377,8 +377,78 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
   }
 }
 
-/// The row under the brand: back arrow and the screen's title, where the app
-/// had it before.
+/// Baslik seridinin alt kenarindaki ayrac cizgisi.
+///
+/// Kalinligi cihazin piksel oranina gore tam piksele yuvarlaniyor. Daha
+/// once kenarlik (border) olarak ciziliyordu; serit yuksekligi sayfadan
+/// sayfaya degistigi icin cizgi kimi ekranda 2, kimi ekranda 3 cihaz
+/// pikseline oturuyor, bu yuzden bazi sayfalarda daha soluk gorunuyordu.
+class TitleBarDivider extends StatelessWidget {
+  const TitleBarDivider({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final oran = MediaQuery.devicePixelRatioOf(context);
+    final kalinlik = oran.roundToDouble() / oran;
+    return Container(height: kalinlik, color: context.colors.headerLine);
+  }
+}
+
+/// Iki baslik seridinin ortak kabugu: ayni ic bosluk, ayni geri oku,
+/// ayni yukseklik. Ayrac her ekranda ayni yere dusuyor.
+class _TitleBarShell extends StatelessWidget {
+  const _TitleBarShell({
+    required this.onBack,
+    required this.child,
+    this.trailing,
+  });
+
+  final VoidCallback onBack;
+  final Widget child;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
+          child: Row(
+            children: [
+              // Yazi kutusunun ustunde altindan daha cok bosluk var; kutular
+              // ortalandiginda ok, harflerin gorsel merkezinin 1.5dp uzerinde
+              // kaliyordu. Ok o kadar asagi alindi, dokunma alani 44 kaldi.
+              Pressable(
+                onTap: onBack,
+                child: const Padding(
+                  padding: EdgeInsets.fromLTRB(10, 11.5, 10, 8.5),
+                  child: _BackChevron(),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Expanded(child: child),
+              ?trailing,
+            ],
+          ),
+        ),
+        const TitleBarDivider(),
+      ],
+    );
+  }
+}
+
+/// Butun basliklarin ortak yazi bicimi. Tek baslikta da breadcrumb'in
+/// icinde de ayni; boylece sayfa degisince baslik buyuyup kucumuyor.
+TextStyle _titleStyle(AppColors c) => TextStyle(
+  fontFamily: kDisplay,
+  fontSize: 21,
+  fontWeight: FontWeight.w700,
+  letterSpacing: -.4,
+  color: c.ink,
+);
+
+/// Alt ekranlarin basligi: geri oku ve sayfanin adi.
 class ScreenTitleBar extends StatelessWidget {
   const ScreenTitleBar({
     super.key,
@@ -393,49 +463,25 @@ class ScreenTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
-      decoration: BoxDecoration(
-        // Ayni tonda oldugu icin zeminde kayboluyordu.
-        border: Border(bottom: BorderSide(color: c.border2)),
-      ),
-      child: Row(
-        children: [
-          // Yazi kutusunun ustunde altindan daha cok bosluk var; kutular
-          // ortalandiginda ok, harflerin gorsel merkezinin 1.5dp uzerinde
-          // kaliyordu. Ok o kadar asagi alindi, dokunma alani 44 kaldi.
-          Pressable(
-            onTap: onBack,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 11.5, 10, 8.5),
-              child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
-            ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 25,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.4,
-                color: c.ink,
-              ),
-            ),
-          ),
-          ?trailing,
-        ],
+    return _TitleBarShell(
+      onBack: onBack,
+      trailing: trailing,
+      child: Text(
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: _titleStyle(context.colors),
       ),
     );
   }
 }
 
 /// Alt ekranlarin basligi: geri oku, ust sayfanin adi ve bulunulan yer.
-/// Butun alt ekranlarda ayni hizada ve ayni olculerde duruyor.
+///
+/// Ust sayfanin adi, o sayfadaki basligin birebir aynisi: ayni yazi tipi,
+/// ayni olcu, ayni yer. Boylece blok detayindan guncelleme sayfasina
+/// gecildiginde blok adi oynamiyor, sadece arkasina bulunulan sayfa
+/// ekleniyor.
 class BreadcrumbBar extends StatelessWidget {
   const BreadcrumbBar({
     super.key,
@@ -456,74 +502,45 @@ class BreadcrumbBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final parentLabel = parent;
+    final stil = _titleStyle(c);
 
-    final hasParent = parentLabel != null && parentLabel.isNotEmpty;
+    if (parentLabel == null || parentLabel.isEmpty) {
+      return ScreenTitleBar(
+        title: title,
+        onBack: onBack,
+        trailing: trailing,
+      );
+    }
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 2, 18, 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: c.border2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Pressable(
-            onTap: onBack,
-            child: const Padding(
-              // Harflerin gorsel merkezi kutunun biraz altinda kaldigi icin
-              // ok 1.5dp asagi aliniyor.
-              padding: EdgeInsets.fromLTRB(10, 11.5, 10, 8.5),
-              child: _BackChevron(),
-            ),
-          ),
-          if (hasParent) ...[
-            // Ust sayfa adi basliktan once, ayni satirda. Marka renginde
-            // oldugu icin dokunulabilir oldugu anlasiliyor.
+    // Dar ekranlarda en uzun baslik da kesilmesin diye yazi kirpilmak
+    // yerine az bir miktar kuculuyor.
+    return _TitleBarShell(
+      onBack: onBack,
+      trailing: trailing,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Pressable(
               onTap: onParentTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  parentLabel,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: c.accent,
-                  ),
-                ),
-              ),
+              child: Text(parentLabel, maxLines: 1, style: stil),
             ),
             // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 '/',
-                style: TextStyle(
-                  fontFamily: kBody,
-                  fontSize: 17,
+                style: stil.copyWith(
+                  fontWeight: FontWeight.w400,
                   color: c.border2,
                 ),
               ),
             ),
+            Text(title, maxLines: 1, style: stil),
           ],
-          Flexible(
-            child: Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 21,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.4,
-                color: c.ink,
-              ),
-            ),
-          ),
-          if (trailing != null) ...[const Spacer(), trailing!],
-        ],
+        ),
       ),
     );
   }
