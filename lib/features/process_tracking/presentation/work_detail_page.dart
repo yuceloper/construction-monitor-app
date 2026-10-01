@@ -76,6 +76,9 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
             title: const Text('Uyarı Ekle'),
+            // Klavye acilinca ya da uzun bir uyari yazilinca pencere
+            // tasiyordu; icerik kendi icinde kayabiliyor.
+            scrollable: true,
             content: SizedBox(
               width: 360,
               child: Column(
@@ -213,9 +216,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         children: [
           _Section(
-            icon: LucideIcons.paperclip,
             title: 'Bağımlı İşler',
-            color: c.warn,
             child: detail.dependencies.isEmpty
                 ? const EmptyState(
                     message: 'Bağımlı iş bulunmuyor.',
@@ -234,9 +235,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
           ),
           const SizedBox(height: 12),
           _Section(
-            icon: LucideIcons.triangleAlert,
             title: 'Uyarılar',
-            color: c.bad,
             action: SmallButton(
               label: 'Ekle',
               icon: LucideIcons.plus,
@@ -265,9 +264,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
           ),
           const SizedBox(height: 12),
           _Section(
-            icon: LucideIcons.history,
             title: 'Tarihçe',
-            color: c.accent,
             child: detail.history.isEmpty
                 ? const EmptyState(
                     message: 'Henüz tarihçe kaydı bulunmuyor.',
@@ -296,16 +293,12 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 /// veri geldikce sekil degistirmiyor.
 class _Section extends StatelessWidget {
   const _Section({
-    required this.icon,
     required this.title,
-    required this.color,
     required this.child,
     this.action,
   });
 
-  final IconData icon;
   final String title;
-  final Color color;
   final Widget child;
   final Widget? action;
 
@@ -319,8 +312,6 @@ class _Section extends StatelessWidget {
         children: [
           Row(
             children: [
-              IconBox(icon: icon, color: color, size: 34),
-              const SizedBox(width: 11),
               Expanded(
                 child: Text(
                   title,
@@ -458,8 +449,10 @@ class _HistoryEntry extends StatelessWidget {
                           color: c.sub,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
+                      const Spacer(),
+                      Icon(LucideIcons.user, size: 15, color: c.muted),
+                      const SizedBox(width: 6),
+                      Flexible(
                         child: Text(
                           item.user,
                           maxLines: 1,
@@ -527,15 +520,19 @@ class _WarningCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'Eklenme: $createdDate',
+                          createdDate,
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 12.5,
-                            color: c.muted,
+                            fontWeight: FontWeight.w600,
+                            color: c.sub,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
+                        const Spacer(),
+                        // Kisi gosterimi gunluk islerdeki ile ayni.
+                        Icon(LucideIcons.user, size: 15, color: c.muted),
+                        const SizedBox(width: 6),
+                        Flexible(
                           child: Text(
                             item.user,
                             maxLines: 1,
@@ -543,8 +540,7 @@ class _WarningCard extends StatelessWidget {
                             style: TextStyle(
                               fontFamily: kBody,
                               fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: c.sub,
+                              color: c.muted,
                             ),
                           ),
                         ),
