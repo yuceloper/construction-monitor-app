@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../app/theme.dart';
+import 'empty_illustration.dart';
 import 'pressable.dart';
 
 /// White card - the body of every screen.
@@ -284,10 +285,9 @@ class StatusChip extends StatelessWidget {
 /// Sunken box for "nothing here" inside a section. It says what to do next
 /// where there is something to do.
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.message, this.icon});
+  const EmptyState({super.key, required this.message});
 
   final String message;
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -302,19 +302,9 @@ class EmptyState extends StatelessWidget {
       ),
       child: Column(
         children: [
-          if (icon != null) ...[
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: c.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: c.border),
-              ),
-              child: Icon(icon, size: 16, color: c.muted),
-            ),
-            const SizedBox(height: 9),
-          ],
+          // Tam ekran bos durumla ayni isaret, kucuk hali.
+          const EmptyIllustration(size: 46),
+          const SizedBox(height: 9),
           Text(
             message,
             textAlign: TextAlign.center,

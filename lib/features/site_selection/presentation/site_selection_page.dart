@@ -305,7 +305,6 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const EmptyView(
-            icon: LucideIcons.mapPin,
             title: 'Bu kullanıcıya atanmış şantiye bulunmuyor.',
           ),
           const SizedBox(height: 14),

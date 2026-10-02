@@ -161,7 +161,6 @@ class _SafetyPageState extends State<SafetyPage> {
               SizedBox(
                 height: constraints.maxHeight,
                 child: const EmptyView(
-                  icon: LucideIcons.shieldCheck,
                   title: 'İSG belgesi bulunmuyor.',
                 ),
               ),

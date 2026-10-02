@@ -667,7 +667,6 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: EmptyState(
                         message: 'Aramanıza uygun blok bulunamadı.',
-                        icon: LucideIcons.search,
                       ),
                     )
                   : ListView(

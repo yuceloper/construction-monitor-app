@@ -225,7 +225,6 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                   padding: EdgeInsets.all(14),
                   child: EmptyState(
                     message: 'Bu süreç için alt iş bulunmuyor.',
-                    icon: LucideIcons.listTodo,
                   ),
                 )
               : Column(

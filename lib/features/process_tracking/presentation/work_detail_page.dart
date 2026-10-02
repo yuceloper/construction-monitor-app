@@ -220,7 +220,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
             child: detail.dependencies.isEmpty
                 ? const EmptyState(
                     message: 'Bağımlı iş bulunmuyor.',
-                    icon: LucideIcons.paperclip,
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,7 +244,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
             child: detail.warnings.isEmpty
                 ? const EmptyState(
                     message: 'Bu iş için uyarı bulunmuyor.',
-                    icon: LucideIcons.triangleAlert,
                   )
                 : Column(
                     children: [
@@ -268,7 +266,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
             child: detail.history.isEmpty
                 ? const EmptyState(
                     message: 'Henüz tarihçe kaydı bulunmuyor.',
-                    icon: LucideIcons.history,
                   )
                 : Column(
                     children: [

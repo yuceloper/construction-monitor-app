@@ -167,7 +167,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
             return const Padding(
               padding: EdgeInsets.only(top: 40),
               child: EmptyView(
-                icon: LucideIcons.bellRing,
                 title: 'Son 15 günde bildirim bulunmuyor.',
               ),
             );
