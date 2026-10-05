@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/work_item_detail.dart';
 import '../services/work_item_service.dart';
 
@@ -116,7 +117,9 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                 onPressed: () {
                   final value = draft.trim();
                   if (value.isEmpty) {
-                    setDialogState(() => validationMessage = 'Uyarı detayı zorunludur.');
+                    setDialogState(
+                      () => validationMessage = 'Uyarı detayı zorunludur.',
+                    );
                     return;
                   }
                   Navigator.of(dialogContext).pop(value);
@@ -136,10 +139,177 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
       await _loadDetail();
     } on WorkItemException catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.message)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
     } finally {
       if (mounted) setState(() => _isAddingWarning = false);
     }
+  }
+
+  /// Uyari metnini duzenler. Pencere ekleme penceresiyle ayni; alan dolu
+  /// geliyor ve buton "Kaydet" yaziyor.
+  Future<void> _editWarning(WorkItemWarning warning) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        final controller = TextEditingController(text: warning.text);
+        String? validationMessage;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Uyarıyı Düzenle'),
+            scrollable: true,
+            content: SizedBox(
+              width: 360,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    autofocus: true,
+                    controller: controller,
+                    minLines: 3,
+                    maxLines: 5,
+                    maxLength: 500,
+                    inputFormatters: [LengthLimitingTextInputFormatter(500)],
+                    decoration: const InputDecoration(
+                      hintText: 'Lütfen detay giriniz.',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  if (validationMessage != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      validationMessage!,
+                      style: TextStyle(color: context.colors.bad, fontSize: 13),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('İptal'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final value = controller.text.trim();
+                  if (value.isEmpty) {
+                    setDialogState(
+                      () => validationMessage = 'Uyarı detayı zorunludur.',
+                    );
+                    return;
+                  }
+                  Navigator.of(dialogContext).pop(value);
+                },
+                child: const Text('Kaydet'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (result == null || !mounted) return;
+    if (result == warning.text) return;
+    setState(() => _isAddingWarning = true);
+    try {
+      await _service.updateWarning(_id, warning.id, result);
+      await _loadDetail();
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _isAddingWarning = false);
+    }
+  }
+
+  /// Uyariyi siler. Geri alinamadigi icin once onay soruluyor.
+  Future<void> _deleteWarning(WorkItemWarning warning) async {
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Uyarıyı Sil'),
+        content: const Text('Bu uyarı silinecek. Devam edilsin mi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: context.colors.bad),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (onay != true || !mounted) return;
+    setState(() => _isAddingWarning = true);
+    try {
+      await _service.deleteWarning(_id, warning.id);
+      await _loadDetail();
+    } on WorkItemException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    } finally {
+      if (mounted) setState(() => _isAddingWarning = false);
+    }
+  }
+
+  /// Kartin ... dugmesine basilinca acilan panel.
+  Future<void> _openWarningMenu(WorkItemWarning warning) async {
+    final c = context.colors;
+    final secim = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Sizes.rCard),
+          border: Border.all(color: c.border),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: c.border2,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 10),
+              _WarningMenuItem(
+                icon: LucideIcons.pencil,
+                label: 'Düzenle',
+                onTap: () => Navigator.of(sheetContext).pop('duzenle'),
+              ),
+              Divider(height: 1, color: c.line),
+              _WarningMenuItem(
+                icon: LucideIcons.trash2,
+                label: 'Sil',
+                danger: true,
+                onTap: () => Navigator.of(sheetContext).pop('sil'),
+              ),
+              const SizedBox(height: 6),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (secim == 'duzenle') await _editWarning(warning);
+    if (secim == 'sil') await _deleteWarning(warning);
   }
 
   static String _formatDate(DateTime date) {
@@ -218,9 +388,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
           _Section(
             title: 'Bağımlı İşler',
             child: detail.dependencies.isEmpty
-                ? const EmptyState(
-                    message: 'Bağımlı iş bulunmuyor.',
-                  )
+                ? const EmptyState(message: 'Bağımlı iş bulunmuyor.')
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -242,9 +410,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
               onTap: _addWarning,
             ),
             child: detail.warnings.isEmpty
-                ? const EmptyState(
-                    message: 'Bu iş için uyarı bulunmuyor.',
-                  )
+                ? const EmptyState(message: 'Bu iş için uyarı bulunmuyor.')
                 : Column(
                     children: [
                       for (final item in detail.warnings)
@@ -255,6 +421,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                           child: _WarningCard(
                             item: item,
                             createdDate: _date(item.createdAt),
+                            onMenu: () => _openWarningMenu(item),
                           ),
                         ),
                     ],
@@ -264,9 +431,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
           _Section(
             title: 'Tarihçe',
             child: detail.history.isEmpty
-                ? const EmptyState(
-                    message: 'Henüz tarihçe kaydı bulunmuyor.',
-                  )
+                ? const EmptyState(message: 'Henüz tarihçe kaydı bulunmuyor.')
                 : Column(
                     children: [
                       for (final item in detail.history)
@@ -289,11 +454,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 /// Bolum dolu da olsa bos da olsa ayni kart icinde duruyor; boylece ekran
 /// veri geldikce sekil degistirmiyor.
 class _Section extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.child,
-    this.action,
-  });
+  const _Section({required this.title, required this.child, this.action});
 
   final String title;
   final Widget child;
@@ -476,8 +637,13 @@ class _HistoryEntry extends StatelessWidget {
 class _WarningCard extends StatelessWidget {
   final WorkItemWarning item;
   final String createdDate;
+  final VoidCallback onMenu;
 
-  const _WarningCard({required this.item, required this.createdDate});
+  const _WarningCard({
+    required this.item,
+    required this.createdDate,
+    required this.onMenu,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -490,7 +656,9 @@ class _WarningCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: overdue ? c.bad.withValues(alpha: .06) : c.inset,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: overdue ? c.bad.withValues(alpha: .28) : c.line),
+        border: Border.all(
+          color: overdue ? c.bad.withValues(alpha: .28) : c.line,
+        ),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -503,15 +671,36 @@ class _WarningCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.text,
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontSize: 15.5,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
-                        color: c.ink,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.text,
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 15.5,
+                              height: 1.4,
+                              fontWeight: FontWeight.w500,
+                              color: c.ink,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        // Dokunma alani 40, gorsel agirlik dusuk: kart
+                        // metnini bastirmasin diye soluk bir ... duruyor.
+                        Pressable(
+                          onTap: onMenu,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(8, 2, 2, 8),
+                            child: Icon(
+                              LucideIcons.ellipsis,
+                              size: 18,
+                              color: c.muted,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 7),
                     Row(
@@ -545,6 +734,48 @@ class _WarningCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Uyari menusundeki tek satir.
+class _WarningMenuItem extends StatelessWidget {
+  const _WarningMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final renk = danger ? c.bad : c.ink;
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, size: 19, color: renk),
+            const SizedBox(width: 13),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: kBody,
+                fontSize: 15.5,
+                fontWeight: FontWeight.w600,
+                color: renk,
               ),
             ),
           ],
