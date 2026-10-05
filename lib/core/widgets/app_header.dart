@@ -50,6 +50,41 @@ class AppHeader extends StatelessWidget {
 class UserChip extends StatelessWidget {
   const UserChip({super.key});
 
+  /// Kutunun en fazla genisligi.
+  static const double _enBoy = 200;
+
+  /// Yazi disinda kalan paylar: sol bosluk + rozet + aradaki bosluk + sag
+  /// bosluk. Ad soyadin sigip sigmadigi bu paylar dusulerek olculuyor.
+  static const double _cerceve = 6 + 36 + 10 + 12;
+
+  /// Ad soyad sigiyorsa oldugu gibi, sigmiyorsa ilk ad ve soyadin bas
+  /// harfi. Yuvarlak rozette zaten bas harfler duruyor, kisi yine
+  /// taniniyor; kutu buyutulse bu kez SAHADA logosu kuculuyordu.
+  static String _adiSigdir(BuildContext context, String adSoyad) {
+    final parcalar = adSoyad.split(' ').where((p) => p.isNotEmpty).toList();
+    if (parcalar.length < 2) return adSoyad;
+
+    final olcek = MediaQuery.textScalerOf(context);
+    double genislik(String metin) {
+      final painter = TextPainter(
+        text: TextSpan(
+          text: metin,
+          style: const TextStyle(
+            fontFamily: kBody,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textScaler: olcek,
+        textDirection: TextDirection.ltr,
+      )..layout();
+      return painter.width;
+    }
+
+    if (genislik(adSoyad) <= _enBoy - _cerceve) return adSoyad;
+    return '${parcalar.first} ${parcalar.last.characters.first}.';
+  }
+
   Future<void> _openSiteSwitcher(BuildContext context) async {
     final selected = await showModalBottomSheet<SiteSummary>(
       context: context,
@@ -81,22 +116,23 @@ class UserChip extends StatelessWidget {
     final first = auth?.firstName ?? '';
     final last = auth?.lastName ?? '';
     final fullName = [first, last].where((p) => p.trim().isNotEmpty).join(' ');
-    final displayName = fullName.isNotEmpty
+    final tamAd = fullName.isNotEmpty
         ? fullName
         : (auth?.username.isNotEmpty == true ? auth!.username : 'Kullanıcı');
+    final displayName = _adiSigdir(context, tamAd);
     final siteName = session.selectedSiteName ?? '';
 
     final letters = [
       if (first.trim().isNotEmpty) first.trim()[0],
       if (last.trim().isNotEmpty) last.trim()[0],
     ].join();
-    final initials = (letters.isEmpty ? displayName.substring(0, 1) : letters)
+    final initials = (letters.isEmpty ? tamAd.characters.first : letters)
         .toUpperCase();
 
     return Pressable(
       onTap: () => _openSiteSwitcher(context),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 200),
+        constraints: const BoxConstraints(maxWidth: _enBoy),
         padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
         decoration: BoxDecoration(
           color: c.surface,
