@@ -377,20 +377,27 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
   }
 }
 
-/// Baslik seridinin alt kenarindaki ayrac cizgisi.
+/// Baslik seridinin alt kenari.
 ///
-/// Kalinligi cihazin piksel oranina gore tam piksele yuvarlaniyor. Daha
-/// once kenarlik (border) olarak ciziliyordu; serit yuksekligi sayfadan
-/// sayfaya degistigi icin cizgi kimi ekranda 2, kimi ekranda 3 cihaz
-/// pikseline oturuyor, bu yuzden bazi sayfalarda daha soluk gorunuyordu.
+/// Duz bir cizgiydi; tablo hissi veriyordu. Yerine cok hafif bir gecis
+/// kondu: ayirma isini goruyor ama cizgi cizmiyor. Ustteki ton her
+/// ekranda ayni, cunku iki baslik serisi de ayni yukseklikte.
 class TitleBarDivider extends StatelessWidget {
   const TitleBarDivider({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final oran = MediaQuery.devicePixelRatioOf(context);
-    final kalinlik = oran.roundToDouble() / oran;
-    return Container(height: kalinlik, color: context.colors.headerLine);
+    final renk = context.colors.headerLine;
+    return Container(
+      height: 10,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [renk.withValues(alpha: .70), renk.withValues(alpha: 0)],
+        ),
+      ),
+    );
   }
 }
 
@@ -528,13 +535,15 @@ class BreadcrumbBar extends StatelessWidget {
               child: Text(parentLabel, maxLines: 1, style: stil),
             ),
             // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
+            // Egik cizgi zeminden 20/255 ayriliyor, ekranda secilmiyordu;
+            // tire hem daha belirgin hem de okurken daha sakin.
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 9),
               child: Text(
-                '/',
+                '\u2013',
                 style: stil.copyWith(
                   fontWeight: FontWeight.w400,
-                  color: c.border2,
+                  color: c.muted,
                 ),
               ),
             ),
