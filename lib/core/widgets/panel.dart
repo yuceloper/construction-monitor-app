@@ -823,9 +823,17 @@ class _ScrollableFieldState extends State<ScrollableField> {
 
   @override
   Widget build(BuildContext context) {
-    return Scrollbar(
+    final c = context.colors;
+    // Varsayilan cubuk kalin ve kare uclu; alanin yuvarlak kosesine ve
+    // odak cizgisine yapisiyordu. Ince, yuvarlak ve kenarlardan icerde.
+    return RawScrollbar(
       controller: _controller,
       thumbVisibility: true,
+      thickness: 4,
+      radius: const Radius.circular(4),
+      crossAxisMargin: 7,
+      mainAxisMargin: 10,
+      thumbColor: c.faint,
       child: widget.builder(_controller),
     );
   }
