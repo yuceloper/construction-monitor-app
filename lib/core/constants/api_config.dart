@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   ApiConfig._();
@@ -10,9 +10,13 @@ class ApiConfig {
       return _definedBaseUrl.replaceFirst(RegExp(r'/$'), '');
     }
 
+    if (kIsWeb) {
+      return 'http://localhost:8080/api/v1';
+    }
+
     // Android emulator reaches the host machine through 10.0.2.2.
     // iOS Simulator can reach the host through localhost.
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:8080/api/v1';
     }
 
