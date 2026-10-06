@@ -86,16 +86,23 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    autofocus: true,
-                    minLines: 3,
-                    maxLines: 5,
-                    maxLength: 500,
-                    inputFormatters: [LengthLimitingTextInputFormatter(500)],
-                    onChanged: (value) => draft = value,
-                    decoration: const InputDecoration(
-                      hintText: 'Lütfen detay giriniz.',
-                      border: OutlineInputBorder(),
+                  ScrollableField(
+                    builder: (scrollController) => TextField(
+                      autofocus: true,
+                      scrollController: scrollController,
+                      minLines: 3,
+                      maxLines: 5,
+                      maxLength: 500,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(500),
+                      ],
+                      onChanged: (value) => draft = value,
+                      decoration: const InputDecoration(
+                        hintText: 'Lütfen detay giriniz.',
+                        border: OutlineInputBorder(),
+                        // Sagda kaydirma cubuguna yer birakiliyor.
+                        contentPadding: EdgeInsets.fromLTRB(12, 14, 20, 14),
+                      ),
                     ),
                   ),
                   if (validationMessage != null) ...[
@@ -165,16 +172,22 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextField(
-                    autofocus: true,
-                    controller: controller,
-                    minLines: 3,
-                    maxLines: 5,
-                    maxLength: 500,
-                    inputFormatters: [LengthLimitingTextInputFormatter(500)],
-                    decoration: const InputDecoration(
-                      hintText: 'Lütfen detay giriniz.',
-                      border: OutlineInputBorder(),
+                  ScrollableField(
+                    builder: (scrollController) => TextField(
+                      autofocus: true,
+                      controller: controller,
+                      scrollController: scrollController,
+                      minLines: 3,
+                      maxLines: 5,
+                      maxLength: 500,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(500),
+                      ],
+                      decoration: const InputDecoration(
+                        hintText: 'Lütfen detay giriniz.',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.fromLTRB(12, 14, 20, 14),
+                      ),
                     ),
                   ),
                   if (validationMessage != null) ...[

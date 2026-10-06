@@ -795,3 +795,38 @@ class AppField extends StatelessWidget {
     );
   }
 }
+
+/// Cok satirli bir metin alanini kaydirma cubuguyla sarar.
+///
+/// Alan kendi icinde kayabiliyordu ama kaydigina dair bir isaret yoktu;
+/// yazinin devami oldugu anlasilmiyordu. Kaydirma denetleyicisini bu
+/// bilesen tutuyor ve kapanirken birakiyor.
+class ScrollableField extends StatefulWidget {
+  const ScrollableField({super.key, required this.builder});
+
+  /// Alani kurar; verilen denetleyiciyi TextField'in scrollController'ina
+  /// baglamak gerekiyor, yoksa cubuk alanla ayni seyi kaydirmaz.
+  final Widget Function(ScrollController controller) builder;
+
+  @override
+  State<ScrollableField> createState() => _ScrollableFieldState();
+}
+
+class _ScrollableFieldState extends State<ScrollableField> {
+  final _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scrollbar(
+      controller: _controller,
+      thumbVisibility: true,
+      child: widget.builder(_controller),
+    );
+  }
+}

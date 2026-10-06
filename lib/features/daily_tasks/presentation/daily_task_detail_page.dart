@@ -488,8 +488,10 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 9),
-                TextField(
+                ScrollableField(
+                  builder: (scrollController) => TextField(
                   controller: _noteController,
+                  scrollController: scrollController,
                   enabled: !_isSaving,
                   minLines: 5,
                   maxLines: 8,
@@ -516,14 +518,13 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                     ),
                     filled: true,
                     fillColor: c.surface2,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 16,
-                    ),
+                    // Sagda kaydirma cubuguna yer birakiliyor.
+                    contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
                     border: border(c.border2),
                     enabledBorder: border(c.border2),
                     disabledBorder: border(c.border),
                     focusedBorder: border(c.accent, 1.8),
+                  ),
                   ),
                 ),
               ],
