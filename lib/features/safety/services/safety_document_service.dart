@@ -113,8 +113,13 @@ class SafetyDocumentService {
   }
 
   Never _throwForResponse(int statusCode, String body) {
-    if (statusCode == 401 || statusCode == 403) {
+    if (statusCode == 401) {
       throw const SafetyDocumentException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+    if (statusCode == 403) {
+      throw const SafetyDocumentException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
     String? message;
     try {

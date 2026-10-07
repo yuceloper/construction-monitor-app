@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/project_summary.dart';
 import '../services/project_service.dart';
 
@@ -15,7 +20,7 @@ class ProcessTrackingPage extends StatefulWidget {
 class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   final _projectService = ProjectService();
 
-  bool _housesExpanded = true;
+  bool _housesExpanded = false;
   bool _shopsExpanded = false;
   bool _isLoading = true;
   String? _errorMessage;
@@ -54,7 +59,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Projeler yüklenirken beklenmeyen bir hata oluştu.';
+        _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.';
       });
     } finally {
       if (mounted) {
@@ -79,34 +84,15 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: Colors.white,
+      color: context.colors.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  children: [
-                    InkWell(
-                      onTap: () => context.go('/dashboard'),
-                      child: const Icon(Icons.arrow_back_ios_new, size: 20),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Süreç Takibi',
-                      style: TextStyle(
-                        fontSize: 23,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            ScreenTitleBar(
+              title: 'Süreç Takibi',
+              onBack: () => context.go('/dashboard'),
             ),
-            const Divider(height: 1),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -115,9 +101,15 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.black),
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
       );
     }
 
@@ -128,21 +120,18 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              Icon(LucideIcons.circleAlert, size: 42, color: c.bad),
               const SizedBox(height: 12),
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15),
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
               ),
               const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: _loadProjects,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Tekrar Dene'),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _loadProjects,
               ),
             ],
           ),
@@ -150,54 +139,65 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
       );
     }
 
+    // Grubu olmayan basliklar hic cizilmiyor; hicbiri yoksa tek satirlik
+    // aciklama kaliyor.
+    final sections = <Widget>[
+      if (_houses.isNotEmpty)
+        _SectionCard(
+          title: 'Evler',
+          countLabel: '${_houses.length} Ev',
+          icon: LucideIcons.house,
+          expanded: _housesExpanded,
+          onTap: () {
+            // Ayni anda tek panel acik kalsin.
+            setState(() {
+              _housesExpanded = !_housesExpanded;
+              if (_housesExpanded) _shopsExpanded = false;
+            });
+          },
+          child: _buildProjectList(projects: _houses),
+        ),
+      if (_shops.isNotEmpty)
+        _SectionCard(
+          title: 'Dükkanlar',
+          countLabel: '${_shops.length} Dükkan',
+          icon: LucideIcons.store,
+          expanded: _shopsExpanded,
+          onTap: () {
+            setState(() {
+              _shopsExpanded = !_shopsExpanded;
+              if (_shopsExpanded) _housesExpanded = false;
+            });
+          },
+          child: _buildProjectList(projects: _shops),
+        ),
+    ];
+
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _loadProjects,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          _SectionCard(
-            title: 'Evler',
-            icon: Icons.home_outlined,
-            expanded: _housesExpanded,
-            onTap: () {
-              setState(() {
-                _housesExpanded = !_housesExpanded;
-              });
-            },
-            child: _buildProjectList(
-              projects: _houses,
-              emptyMessage: 'Henüz ev projesi bulunmuyor.',
-            ),
-          ),
-          const SizedBox(height: 18),
-          _SectionCard(
-            title: 'Dükkanlar',
-            icon: Icons.storefront_outlined,
-            expanded: _shopsExpanded,
-            onTap: () {
-              setState(() {
-                _shopsExpanded = !_shopsExpanded;
-              });
-            },
-            child: _buildProjectList(
-              projects: _shops,
-              emptyMessage: 'Henüz dükkan projesi bulunmuyor.',
-            ),
-          ),
+          if (sections.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: EmptyView(
+                title: 'Bu şantiyede tanımlı blok bulunmamaktadır.',
+              ),
+            )
+          else
+            for (var i = 0; i < sections.length; i++) ...[
+              if (i > 0) const SizedBox(height: 16),
+              sections[i],
+            ],
         ],
       ),
     );
   }
 
-  Widget _buildProjectList({
-    required List<ProjectSummary> projects,
-    required String emptyMessage,
-  }) {
-    if (projects.isEmpty) {
-      return _EmptySection(message: emptyMessage);
-    }
-
+  Widget _buildProjectList({required List<ProjectSummary> projects}) {
     return Column(
       children: projects
           .asMap()
@@ -205,7 +205,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
           .map(
             (entry) => _ProjectRow(
               project: entry.value,
-              index: entry.key,
+              first: entry.key == 0,
               onTap: () => _openProject(entry.value),
             ),
           )
@@ -216,6 +216,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
 
 class _SectionCard extends StatelessWidget {
   final String title;
+  final String countLabel;
   final IconData icon;
   final bool expanded;
   final VoidCallback onTap;
@@ -223,6 +224,7 @@ class _SectionCard extends StatelessWidget {
 
   const _SectionCard({
     required this.title,
+    required this.countLabel,
     required this.icon,
     required this.expanded,
     required this.onTap,
@@ -231,46 +233,82 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: const Color(0xFFEDEDED),
-        borderRadius: BorderRadius.circular(18),
+        color: c.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.border),
+        boxShadow: kLiftShadow,
       ),
       child: Column(
         children: [
-          InkWell(
+          Pressable(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
               child: Row(
                 children: [
-                  Icon(icon, size: 32),
-                  const SizedBox(width: 14),
+                  // Kutu, yanindaki iki satirlik yazi blogu ile ayni
+                  // yukseklikte; simge de kutunun yarisini doldurarak
+                  // basligin agirligina denk geliyor.
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: c.inset,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(icon, size: 24, color: c.accent),
+                  ),
+                  const SizedBox(width: 13),
                   Expanded(
-                    child: Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontFamily: kDisplay,
+                            fontSize: 21,
+                            fontWeight: FontWeight.w700,
+                            height: 1.15,
+                            letterSpacing: -.4,
+                            color: c.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          countLabel,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 13.5,
+                            height: 1.3,
+                            color: c.muted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Icon(
-                    expanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    size: 36,
+                  AnimatedRotation(
+                    turns: expanded ? .5 : 0,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    child: Icon(LucideIcons.chevronDown, size: 22, color: c.sub),
                   ),
                 ],
               ),
             ),
           ),
-          if (expanded)
-            Container(
-              color: Colors.white,
-              child: child,
-            ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: expanded
+                ? SizedBox(width: double.infinity, child: child)
+                : const SizedBox(width: double.infinity),
+          ),
         ],
       ),
     );
@@ -279,64 +317,53 @@ class _SectionCard extends StatelessWidget {
 
 class _ProjectRow extends StatelessWidget {
   final ProjectSummary project;
-  final int index;
+  final bool first;
   final VoidCallback onTap;
 
   const _ProjectRow({
     required this.project,
-    required this.index,
+    required this.first,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isEvenRow = (index + 1).isEven;
-
-    return InkWell(
+    final c = context.colors;
+    return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 7),
-        color: isEvenRow ? const Color(0xFFE9E9E9) : Colors.white,
+        padding: const EdgeInsets.fromLTRB(20, 15, 16, 15),
+        decoration: BoxDecoration(
+          color: c.surface2,
+          border: Border(top: BorderSide(color: first ? c.border : c.border2)),
+        ),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 project.name,
-                style: const TextStyle(
-                  fontSize: 17,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: kDisplay,
+                  fontSize: 19,
                   fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
+                  color: c.ink,
                 ),
               ),
             ),
             Text(
               '%${project.roundedProgress}',
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w600,
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: c.ink,
               ),
             ),
+            const SizedBox(width: 8),
+            Icon(LucideIcons.chevronRight, size: 20, color: c.muted),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptySection extends StatelessWidget {
-  final String message;
-
-  const _EmptySection({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          message,
-          style: const TextStyle(fontSize: 14, color: Colors.black54),
         ),
       ),
     );

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/stakeholder_summary.dart';
 import '../services/stakeholder_service.dart';
 
@@ -113,58 +117,97 @@ class _StakeholderFormPageState extends State<StakeholderFormPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
+    InputDecoration field({String? hint}) => InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
+          counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
+          isDense: true,
+          filled: true,
+          fillColor: c.surface2,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          border: border(c.border2),
+          enabledBorder: border(c.border2),
+          disabledBorder: border(c.border),
+          focusedBorder: border(c.accent, 1.8),
+        );
+
+    final textStyle = TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink);
+
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: c.border)),
+              ),
               child: Row(
                 children: [
-                  InkWell(
+                  Pressable(
                     onTap: () => context.pop(false),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.arrow_back_ios_new, size: 20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  InkWell(
+                  const SizedBox(width: 4),
+                  Pressable(
                     onTap: () => context.pop(false),
-                    child: const Text(
+                    child: Text(
                       'Paydaşlar',
                       style: TextStyle(
-                        fontSize: 20,
-                        color: Color(0xFF0066A6),
-                        decoration: TextDecoration.underline,
+                        fontFamily: kBody,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                        color: c.accent,
                       ),
                     ),
                   ),
-                  const Text(' > ', style: TextStyle(fontSize: 20)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    child: Icon(LucideIcons.chevronRight, size: 15, color: c.muted),
+                  ),
                   Expanded(
                     child: Text(
                       _isEdit ? 'Düzenle' : 'Ekle',
-                      style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: kDisplay,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.3,
+                        color: c.ink,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
                 children: [
                   _FieldLabel('Firma Adı'),
                   TextField(
                     controller: _companyController,
                     maxLength: 150,
                     inputFormatters: [LengthLimitingTextInputFormatter(150)],
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    style: textStyle,
+                    cursorColor: c.accent,
+                    decoration: field(),
                   ),
                   const SizedBox(height: 14),
                   _FieldLabel('Detay'),
@@ -174,10 +217,9 @@ class _StakeholderFormPageState extends State<StakeholderFormPage> {
                     maxLines: 5,
                     maxLength: 500,
                     inputFormatters: [LengthLimitingTextInputFormatter(500)],
-                    decoration: const InputDecoration(
-                      hintText: 'Lütfen detay giriniz.',
-                      border: OutlineInputBorder(),
-                    ),
+                    style: textStyle,
+                    cursorColor: c.accent,
+                    decoration: field(hint: 'Lütfen detay giriniz.'),
                   ),
                   const SizedBox(height: 14),
                   _FieldLabel('İlgili Kişi'),
@@ -185,7 +227,9 @@ class _StakeholderFormPageState extends State<StakeholderFormPage> {
                     controller: _contactController,
                     maxLength: 120,
                     inputFormatters: [LengthLimitingTextInputFormatter(120)],
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    style: textStyle,
+                    cursorColor: c.accent,
+                    decoration: field(),
                   ),
                   const SizedBox(height: 14),
                   _FieldLabel('Telefon Numarası'),
@@ -194,36 +238,41 @@ class _StakeholderFormPageState extends State<StakeholderFormPage> {
                     keyboardType: TextInputType.phone,
                     maxLength: 30,
                     inputFormatters: [LengthLimitingTextInputFormatter(30)],
-                    decoration: const InputDecoration(
-                      hintText: '05xx xxx xx xx',
-                      border: OutlineInputBorder(),
-                    ),
+                    style: textStyle,
+                    cursorColor: c.accent,
+                    decoration: field(hint: '05xx xxx xx xx'),
                   ),
                   const SizedBox(height: 22),
-                  SizedBox(
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isSaving || _isDeleting ? null : _save,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                      ),
-                      child: _isSaving
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : Text(_isEdit ? 'GÜNCELLE' : 'KAYDET', style: const TextStyle(fontSize: 20)),
-                    ),
+                  PrimaryButton(
+                    label: _isEdit ? 'GÜNCELLE' : 'KAYDET',
+                    busy: _isSaving,
+                    onPressed: _isSaving || _isDeleting ? null : _save,
                   ),
                   if (_isEdit) ...[
                     const SizedBox(height: 12),
-                    TextButton.icon(
-                      onPressed: _isSaving || _isDeleting ? null : _delete,
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      label: const Text('Paydaşı Sil', style: TextStyle(color: Colors.red)),
+                    Center(
+                      child: Pressable(
+                        onTap: _isSaving || _isDeleting ? null : _delete,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.trash2, size: 19, color: c.bad),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Paydaşı Sil',
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.bad,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -243,8 +292,17 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
-      child: Text(text, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontFamily: kBody,
+          fontSize: 15.5,
+          fontWeight: FontWeight.w600,
+          letterSpacing: .2,
+          color: context.colors.ink,
+        ),
+      ),
     );
   }
 }

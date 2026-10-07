@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
+import '../../../core/widgets/brand_logo.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/site_summary.dart';
 import '../services/site_service.dart';
@@ -63,7 +69,7 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Şantiyeler yüklenirken beklenmeyen bir hata oluştu.');
+      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -81,54 +87,150 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
     context.go('/login');
   }
 
+  /// Santiye secimi: acilir liste yerine alttan acilan panel - telefonda
+  /// parmakla secmesi kolay, secili olan net gorunuyor.
+  Future<void> _openSitePicker() async {
+    final c = context.colors;
+    final selected = await showModalBottomSheet<SiteSummary>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * .6,
+          ),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            10,
+            16,
+            16 + MediaQuery.paddingOf(sheetContext).bottom,
+          ),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.border2,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 10),
+                child: Text(
+                  'Şantiye',
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.3,
+                    color: c.ink,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: _sites.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (_, index) {
+                    final site = _sites[index];
+                    final isSelected = site.id == _selectedSite?.id;
+                    return Pressable(
+                      onTap: () => Navigator.of(sheetContext).pop(site),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
+                        decoration: BoxDecoration(
+                          color: isSelected ? c.accent.withValues(alpha: .08) : c.surface2,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isSelected ? c.accent : c.border,
+                            width: isSelected ? 1.6 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                site.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ),
+                            if (isSelected)
+                              Icon(LucideIcons.check, size: 20, color: c.accent),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (selected != null && mounted) {
+      setState(() => _selectedSite = selected);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: c.bg,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 44).clamp(0.0, double.infinity),
+                ),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
-                  const Text(
-                    'SefaTech',
-                    style: TextStyle(
-                      fontSize: 46,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Şantiye Takip Uygulaması',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 8),
+                  const Center(child: BrandLogo(height: 74)),
+                  const SizedBox(height: 34),
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE9E9E9),
-                      borderRadius: BorderRadius.circular(20),
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: c.border),
+                      boxShadow: kLiftShadow,
                     ),
                     child: _buildSelectorContent(),
                   ),
-                  const SizedBox(height: 18),
-                  const Text(
+                  const SizedBox(height: 22),
+                  Text(
                     '© Copyright 2026 SefaTech tüm hakları saklıdır.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.black26),
+                    style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -139,129 +241,164 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
   }
 
   Widget _buildSelectorContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const SizedBox(
-        height: 150,
-        child: Center(child: CircularProgressIndicator(color: Colors.black)),
+      return SizedBox(
+        height: 140,
+        child: Center(
+          child: SizedBox(
+            width: 26,
+            height: 26,
+            child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+          ),
+        ),
       );
     }
 
     if (_errorMessage != null) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Icon(Icons.error_outline, color: Colors.redAccent, size: 38),
-          const SizedBox(height: 12),
-          Text(_errorMessage!, textAlign: TextAlign.center),
-          const SizedBox(height: 18),
-          ElevatedButton(
-            onPressed: _loadSites,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: c.bad.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Text('Tekrar Dene'),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 14.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      color: c.bad,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 12),
-          TextButton(onPressed: _goBackToLogin, child: const Text("< GİRİŞ'e Dön")),
+          const SizedBox(height: 20),
+          Center(
+            child: SmallButton(
+              label: 'Tekrar Dene',
+              icon: LucideIcons.refreshCw,
+              onTap: _loadSites,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _BackToLogin(onTap: _goBackToLogin),
         ],
       );
     }
 
     if (_sites.isEmpty) {
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Bu kullanıcıya atanmış şantiye bulunmuyor.'),
-          const SizedBox(height: 16),
-          TextButton(onPressed: _goBackToLogin, child: const Text("< GİRİŞ'e Dön")),
+          const EmptyView(
+            title: 'Bu kullanıcıya atanmış şantiye bulunmuyor.',
+          ),
+          const SizedBox(height: 14),
+          _BackToLogin(onTap: _goBackToLogin),
         ],
       );
     }
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          children: [
-            const SizedBox(
-              width: 120,
-              child: Text(
-                'Şantiye',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-              ),
+        Text(
+          'Şantiye',
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .2,
+            color: c.ink,
+          ),
+        ),
+        const SizedBox(height: 9),
+        Pressable(
+          onTap: _openSitePicker,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 17, 14, 17),
+            decoration: BoxDecoration(
+              color: c.surface2,
+              borderRadius: BorderRadius.circular(Sizes.rField),
+              border: Border.all(color: c.border2, width: 1.5),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: DropdownButtonFormField<int>(
-                value: _selectedSite?.id,
-                isExpanded: true,
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.black),
-                decoration: InputDecoration(
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(2),
-                    borderSide: const BorderSide(color: Colors.black, width: 1.2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(2),
-                    borderSide: const BorderSide(color: Colors.black, width: 1.2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(2),
-                    borderSide: const BorderSide(color: Colors.black, width: 1.4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _selectedSite?.name ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w500,
+                      color: c.ink,
+                    ),
                   ),
                 ),
-                items: _sites
-                    .map(
-                      (site) => DropdownMenuItem<int>(
-                        value: site.id,
-                        child: Text(site.name, style: const TextStyle(fontSize: 14)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (id) {
-                  if (id == null) return;
-                  setState(() {
-                    _selectedSite = _sites.firstWhere((site) => site.id == id);
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 36),
-        SizedBox(
-          width: double.infinity,
-          height: 58,
-          child: ElevatedButton(
-            onPressed: _selectedSite == null ? null : _continue,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-            ),
-            child: const Text(
-              'DEVAM',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        TextButton(
-          onPressed: _goBackToLogin,
-          style: TextButton.styleFrom(foregroundColor: const Color(0xFF0066AA)),
-          child: const Text(
-            "< GİRİŞ'e Dön",
-            style: TextStyle(
-              fontSize: 16,
-              decoration: TextDecoration.underline,
-              decorationColor: Color(0xFF0066AA),
-            ),
-          ),
+        const SizedBox(height: 26),
+        PrimaryButton(
+          label: 'DEVAM',
+          onPressed: _selectedSite == null ? null : _continue,
         ),
+        const SizedBox(height: 8),
+        _BackToLogin(onTap: _goBackToLogin),
       ],
+    );
+  }
+}
+
+class _BackToLogin extends StatelessWidget {
+  const _BackToLogin({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Center(
+      child: Pressable(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(LucideIcons.chevronLeft, size: 17, color: c.accent),
+              const SizedBox(width: 4),
+              Text(
+                "GİRİŞ'e Dön",
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w600,
+                  color: c.accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

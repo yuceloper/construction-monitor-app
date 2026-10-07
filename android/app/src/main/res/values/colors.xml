@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window colour shown while the process starts, matched to the app's
+         page background so the launch does not flash white. -->
+    <color name="launch_bg">#F4F7F9</color>
+</resources>

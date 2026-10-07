@@ -84,6 +84,47 @@ class WorkItemService {
     }
   }
 
+  Future<void> updateWarning(int id, int warningId, String text) async {
+    final token = _token();
+    final client = HttpClient();
+    try {
+      final request = await client.putUrl(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings/$warningId'),
+      );
+      _auth(request, token, json: true);
+      request.write(jsonEncode({'text': text}));
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        _throwForResponse(response.statusCode, body, 'Uyarı güncellenemedi.');
+      }
+    } on SocketException {
+      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
+  Future<void> deleteWarning(int id, int warningId) async {
+    final token = _token();
+    final client = HttpClient();
+    try {
+      final request = await client.deleteUrl(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings/$warningId'),
+      );
+      _auth(request, token);
+      final response = await request.close();
+      final body = await response.transform(utf8.decoder).join();
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        _throwForResponse(response.statusCode, body, 'Uyarı silinemedi.');
+      }
+    } on SocketException {
+      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+    } finally {
+      client.close(force: true);
+    }
+  }
+
   Future<WorkItemSummary> updateStatus(int id, {required bool completed}) async {
     final token = _token();
     final client = HttpClient();
@@ -126,8 +167,13 @@ class WorkItemService {
   }
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
-    if (statusCode == 401 || statusCode == 403) {
+    if (statusCode == 401) {
       throw const WorkItemException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+    if (statusCode == 403) {
+      throw const WorkItemException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
 
     String? message;

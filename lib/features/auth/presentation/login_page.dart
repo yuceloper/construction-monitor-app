@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
+import '../../../core/widgets/brand_logo.dart';
+import '../../../core/widgets/panel.dart';
 import '../../site_selection/services/site_service.dart';
 import '../services/auth_service.dart';
 import '../services/session_manager.dart';
@@ -85,58 +89,50 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: c.bg,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 44).clamp(0.0, double.infinity),
+                ),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 40),
-                  const Text(
-                    'SefaTech',
-                    style: TextStyle(
-                      fontSize: 46,
-                      color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Şantiye Takip Uygulaması',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 8),
+                  const Center(child: BrandLogo(height: 74)),
+                  const SizedBox(height: 34),
                   Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE9E9E9),
-                      borderRadius: BorderRadius.circular(20),
+                      color: c.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: c.border),
+                      boxShadow: kLiftShadow,
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _LoginFieldRow(
+                        _Field(
                           label: 'Kullanıcı Adı',
                           child: TextField(
                             controller: _usernameController,
                             enabled: !_isLoading,
                             textInputAction: TextInputAction.next,
-                            inputFormatters: [LengthLimitingTextInputFormatter(50)],
-                            decoration: _inputDecoration(),
+                            inputFormatters: [LengthLimitingTextInputFormatter(25)],
+                            style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
+                            cursorColor: c.accent,
+                            decoration: _inputDecoration(c),
                           ),
                         ),
                         const SizedBox(height: 20),
-                        _LoginFieldRow(
+                        _Field(
                           label: 'Parola',
                           child: TextField(
                             controller: _passwordController,
@@ -147,65 +143,56 @@ class _LoginPageState extends State<LoginPage> {
                             onSubmitted: (_) {
                               if (!_isLoading) _login();
                             },
-                            decoration: _inputDecoration(),
+                            style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
+                            cursorColor: c.accent,
+                            decoration: _inputDecoration(c),
                           ),
                         ),
                         if (_errorMessage != null) ...[
                           const SizedBox(height: 18),
-                          Text(
-                            _errorMessage!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.red,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                            decoration: BoxDecoration(
+                              color: c.bad.withValues(alpha: .08),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: TextStyle(
+                                      fontFamily: kBody,
+                                      fontSize: 14.5,
+                                      height: 1.4,
+                                      fontWeight: FontWeight.w500,
+                                      color: c.bad,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                        const SizedBox(height: 30),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 58,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _login,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black,
-                              foregroundColor: Colors.white,
-                              disabledBackgroundColor: Colors.black54,
-                              disabledForegroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(22),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'GİRİŞ',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                          ),
+                        const SizedBox(height: 26),
+                        PrimaryButton(
+                          label: 'GİRİŞ',
+                          busy: _isLoading,
+                          onPressed: _isLoading ? null : _login,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  const Text(
+                  const SizedBox(height: 22),
+                  Text(
                     '© Copyright 2026 SefaTech tüm hakları saklıdır.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.black26),
+                    style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
                   ),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
@@ -215,48 +202,52 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  InputDecoration _inputDecoration() {
+  InputDecoration _inputDecoration(AppColors c) {
+    OutlineInputBorder border(Color color, [double width = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     return InputDecoration(
       isDense: true,
       counterText: '',
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(2),
-        borderSide: const BorderSide(color: Colors.black, width: 1.2),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(2),
-        borderSide: const BorderSide(color: Colors.black, width: 1.2),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(2),
-        borderSide: const BorderSide(color: Colors.black, width: 1.4),
-      ),
+      fillColor: c.surface2,
+      border: border(c.border2),
+      enabledBorder: border(c.border2),
+      disabledBorder: border(c.border),
+      focusedBorder: border(c.accent, 1.8),
     );
   }
 }
 
-class _LoginFieldRow extends StatelessWidget {
+/// Alan basligi kutunun ustunde - dar ekranda da kirilmiyor, uzun etiketler
+/// alani daraltmiyor.
+class _Field extends StatelessWidget {
   final String label;
   final Widget child;
 
-  const _LoginFieldRow({required this.label, required this.child});
+  const _Field({required this.label, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 120,
-          child: Text(
-            label,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 14.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .2,
+            color: context.colors.ink,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: child),
+        const SizedBox(height: 9),
+        child,
       ],
     );
   }

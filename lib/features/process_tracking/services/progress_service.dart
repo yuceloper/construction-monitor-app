@@ -71,9 +71,14 @@ class ProgressService {
         return decoded;
       }
 
-      if (response.statusCode == 401 || response.statusCode == 403) {
+      if (response.statusCode == 401) {
         throw const ProgressException(
           'Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.',
+        );
+      }
+      if (response.statusCode == 403) {
+        throw const ProgressException(
+          'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
         );
       }
 

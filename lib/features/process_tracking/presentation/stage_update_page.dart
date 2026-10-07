@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/work_item_summary.dart';
 import '../services/work_item_service.dart';
 
@@ -65,7 +69,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Alt işler yüklenirken beklenmeyen bir hata oluştu.');
+      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -84,6 +88,13 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
     if (_isSaving) return;
 
     final changedWorks = _works.where((work) => work.changed).toList();
+    if (changedWorks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Herhangi bir güncelleme yapılmadı.')),
+      );
+      return;
+    }
+
     setState(() {
       _isSaving = true;
       _errorMessage = null;
@@ -108,39 +119,27 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       await _loadWorks();
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Değişiklikler kaydedilirken beklenmeyen bir hata oluştu.');
+      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
-  @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: Colors.white,
+      color: context.colors.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.pop(false),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      widget.stageTitle,
-                      style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
+            // Hangi blogun asamasinda olundugu basliktan okunuyor; diger alt
+            // ekranlarla ayni serit kullaniliyor.
+            BreadcrumbBar(
+              parent: widget.blockName,
+              title: widget.stageTitle,
+              onBack: () => context.pop(false),
+              onParentTap: () => context.pop(false),
             ),
-            const Divider(height: 1),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -149,8 +148,16 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
   }
 
   Widget _buildContent() {
+    final c = context.colors;
+
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.black));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
+        ),
+      );
     }
 
     if (_errorMessage != null && _works.isEmpty) {
@@ -160,17 +167,18 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 42, color: Colors.redAccent),
+              Icon(LucideIcons.circleAlert, size: 42, color: c.bad),
               const SizedBox(height: 12),
-              Text(_errorMessage!, textAlign: TextAlign.center),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: _loadWorks,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Tekrar Dene'),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _loadWorks,
               ),
             ],
           ),
@@ -179,83 +187,126 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 30, 20, 20),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
       children: [
         if (_errorMessage != null) ...[
-          Text(_errorMessage!, style: const TextStyle(color: Colors.redAccent)),
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: c.bad.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(Sizes.rField),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _errorMessage!,
+                    style: TextStyle(fontFamily: kBody, fontSize: 14.5, height: 1.4, color: c.bad),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
         ],
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+          clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: const Color(0xFFEDEDED),
+            color: c.surface,
             borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: c.border),
+            boxShadow: kLiftShadow,
           ),
           child: _works.isEmpty
-              ? const Text('Bu süreç için alt iş bulunmuyor.')
+              ? const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: EmptyState(
+                    message: 'Bu süreç için alt iş bulunmuyor.',
+                  ),
+                )
               : Column(
                   children: _works.asMap().entries.map((entry) {
                     final index = entry.key;
                     final work = entry.value;
-                    return Padding(
-                      padding: EdgeInsets.only(bottom: index == _works.length - 1 ? 0 : 16),
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: index == 0
+                            ? null
+                            : Border(top: BorderSide(color: c.line)),
+                      ),
                       child: Row(
                         children: [
-                          SizedBox(
-                            width: 34,
-                            height: 34,
-                            child: Checkbox(
-                              value: work.completed,
-                              activeColor: Colors.black,
-                              onChanged: _isSaving
-                                  ? null
-                                  : (value) {
-                                      setState(() {
-                                        _works[index] = work.copy(completed: value ?? false);
-                                      });
-                                    },
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 10, 0, 10),
+                            child: SizedBox(
+                              width: 34,
+                              height: 34,
+                              child: Checkbox(
+                                value: work.completed,
+                                activeColor: c.ink,
+                                checkColor: c.bg,
+                                side: BorderSide(color: c.border2, width: 1.8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                visualDensity: VisualDensity.compact,
+                                onChanged: _isSaving
+                                    ? null
+                                    : (value) {
+                                        setState(() {
+                                          _works[index] = work.copy(completed: value ?? false);
+                                        });
+                                      },
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Expanded(
-                            child: InkWell(
+                            child: Pressable(
                               onTap: () => _openWorkDetail(work),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                padding: const EdgeInsets.fromLTRB(0, 16, 14, 16),
                                 child: Row(
                                   children: [
                                     Expanded(
                                       child: Text(
                                         work.title,
-                                        style: const TextStyle(
-                                          fontSize: 20,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontFamily: kBody,
+                                          fontSize: 18,
+                                          height: 1.3,
                                           fontWeight: FontWeight.w500,
-                                          decoration: TextDecoration.underline,
+                                          color: work.completed ? c.sub : c.ink,
                                         ),
                                       ),
                                     ),
-                                    if (work.hasDependency) ...[
-                                      const SizedBox(width: 8),
-                                      const Tooltip(
-                                        message: 'Bağımlı iş var',
-                                        child: Icon(
-                                          Icons.link_rounded,
-                                          size: 24,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ],
                                     if (work.hasWarning) ...[
                                       const SizedBox(width: 8),
-                                      const Tooltip(
+                                      Tooltip(
                                         message: 'Uyarı var',
-                                        child: Icon(
-                                          Icons.warning_amber_rounded,
-                                          size: 25,
-                                          color: Colors.red,
+                                        child: StatusBadge(
+                                          icon: LucideIcons.triangleAlert,
+                                          color: c.bad,
                                         ),
                                       ),
                                     ],
+                                    if (work.hasDependency) ...[
+                                      const SizedBox(width: 6),
+                                      Tooltip(
+                                        message: 'Bağımlı iş var',
+                                        child: StatusBadge(
+                                          icon: LucideIcons.link,
+                                          color: c.warn,
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(width: 8),
+                                    Icon(LucideIcons.chevronRight, size: 19, color: c.muted),
                                   ],
                                 ),
                               ),
@@ -267,29 +318,11 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                   }).toList(),
                 ),
         ),
-        const SizedBox(height: 42),
-        SizedBox(
-          height: 58,
-          child: ElevatedButton(
-            onPressed: _isSaving ? null : _save,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.black38,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            ),
-            child: _isSaving
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Text(
-                    'KAYDET',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
-                  ),
-          ),
+        const SizedBox(height: 32),
+        PrimaryButton(
+          label: 'KAYDET',
+          busy: _isSaving,
+          onPressed: _isSaving ? null : _save,
         ),
       ],
     );

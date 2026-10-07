@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
+import '../../../core/widgets/pressable.dart';
 import '../models/notification_item.dart';
 import '../services/notification_service.dart';
 
@@ -70,56 +75,40 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
   }
 
-  @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final unreadCount = _items.where((item) => !item.isRead).length;
 
     return ColoredBox(
-      color: Colors.white,
+      color: c.bg,
       child: SafeArea(
         child: Column(
           children: [
             const AppHeader(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 7),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.go('/dashboard'),
-                    child: const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: Icon(Icons.arrow_back_ios_new, size: 20),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Expanded(
-                    child: Text(
-                      'Bildirimler',
-                      style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                  if (unreadCount > 0)
-                    Container(
-                      width: 27,
-                      height: 27,
+            ScreenTitleBar(
+              title: 'Bildirimler',
+              onBack: () => context.go('/dashboard'),
+              trailing: unreadCount > 0
+                  ? Container(
+                      constraints: const BoxConstraints(minWidth: 29, minHeight: 29),
+                      padding: const EdgeInsets.symmetric(horizontal: 9),
                       alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFEE2E3B),
-                        shape: BoxShape.circle,
+                      decoration: BoxDecoration(
+                        color: c.bad,
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
                         unreadCount > 99 ? '99+' : '$unreadCount',
                         style: const TextStyle(
+                          fontFamily: kBody,
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                    ),
-                ],
-              ),
+                    )
+                  : null,
             ),
-            const Divider(height: 1, thickness: 1),
             Expanded(child: _body()),
           ],
         ),
@@ -128,8 +117,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Widget _body() {
+    final c = context.colors;
+
     if (_loading && _items.isEmpty) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFF0066A6)));
+      return Center(
+        child: SizedBox(
+          width: 26,
+          height: 26,
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.accent),
+        ),
+      );
     }
     if (_error != null && _items.isEmpty) {
       return Center(
@@ -138,11 +135,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off_outlined, size: 52, color: Colors.black38),
+              Icon(LucideIcons.cloudOff, size: 52, color: c.muted),
               const SizedBox(height: 14),
-              Text(_error!, textAlign: TextAlign.center),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+              ),
               const SizedBox(height: 16),
-              ElevatedButton(onPressed: _load, child: const Text('Tekrar Dene')),
+              SmallButton(
+                label: 'Tekrar Dene',
+                icon: LucideIcons.refreshCw,
+                onTap: _load,
+              ),
             ],
           ),
         ),
@@ -150,21 +155,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
     }
 
     return RefreshIndicator(
+      color: c.ink,
       onRefresh: _load,
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 24),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         itemCount: _items.isEmpty ? 1 : _items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
             return const Padding(
-              padding: EdgeInsets.only(top: 90),
-              child: Center(
-                child: Text(
-                  'Son 15 günde bildirim bulunmuyor.',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+              padding: EdgeInsets.only(top: 40),
+              child: EmptyView(
+                title: 'Son 15 günde bildirim bulunmuyor.',
               ),
             );
           }
@@ -184,24 +187,31 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final isDaily = item.isDailyTask;
-    final accent = isDaily ? const Color(0xFF78B9F2) : const Color(0xFFFFDF79);
+    // Sol serit: gunluk is mi, is kalemi uyarisi mi - renk ayrimi onlarin
+    // ekranindaki gibi duruyor.
+    final accent = isDaily ? c.accent : c.warn;
     final content = _NotificationContent.fromItem(item);
 
-    return Material(
-      color: const Color(0xFFE9E9E9),
-      borderRadius: BorderRadius.circular(21),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: c.border),
+          boxShadow: kLiftShadow,
+        ),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 30, color: accent),
+              Container(width: 5, color: accent),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 7, 10, 7),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -215,41 +225,44 @@ class _NotificationCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 14,
-                                height: 1.05,
-                                fontWeight: isDaily ? FontWeight.w500 : FontWeight.w800,
-                                color: isDaily ? Colors.black54 : Colors.black87,
+                                fontFamily: kDisplay,
+                                fontSize: 16,
+                                height: 1.2,
+                                fontWeight: isDaily ? FontWeight.w600 : FontWeight.w700,
+                                color: c.ink,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Text(
                             _formatDate(item.createdAt),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              height: 1.05,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black54,
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 12,
+                              height: 1.2,
+                              fontWeight: FontWeight.w600,
+                              color: c.muted,
                             ),
                           ),
                         ],
                       ),
                       if (content.detail.isNotEmpty) ...[
-                        const SizedBox(height: 3),
+                        const SizedBox(height: 5),
                         Text(
                           content.detail,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12.5,
-                            height: 1.05,
-                            fontWeight: isDaily ? FontWeight.w400 : FontWeight.w700,
-                            color: isDaily ? Colors.black54 : const Color(0xFF0066A6),
+                            fontFamily: kBody,
+                            fontSize: 13.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w400,
+                            color: c.sub,
                           ),
                         ),
                       ],
                       if (isDaily && (content.block.isNotEmpty || content.person.isNotEmpty)) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
                             Expanded(
@@ -257,24 +270,26 @@ class _NotificationCard extends StatelessWidget {
                                 content.block,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  height: 1.05,
-                                  color: Color(0xFF0066A6),
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 13,
+                                  height: 1.25,
+                                  color: c.accent,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
                             if (content.person.isNotEmpty) ...[
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 10),
                               Text(
                                 content.person,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  height: 1.05,
-                                  color: Color(0xFF0066A6),
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 13,
+                                  height: 1.25,
+                                  color: c.accent,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -300,6 +315,7 @@ class _NotificationCard extends StatelessWidget {
     return '$day.$month.${date.year}';
   }
 }
+
 
 class _NotificationContent {
   final String title;

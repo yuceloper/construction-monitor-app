@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../auth/services/session_manager.dart';
+import '../../../app/theme.dart';
+import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../notifications/services/notification_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -11,14 +14,32 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage>
+    with SingleTickerProviderStateMixin {
   final _notificationService = NotificationService();
+
+  /// Drives the opening sequence: the cards rise into place one after the
+  /// other instead of all appearing at once.
+  late final AnimationController _entrance = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 820),
+  )..forward();
 
   @override
   void initState() {
     super.initState();
     _refreshUnreadCount();
   }
+
+  @override
+  void dispose() {
+    _entrance.dispose();
+    super.dispose();
+  }
+
+  /// Wraps [child] so it fades and rises in; [order] places it in the queue.
+  Widget _entering(int order, Widget child) =>
+      _Entering(controller: _entrance, order: order, child: child);
 
   Future<void> _refreshUnreadCount() async {
     try {
@@ -30,252 +51,407 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final session = SessionManager.instance;
-    final auth = session.auth;
-    final siteName = session.selectedSiteName ?? '';
-    final firstName = auth?.firstName.isNotEmpty == true ? auth!.firstName : auth?.username ?? '';
-    final lastName = auth?.lastName ?? '';
+    final c = context.colors;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: c.bg,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Ust serit her ekranda ayni bilesen: logo boyutu ve kenar
+            // bosluklari sayfadan sayfaya degismiyor.
+            _entering(0, const AppHeader()),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    const gap = 14.0;
+
+                    // Ana kartlar kisaldi; alttaki uc giris ayri birer panel
+                    // oldugu icin aralarinda bosluk var. Artan pay ustte ve
+                    // altta esit bolunur.
+                    const row = 72.0;
+                    var primary = constraints.maxHeight -
+                        gap -
+                        (row * 3 + gap * 2) -
+                        gap;
+                    if (primary > 300) primary = 300;
+                    if (primary < 210) primary = 210;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        InkWell(
-                          onTap: () => context.go('/dashboard'),
-                          child: const Text(
-                            'SefaTech',
-                            style: TextStyle(
-                              fontSize: 34,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1,
+                        SizedBox(
+                          height: primary,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _entering(
+                                  1,
+                                  _PrimaryCard(
+                                    title: 'Süreç Takip',
+                                    icon: LucideIcons.chartGantt,
+                                    color: c.accent,
+                                    onTap: () => context.go('/process'),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _entering(
+                                  2,
+                                  _PrimaryCard(
+                                    title: 'Günlük İşler',
+                                    icon: LucideIcons.clipboardList,
+                                    color: c.teal,
+                                    onTap: () => context.go('/daily-tasks'),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: gap),
+                        // Her giris kendi panelinde duruyor.
+                        _entering(
+                          3,
+                          SizedBox(
+                            height: row,
+                            child: _SecondaryCard(
+                              title: 'Paydaşlar',
+                              icon: LucideIcons.users,
+                              color: c.violet,
+                              onTap: () => context.go('/stakeholders'),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(6),
+                        const SizedBox(height: gap),
+                        _entering(
+                          4,
+                          SizedBox(
+                            height: row,
+                            child: _SecondaryCard(
+                              title: 'İSG Takip',
+                              icon: LucideIcons.shieldCheck,
+                              color: c.warn,
+                              onTap: () => context.go('/safety'),
+                            ),
                           ),
-                          child: const Text(
-                            'TDS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1,
+                        ),
+                        const SizedBox(height: gap),
+                        _entering(
+                          5,
+                          SizedBox(
+                            height: row,
+                            child: ValueListenableBuilder<int>(
+                              valueListenable: NotificationUnreadCount.value,
+                              builder: (context, unreadCount, _) =>
+                                  _SecondaryCard(
+                                    title: 'Bildirimler',
+                                    icon: LucideIcons.bellRing,
+                                    color: c.bad,
+                                    badgeCount: unreadCount,
+                                    onTap: () => context.go('/notifications'),
+                                  ),
                             ),
                           ),
                         ),
                       ],
-                    ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One item of the opening sequence: fades in while rising into place.
+///
+/// [order] is its place in the queue - each item starts 90ms after the one
+/// before it, so the screen assembles itself rather than snapping into view.
+class _Entering extends StatelessWidget {
+  const _Entering({
+    required this.controller,
+    required this.order,
+    required this.child,
+  });
+
+  final AnimationController controller;
+  final int order;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final begin = (order * .09).clamp(0.0, 1.0);
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Interval(
+        begin,
+        (begin + .55).clamp(0.0, 1.0),
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, inner) => Opacity(
+        opacity: animation.value,
+        child: Transform.translate(
+          offset: Offset(0, 26 * (1 - animation.value)),
+          child: inner,
+        ),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Markanin mavi yayindan tureyen dekoratif cizgi - kartlarin kosesinde
+/// hafif bir doku birakiyor.
+class _ArcMotif extends StatelessWidget {
+  const _ArcMotif({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _ArcPainter(color: color.withValues(alpha: .11)),
+    );
+  }
+}
+
+class _ArcPainter extends CustomPainter {
+  _ArcPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (var i = 0; i < 3; i++) {
+      paint.strokeWidth = 3.5 - i * .8;
+      final inset = i * 16.0;
+      final path = Path()
+        ..moveTo(size.width * .02 + inset, size.height * .86)
+        ..quadraticBezierTo(
+          size.width * .52,
+          size.height * .42 + inset * .7,
+          size.width * 1.02,
+          size.height * .86,
+        );
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ArcPainter old) => old.color != color;
+}
+
+/// Ana giris: beyaz kart, arkasinda kendi renginde bir raf.
+///
+/// Raf kartin altindan gorunuyor; derinlik renkle degil katmanla veriliyor,
+/// boylece kart beyaz kalirken asagidaki listeden ayrilabiliyor.
+class _PrimaryCard extends StatelessWidget {
+  const _PrimaryCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Pressable(
+      onTap: onTap,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 10,
+            right: 10,
+            bottom: 0,
+            height: 40,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Color.lerp(color, c.surface, .62),
+                borderRadius: BorderRadius.circular(22),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 20,
+            child: Container(
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: c.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: .24),
+                    blurRadius: 22,
+                    offset: const Offset(0, 10),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    color: const Color(0xFFE9E9E9),
-                    child: Row(
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -30,
+                    bottom: -26,
+                    width: 190,
+                    height: 118,
+                    child: _ArcMotif(color: color),
+                  ),
+                  Positioned.fill(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.person_outline, size: 28),
-                        const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(firstName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                            if (lastName.isNotEmpty)
-                              Text(lastName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                            if (siteName.isNotEmpty) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                siteName,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  fontStyle: FontStyle.italic,
-                                ),
+                        Container(
+                          width: 64,
+                          height: 64,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Color.lerp(c.surface, color, .14),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Icon(icon, size: 30, color: color),
+                        ),
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.visible,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontFamily: kDisplay,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                height: 1.05,
+                                letterSpacing: -.5,
+                                color: c.ink,
                               ),
-                            ],
-                          ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
-              Expanded(
-                child: Column(
-                  children: [
-                    Expanded(
-                      flex: 5,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _DashboardCard(
-                              title: 'Süreç Takip',
-                              icon: Icons.autorenew,
-                              backgroundColor: const Color(0xFFFFF0C8),
-                              onTap: () => context.go('/process'),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: _DashboardCard(
-                              title: 'Günlük\nİşler',
-                              icon: Icons.format_list_bulleted,
-                              backgroundColor: const Color(0xFFD3E4FF),
-                              onTap: () => context.go('/daily-tasks'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _WideDashboardCard(
-                      title: 'Paydaşlar',
-                      icon: Icons.handshake_outlined,
-                      backgroundColor: const Color(0xFFDCEBD5),
-                      onTap: () => context.go('/stakeholders'),
-                    ),
-                    const SizedBox(height: 14),
-                    _WideDashboardCard(
-                      title: 'İSG Takip',
-                      icon: Icons.shield_outlined,
-                      backgroundColor: const Color(0xFFDED6EE),
-                      onTap: () => context.go('/safety'),
-                    ),
-                    const SizedBox(height: 14),
-                    ValueListenableBuilder<int>(
-                      valueListenable: NotificationUnreadCount.value,
-                      builder: (context, unreadCount, _) {
-                        return _WideDashboardCard(
-                          title: 'Bildirimler',
-                          icon: Icons.notifications_none,
-                          backgroundColor: const Color(0xFFECECEC),
-                          badgeCount: unreadCount,
-                          onTap: () => context.go('/notifications'),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color backgroundColor;
-  final VoidCallback onTap;
-
-  const _DashboardCard({
+/// Ikincil giris: kendi panelinde, ana kartlarla ayni ikon yapisiyla.
+///
+/// Ikon ana kartlardaki gibi tonlu bir karenin icinde; aradaki tek fark
+/// olculer, boylece bes giris ayni dili konusuyor.
+class _SecondaryCard extends StatelessWidget {
+  const _SecondaryCard({
     required this.title,
     required this.icon,
-    required this.backgroundColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 44, color: Colors.black),
-              const SizedBox(height: 26),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _WideDashboardCard extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Color backgroundColor;
-  final VoidCallback onTap;
-  final int? badgeCount;
-
-  const _WideDashboardCard({
-    required this.title,
-    required this.icon,
-    required this.backgroundColor,
+    required this.color,
     required this.onTap,
     this.badgeCount,
   });
 
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  final int? badgeCount;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: SizedBox(
-          height: 82,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(icon, size: 34),
-                  if ((badgeCount ?? 0) > 0)
-                    Positioned(
-                      right: -12,
-                      top: -10,
-                      child: Container(
-                        constraints: const BoxConstraints(minWidth: 23, minHeight: 23),
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.all(Radius.circular(12)),
-                        ),
-                        child: Text(
-                          badgeCount! > 99 ? '99+' : '$badgeCount',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                    ),
-                ],
+    final c = context.colors;
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c.border),
+          boxShadow: kLiftShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: Color.lerp(c.surface, color, .14),
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(width: 18),
-              Text(title, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w500)),
-            ],
-          ),
+              child: Icon(icon, size: 21, color: color),
+            ),
+            const SizedBox(width: 13),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: kDisplay,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.3,
+                  color: c.ink,
+                ),
+              ),
+            ),
+            if ((badgeCount ?? 0) > 0)
+              Container(
+                height: 26,
+                constraints: const BoxConstraints(minWidth: 26),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: c.bad,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Text(
+                  badgeCount! > 99 ? '99+' : '$badgeCount',
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    color: c.surface,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
