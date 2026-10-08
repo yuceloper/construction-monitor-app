@@ -8,6 +8,8 @@ class AuthResponse {
   final String firstName;
   final String lastName;
   final String role;
+  final int? companyId;
+  final String? companyName;
 
   const AuthResponse({
     required this.accessToken,
@@ -19,6 +21,8 @@ class AuthResponse {
     required this.firstName,
     required this.lastName,
     required this.role,
+    this.companyId,
+    this.companyName,
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class AuthResponse {
       firstName: json['firstName'] as String? ?? '',
       lastName: json['lastName'] as String? ?? '',
       role: json['role']?.toString() ?? '',
+      companyId: (json['companyId'] as num?)?.toInt(),
+      companyName: json['companyName']?.toString(),
     );
   }
 
