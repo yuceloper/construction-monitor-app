@@ -245,6 +245,8 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                     children: [
                       Text(
                         item.companyName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: kDisplay,
                           fontSize: 19,
@@ -257,6 +259,8 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         const SizedBox(height: 5),
                         Text(
                           item.detail,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 14.5,
