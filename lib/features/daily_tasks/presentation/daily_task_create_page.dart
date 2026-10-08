@@ -40,6 +40,10 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   List<ProjectSummary> _projects = const [];
   List<SiteMemberSummary> _members = const [];
   List<XFile> _photos = const [];
+
+  /// Zorunlu alan uyarisi. Giris ekranindaki gibi formun icinde duruyor;
+  /// alttan gecen serit kacirilabiliyordu.
+  String? _formHatasi;
   int? _projectId;
   int? _memberId;
   String? _priority;
@@ -158,12 +162,24 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       return;
     }
     final note = _noteController.text.trim();
-    if (_projectId == null) return _show('Ev/Dükkan blok seçmelisiniz.');
-    if (_priority == null) return _show('Kritiklik seviyesi seçmelisiniz.');
-    if (_memberId == null) return _show('İlgili kişi seçmelisiniz.');
-    if (note.isEmpty) return _show('Not alanı zorunludur.');
+    final eksik = _projectId == null
+        ? 'Ev/Dükkan blok seçmelisiniz.'
+        : _priority == null
+        ? 'Kritiklik seviyesi seçmelisiniz.'
+        : _memberId == null
+        ? 'İlgili kişi seçmelisiniz.'
+        : note.isEmpty
+        ? 'Not alanı zorunludur.'
+        : null;
+    if (eksik != null) {
+      setState(() => _formHatasi = eksik);
+      return;
+    }
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _formHatasi = null;
+      _isSaving = true;
+    });
     try {
       final task = await _taskService.createTask(
         projectId: _projectId!,
@@ -178,7 +194,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       _show('Günlük iş kaydedildi.');
       context.pop(true);
     } on DailyTaskException catch (error) {
-      if (mounted) _show(error.message);
+      if (mounted) setState(() => _formHatasi = error.message);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -393,7 +409,9 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                   height: 52,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: _isRecording ? c.bad : c.surface2,
+                    // Kirmizi uygulamada hata ve silme rengi; kayit
+                    // sirasindaki buton siyah.
+                    color: _isRecording ? c.ink : c.surface2,
                     borderRadius: BorderRadius.circular(Sizes.rField),
                     border: _isRecording
                         ? null
@@ -411,7 +429,9 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                       Text(
                         _isRecording
                             ? 'Kaydı Durdur'
-                            : (_audioPath == null ? 'Sesli not kaydet' : 'Yeniden kaydet'),
+                            : (_audioPath == null
+                                  ? 'Sesli not kaydet'
+                                  : 'Yeni kayıt'),
                         style: TextStyle(
                           fontFamily: kBody,
                           fontSize: 15.5,
@@ -423,34 +443,19 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                   ),
                 ),
               ),
-              if (_audioPath != null && !_isRecording)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Sesli not hazır',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: kBody,
-                            fontSize: 14.5,
-                            color: c.ok,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      Pressable(
-                        onTap: _removeAudio,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(LucideIcons.trash2, size: 19, color: c.bad),
-                        ),
-                      ),
-                    ],
+              // Kayitli ses, secilen fotograflarla ayni kutu bicimi:
+              // ekranda ne eklendigi tek bakista goruluyor.
+              if (_audioPath != null && !_isRecording) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: _FileChip(
+                    name: 'Sesli not',
+                    icon: LucideIcons.mic,
+                    onRemove: _isSaving ? null : _removeAudio,
                   ),
                 ),
+              ],
             ],
           ),
         ),
@@ -486,6 +491,37 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           ),
           ),
         ),
+        // Uyari butonun hemen ustunde: kullanici KAYDET'e basinca
+        // gozunun gittigi yer burasi.
+        if (_formHatasi != null) ...[
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: c.bad.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _formHatasi!,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 14.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: c.bad,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         PrimaryButton(
           label: 'KAYDET',
@@ -850,10 +886,15 @@ class _OutlineAction extends StatelessWidget {
 }
 
 class _FileChip extends StatelessWidget {
-  const _FileChip({required this.name, required this.onRemove});
+  const _FileChip({
+    required this.name,
+    required this.onRemove,
+    this.icon = LucideIcons.image,
+  });
 
   final String name;
   final VoidCallback? onRemove;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -868,7 +909,7 @@ class _FileChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(LucideIcons.image, size: 17, color: c.muted),
+          Icon(icon, size: 17, color: c.muted),
           const SizedBox(width: 7),
           SizedBox(
             width: 92,
