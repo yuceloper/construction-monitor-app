@@ -6,8 +6,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../../../app/theme.dart';
-import '../../../core/widgets/panel.dart';
-import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/state_views.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
@@ -138,38 +138,14 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
         bottom: false,
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 20, 14),
-              decoration: BoxDecoration(
-                color: c.surface,
-                border: Border(bottom: BorderSide(color: c.border)),
-              ),
-              child: Row(
-                children: [
-                  Pressable(
-                    onTap: () => context.pop(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kDisplay,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.3,
-                        color: c.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            // Butun alt ekranlarla ayni serit: marka + breadcrumb.
+            // Bu ekran kendi basligini ciziyordu, uygulamadan kopuktu.
+            const AppHeader(),
+            BreadcrumbBar(
+              title: widget.title,
+              parent: 'İSG Takip',
+              onBack: () => context.pop(),
+              onParentTap: () => context.pop(),
             ),
             if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
               Padding(
@@ -221,40 +197,16 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     final c = context.colors;
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.fileText, size: 52, color: c.bad),
-              const SizedBox(height: 14),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
-              ),
-              const SizedBox(height: 18),
-              SmallButton(
-                label: 'Tekrar Dene',
-                icon: LucideIcons.refreshCw,
-                onTap: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
-              ),
-            ],
-          ),
-        ),
+      // Diger ekranlardaki hata gorunumuyle ayni.
+      return ErrorView(
+        message: _errorMessage!,
+        onRetry: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
       );
     }
 
     final bytes = _pdfBytes;
     if (bytes == null) {
-      return Center(
-        child: SizedBox(
-          width: 26,
-          height: 26,
-          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
-        ),
-      );
+      return const LoadingView();
     }
 
     return PdfViewer.data(
