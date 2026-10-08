@@ -27,6 +27,7 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.accent,
     required this.ok,
     required this.warn,
+    required this.priorityMid,
     required this.bad,
     required this.track,
     required this.anchorTop,
@@ -51,6 +52,7 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color faint; //     placeholder
   final Color accent; //    link, selection
   final Color ok; //        completed
+  final Color priorityMid; // orta oncelik rozeti (koyu yaziyla)
   final Color warn; //      in progress, warning
   final Color bad; //       overdue, high priority
   final Color track; //     unfilled part of a progress bar
@@ -80,6 +82,7 @@ class AppColors extends ThemeExtension<AppColors> {
     accent: Color(0xFF2C6B8F),
     ok: Color(0xFF1C874A),
     warn: Color(0xFFBE7300),
+    priorityMid: Color(0xFFEDB02A),
     bad: Color(0xFFC0272F),
     track: Color(0xFFDBE2E7),
     anchorTop: Color(0xFF232C38),
@@ -106,6 +109,7 @@ class AppColors extends ThemeExtension<AppColors> {
     accent: Color(0xFF64A7CE),
     ok: Color(0xFF3EC776),
     warn: Color(0xFFE0A030),
+    priorityMid: Color(0xFFE8B33C),
     bad: Color(0xFFE5606A),
     track: Color(0xFF262E38),
     anchorTop: Color(0xFF232C38),
@@ -141,6 +145,7 @@ class AppColors extends ThemeExtension<AppColors> {
       accent: m(accent, other.accent),
       ok: m(ok, other.ok),
       warn: m(warn, other.warn),
+      priorityMid: m(priorityMid, other.priorityMid),
       bad: m(bad, other.bad),
       track: m(track, other.track),
       anchorTop: m(anchorTop, other.anchorTop),
