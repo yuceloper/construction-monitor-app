@@ -77,7 +77,9 @@ class _DashboardPageState extends State<DashboardPage>
                         gap -
                         (row * 3 + gap * 2) -
                         gap;
-                    if (primary > 300) primary = 300;
+                    // Ust sinir yukseltildi: kartlar daha cok pay alinca
+                    // logoyla aralarindaki olu bosluk kuculuyor.
+                    if (primary > 340) primary = 340;
                     if (primary < 210) primary = 210;
 
                     return Column(
