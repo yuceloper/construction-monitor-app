@@ -153,8 +153,8 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     }
   }
 
-  /// Uyari metnini duzenler. Pencere ekleme penceresiyle ayni; alan dolu
-  /// geliyor ve buton "Kaydet" yaziyor.
+  /// Uyari metnini gunceller. Pencere ekleme penceresiyle ayni; alan
+  /// dolu geliyor ve buton "Guncelle" yaziyor.
   Future<void> _editWarning(WorkItemWarning warning) async {
     final result = await showDialog<String>(
       context: context,
@@ -164,7 +164,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Uyarıyı Düzenle'),
+            title: const Text('Uyarıyı Güncelle'),
             scrollable: true,
             content: SizedBox(
               width: 360,
@@ -216,7 +216,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                   }
                   Navigator.of(dialogContext).pop(value);
                 },
-                child: const Text('Kaydet'),
+                child: const Text('Güncelle'),
               ),
             ],
           ),
@@ -230,6 +230,8 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     try {
       await _service.updateWarning(_id, warning.id, result);
       await _loadDetail();
+      if (!mounted) return;
+      _bildir('Uyarı güncellendi.');
     } on WorkItemException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -241,11 +243,52 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 
   /// Uyariyi siler. Geri alinamadigi icin once onay soruluyor.
   Future<void> _deleteWarning(WorkItemWarning warning) async {
+    final c = context.colors;
     final onay = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Uyarıyı Sil'),
-        content: const Text('Bu uyarı silinecek. Devam edilsin mi?'),
+        scrollable: true,
+        // Ekleme penceresiyle ayni yapi: metin kendi kutusunda, koyu ve
+        // okunabilir; hangi uyarinin silindigi net gorunuyor.
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+                decoration: BoxDecoration(
+                  color: c.inset,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: c.border),
+                ),
+                child: Text(
+                  warning.text,
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 15.5,
+                    height: 1.4,
+                    fontWeight: FontWeight.w500,
+                    color: c.ink,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Bu uyarı silinecek. Devam edilsin mi?',
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 14,
+                  height: 1.45,
+                  color: c.sub,
+                ),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -265,6 +308,8 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     try {
       await _service.deleteWarning(_id, warning.id);
       await _loadDetail();
+      if (!mounted) return;
+      _bildir('Uyarı silindi.');
     } on WorkItemException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -304,7 +349,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
               const SizedBox(height: 10),
               _WarningMenuItem(
                 icon: LucideIcons.pencil,
-                label: 'Düzenle',
+                label: 'Güncelle',
                 onTap: () => Navigator.of(sheetContext).pop('duzenle'),
               ),
               Divider(height: 1, color: c.line),
@@ -323,6 +368,13 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 
     if (secim == 'duzenle') await _editWarning(warning);
     if (secim == 'sil') await _deleteWarning(warning);
+  }
+
+  /// Islem sonucunu kisa bir seritle bildirir.
+  void _bildir(String mesaj) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mesaj), duration: const Duration(seconds: 2)),
+    );
   }
 
   static String _formatDate(DateTime date) {
@@ -647,7 +699,7 @@ class _HistoryEntry extends StatelessWidget {
   }
 }
 
-class _WarningCard extends StatelessWidget {
+class _WarningCard extends StatefulWidget {
   final WorkItemWarning item;
   final String createdDate;
   final VoidCallback onMenu;
@@ -659,7 +711,19 @@ class _WarningCard extends StatelessWidget {
   });
 
   @override
+  State<_WarningCard> createState() => _WarningCardState();
+}
+
+class _WarningCardState extends State<_WarningCard> {
+  /// Uzun uyarilar listeyi eziyordu; varsayilan olarak uc satirla
+  /// sinirli, dokununca aciliyor.
+  bool _acik = false;
+
+  @override
   Widget build(BuildContext context) {
+    final item = widget.item;
+    final createdDate = widget.createdDate;
+    final onMenu = widget.onMenu;
     final c = context.colors;
     final overdue = item.isOverdue;
     final edge = overdue ? c.bad : c.border2;
@@ -688,14 +752,21 @@ class _WarningCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(
-                            item.text,
-                            style: TextStyle(
-                              fontFamily: kBody,
-                              fontSize: 15.5,
-                              height: 1.4,
-                              fontWeight: FontWeight.w500,
-                              color: c.ink,
+                          child: Pressable(
+                            onTap: () => setState(() => _acik = !_acik),
+                            child: Text(
+                              item.text,
+                              maxLines: _acik ? null : 3,
+                              overflow: _acik
+                                  ? TextOverflow.visible
+                                  : TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 15.5,
+                                height: 1.4,
+                                fontWeight: FontWeight.w500,
+                                color: c.ink,
+                              ),
                             ),
                           ),
                         ),
