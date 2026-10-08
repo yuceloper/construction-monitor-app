@@ -8,6 +8,7 @@ import '../../features/auth/services/session_manager.dart';
 import '../../features/site_selection/models/site_summary.dart';
 import '../../features/site_selection/services/site_service.dart';
 import 'brand_logo.dart';
+import 'kisa_ad.dart';
 import 'pressable.dart';
 
 /// Brand row at the top of every signed-in screen: the logo on the left, the
@@ -18,7 +19,7 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 4),
       child: Row(
         children: [
           Expanded(
@@ -57,33 +58,10 @@ class UserChip extends StatelessWidget {
   /// bosluk. Ad soyadin sigip sigmadigi bu paylar dusulerek olculuyor.
   static const double _cerceve = 6 + 36 + 10 + 12;
 
-  /// Ad soyad sigiyorsa oldugu gibi, sigmiyorsa ilk ad ve soyadin bas
-  /// harfi. Yuvarlak rozette zaten bas harfler duruyor, kisi yine
-  /// taniniyor; kutu buyutulse bu kez SAHADA logosu kuculuyordu.
-  static String _adiSigdir(BuildContext context, String adSoyad) {
-    final parcalar = adSoyad.split(' ').where((p) => p.isNotEmpty).toList();
-    if (parcalar.length < 2) return adSoyad;
-
-    final olcek = MediaQuery.textScalerOf(context);
-    double genislik(String metin) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: metin,
-          style: const TextStyle(
-            fontFamily: kBody,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        textScaler: olcek,
-        textDirection: TextDirection.ltr,
-      )..layout();
-      return painter.width;
-    }
-
-    if (genislik(adSoyad) <= _enBoy - _cerceve) return adSoyad;
-    return '${parcalar.first} ${parcalar.last.characters.first}.';
-  }
+  /// Kutuya sigacak ad. Kural ortak dosyada; ayni kisi listede de ayni
+  /// bicimde yaziliyor.
+  static String _adiSigdir(BuildContext context, String adSoyad) =>
+      kisaKisiAdi(context, adSoyad, enBoy: _enBoy - _cerceve);
 
   Future<void> _openSiteSwitcher(BuildContext context) async {
     final selected = await showModalBottomSheet<SiteSummary>(
