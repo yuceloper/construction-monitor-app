@@ -109,7 +109,12 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                     const SizedBox(height: 10),
                     Text(
                       validationMessage!,
-                      style: TextStyle(color: context.colors.bad, fontSize: 13),
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.bad,
+                      ),
                     ),
                   ],
                 ],
@@ -194,7 +199,12 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                     const SizedBox(height: 10),
                     Text(
                       validationMessage!,
-                      style: TextStyle(color: context.colors.bad, fontSize: 13),
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.bad,
+                      ),
                     ),
                   ],
                 ],
