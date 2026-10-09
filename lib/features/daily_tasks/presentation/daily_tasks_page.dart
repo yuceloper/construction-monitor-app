@@ -101,13 +101,6 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
             ScreenTitleBar(
               title: 'Günlük İşler',
               onBack: () => context.go('/dashboard'),
-              // Sayfanin eylemi basligin yaninda: listeyi ortmuyor,
-              // kaydirmayla kaybolmuyor, ayri bir satir da yemiyor.
-              trailing: SmallButton(
-                label: 'Ekle',
-                icon: LucideIcons.plus,
-                onTap: _openCreate,
-              ),
             ),
             if (!_hicIsYok)
               Padding(
@@ -137,6 +130,52 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                       ),
                     ],
                   ),
+                ),
+              ),
+            // Ekle tek basina bir kutu degil; solda kac is oldugunu
+            // soyleyen satirin sag ucu. Bosta asili durmuyor, yer
+            // kaplamasi en az ve ustelik bilgi de tasiyor.
+            if (!_hicIsYok && _errorMessage == null && !_isLoading)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 2, 18, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      _showAll
+                          ? '${_tasks.length} iş'
+                          : '${_tasks.length} aktif iş',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .2,
+                        color: c.muted,
+                      ),
+                    ),
+                    const Spacer(),
+                    Pressable(
+                      onTap: _openCreate,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 6, 2, 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.plus, size: 18, color: c.accent),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Ekle',
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: c.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             Expanded(child: _buildContent()),
