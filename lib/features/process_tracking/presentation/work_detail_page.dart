@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/genisleyen_metin.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/work_item_detail.dart';
@@ -725,10 +726,6 @@ class _WarningCard extends StatefulWidget {
 }
 
 class _WarningCardState extends State<_WarningCard> {
-  /// Uzun uyarilar listeyi eziyordu; varsayilan olarak uc satirla
-  /// sinirli, dokununca aciliyor.
-  bool _acik = false;
-
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -762,21 +759,14 @@ class _WarningCardState extends State<_WarningCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Pressable(
-                            onTap: () => setState(() => _acik = !_acik),
-                            child: Text(
-                              item.text,
-                              maxLines: _acik ? null : 3,
-                              overflow: _acik
-                                  ? TextOverflow.visible
-                                  : TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontSize: 15.5,
-                                height: 1.4,
-                                fontWeight: FontWeight.w500,
-                                color: c.ink,
-                              ),
+                          child: GenisleyenMetin(
+                            metin: item.text,
+                            bicim: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 15.5,
+                              height: 1.4,
+                              fontWeight: FontWeight.w500,
+                              color: c.ink,
                             ),
                           ),
                         ),
