@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
@@ -17,19 +18,18 @@ class ProjectService {
       throw const ProjectException('Şantiye seçimi bulunamadı. Lütfen şantiye seçin.');
     }
 
-    final client = HttpClient();
-
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/projects').replace(
         queryParameters: {'siteId': '$siteId'},
       );
-      final request = await client.getUrl(uri);
-
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
-
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      final responseBody = response.body;
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(responseBody);
@@ -64,12 +64,10 @@ class ProjectService {
       }
 
       throw ProjectException(_readErrorMessage(responseBody, response.statusCode));
-    } on SocketException {
+    } on http.ClientException {
       throw ProjectException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
       throw const ProjectException('Sunucudan geçersiz bir yanıt geldi.');
-    } finally {
-      client.close(force: true);
     }
   }
 
