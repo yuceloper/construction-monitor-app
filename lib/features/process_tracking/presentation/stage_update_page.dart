@@ -141,6 +141,18 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
               onParentTap: () => context.pop(false),
             ),
             Expanded(child: _buildContent()),
+            // KAYDET listenin sonunda duruyordu: uc kalemlik bir asamada
+            // dugme ekranin ortasinda, altinda yarim ekran bosluk kaliyordu.
+            // Artik sayfanin altina sabit.
+            if (!_isLoading && !(_errorMessage != null && _works.isEmpty))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+                child: PrimaryButton(
+                  label: 'KAYDET',
+                  busy: _isSaving,
+                  onPressed: _isSaving ? null : _save,
+                ),
+              ),
           ],
         ),
       ),
@@ -317,12 +329,6 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                     );
                   }).toList(),
                 ),
-        ),
-        const SizedBox(height: 32),
-        PrimaryButton(
-          label: 'KAYDET',
-          busy: _isSaving,
-          onPressed: _isSaving ? null : _save,
         ),
       ],
     );

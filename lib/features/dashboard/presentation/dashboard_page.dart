@@ -68,17 +68,30 @@ class _DashboardPageState extends State<DashboardPage>
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     // Iki buyuk kartin icinde bir ikon ve bir baslik var;
-                    // uzadikca ortalari bosaliyordu. Ekranin %30'u kadarlar,
-                    // en fazla 250dp. Artan pay alt panellere ve aralarindaki
-                    // bosluga gidiyor, kartlari sismiyor.
-                    const row = 88.0;
-                    var primary = constraints.maxHeight * .30;
-                    if (primary > 250) primary = 250;
-                    if (primary < 180) primary = 180;
+                    // uzadikca ortalari bosaliyordu, en fazla 250dp.
+                    //
+                    // Olculer kalan yerden hesaplaniyor, sabit degil: ekran
+                    // kisaldiginda (ornegin klavye acikken) once alt paneller
+                    // kisiliyor, sonra kartlar. Sabit olculerle 478dp
+                    // yukseklikte tasiyordu.
+                    const rowMax = 88.0;
+                    const rowMin = 62.0;
+                    const gapMin = 12.0;
+                    const gapMax = 30.0;
 
-                    var gap = (constraints.maxHeight - primary - row * 3) / 5;
-                    if (gap < 14) gap = 14;
-                    if (gap > 32) gap = 32;
+                    var row = (constraints.maxHeight - 180 - gapMin * 3) / 3;
+                    if (row > rowMax) row = rowMax;
+                    if (row < rowMin) row = rowMin;
+
+                    var gap = gapMin;
+                    var primary = constraints.maxHeight - row * 3 - gap * 3;
+                    if (primary > 250) {
+                      primary = 250;
+                      gap = (constraints.maxHeight - primary - row * 3) / 5;
+                      if (gap < gapMin) gap = gapMin;
+                      if (gap > gapMax) gap = gapMax;
+                    }
+                    if (primary < 0) primary = 0;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
