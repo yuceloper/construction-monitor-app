@@ -261,7 +261,11 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: kDisplay,
-                          fontSize: 19,
+                          // Firma adlari bir santiyede tamamen buyuk harf
+                          // ("3S KARADENIZ SU"), digerinde normal yazim
+                          // ("Bitez Yapi Market") giriliyor. Ayni puntoda
+                          // buyuk harf cok daha iri okunuyordu.
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -.2,
                           color: c.ink,
