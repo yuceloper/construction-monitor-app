@@ -188,7 +188,18 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
                   ],
                 ),
               ),
-            Expanded(child: ColoredBox(color: c.inset, child: _buildBody())),
+            // Belge, secim alaninin hemen altina kenardan kenara biniyordu.
+            // Artik kendi panelinde duruyor: ustte ince ayrac, icerde cukur
+            // zemin; sayfa bu zeminin uzerinde ayri bir kagit gibi.
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: c.inset,
+                  border: Border(top: BorderSide(color: c.border)),
+                ),
+                child: _buildBody(),
+              ),
+            ),
           ],
         ),
       ),
@@ -207,16 +218,111 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     }
 
     final bytes = _pdfBytes;
-    if (bytes == null) {
-      return const LoadingView();
-    }
 
-    return PdfViewer.data(
-      bytes,
-      sourceName: 'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
-      params: PdfViewerParams(backgroundColor: c.inset),
+    // Belge hazir olunca birden belirip goz yoruyordu; iskelet sayfa ile
+    // ayni cercevede duruyor ve yerini yumusak bir gecisle biraktiriyor.
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: bytes == null
+          ? const _BelgeIskeleti(key: ValueKey('iskelet'))
+          : Padding(
+              key: ValueKey(
+                'belge-${_selectedDocumentId ?? widget.documentId}',
+              ),
+              padding: const EdgeInsets.all(14),
+              // pdfrx'in kendi margin'i sayfayla birlikte olceklendigi icin
+              // gorunmuyordu; cerceve disaridan kuruluyor. Belge boylece
+              // cukur zeminin uzerinde kendi kagidinda duruyor.
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: c.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: c.border),
+                  boxShadow: kLiftShadow,
+                ),
+                child: PdfViewer.data(
+                  bytes,
+                  sourceName:
+                      'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
+                  params: PdfViewerParams(
+                    backgroundColor: c.surface,
+                    margin: 0,
+                    pageDropShadow: const BoxShadow(color: Colors.transparent),
+                  ),
+                ),
+              ),
+            ),
     );
   }
+}
+
+/// Belge yuklenirken gosterilen bos sayfa. Gercek sayfayla ayni yerde,
+/// ayni olcude duruyor; icerik gelince sadece ustune yazilmis gibi oluyor.
+class _BelgeIskeleti extends StatefulWidget {
+  const _BelgeIskeleti({super.key});
+
+  @override
+  State<_BelgeIskeleti> createState() => _BelgeIskeletiState();
+}
+
+class _BelgeIskeletiState extends State<_BelgeIskeleti>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _nabiz = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _nabiz.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: SizedBox.expand(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(26, 30, 26, 30),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.border),
+            boxShadow: kLiftShadow,
+          ),
+          child: FadeTransition(
+            opacity: Tween<double>(begin: .45, end: .9).animate(_nabiz),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _cizgi(c.inset, 160, 14),
+                const SizedBox(height: 18),
+                for (var i = 0; i < 7; i++) ...[
+                  _cizgi(c.inset, double.infinity, 9),
+                  const SizedBox(height: 11),
+                ],
+                _cizgi(c.inset, 190, 9),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cizgi(Color renk, double en, double boy) => Container(
+    width: en,
+    height: boy,
+    decoration: BoxDecoration(
+      color: renk,
+      borderRadius: BorderRadius.circular(boy / 2),
+    ),
+  );
 }
 
 
