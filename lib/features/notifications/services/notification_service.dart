@@ -51,9 +51,11 @@ class NotificationService {
       }
       _throwForResponse(response.statusCode, body, 'Bildirimler alınamadı.');
     } on SocketException {
-      throw NotificationException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const NotificationException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const NotificationException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const NotificationException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -80,9 +82,11 @@ class NotificationService {
       }
       _throwForResponse(response.statusCode, body, 'Bildirim sayısı alınamadı.');
     } on SocketException {
-      throw NotificationException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const NotificationException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const NotificationException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const NotificationException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -109,7 +113,9 @@ class NotificationService {
       if (response.statusCode >= 200 && response.statusCode < 300) return;
       _throwForResponse(response.statusCode, body, 'Bildirim güncellenemedi.');
     } on SocketException {
-      throw NotificationException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const NotificationException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }

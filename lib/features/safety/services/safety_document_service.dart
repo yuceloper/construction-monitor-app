@@ -32,7 +32,9 @@ class SafetyDocumentService {
       }
       _throwForResponse(response.statusCode, body);
     } on SocketException {
-      throw DailySafetyConnectionException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailySafetyConnectionException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -61,7 +63,9 @@ class SafetyDocumentService {
       }
       _throwForResponse(response.statusCode, body);
     } on SocketException {
-      throw DailySafetyConnectionException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailySafetyConnectionException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -85,7 +89,9 @@ class SafetyDocumentService {
       final body = await response.transform(utf8.decoder).join();
       _throwForResponse(response.statusCode, body);
     } on SocketException {
-      throw DailySafetyConnectionException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailySafetyConnectionException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }

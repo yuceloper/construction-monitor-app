@@ -82,13 +82,15 @@ class ProgressService {
         );
       }
 
-      throw ProgressException('Süreç bilgileri alınamadı. Sunucu hatası: ${response.statusCode}');
+      throw const ProgressException(
+        'Süreç bilgileri alınamadı. Lütfen daha sonra tekrar deneyiniz.',
+      );
     } on SocketException {
       throw ProgressException(
-        'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const ProgressException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const ProgressException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }

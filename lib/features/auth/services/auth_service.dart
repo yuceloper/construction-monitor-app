@@ -31,7 +31,7 @@ class AuthService {
         final decoded = jsonDecode(responseBody);
 
         if (decoded is! Map<String, dynamic>) {
-          throw const AuthException('Sunucudan geçersiz bir yanıt geldi.');
+          throw const AuthException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
         }
 
         if (decoded['success'] != true) {
@@ -62,10 +62,10 @@ class AuthService {
       throw AuthException(_readErrorMessage(responseBody, response.statusCode));
     } on SocketException {
       throw AuthException(
-        'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const AuthException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const AuthException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -94,7 +94,7 @@ class AuthService {
       return 'Giriş bilgileri geçersiz.';
     }
 
-    return 'Giriş yapılamadı. Sunucu hatası: $statusCode';
+    return 'Giriş yapılamadı. Lütfen daha sonra tekrar deneyiniz.';
   }
 }
 

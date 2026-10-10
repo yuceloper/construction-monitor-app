@@ -29,9 +29,11 @@ class StakeholderService {
       }
       _throwForResponse(response.statusCode, body, 'Paydaşlar alınamadı.');
     } on SocketException {
-      throw StakeholderException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const StakeholderException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const StakeholderException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const StakeholderException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -71,9 +73,11 @@ class StakeholderService {
       }
       _throwForResponse(response.statusCode, body, 'Paydaş kaydedilemedi.');
     } on SocketException {
-      throw StakeholderException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const StakeholderException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const StakeholderException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const StakeholderException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -134,7 +138,7 @@ class StakeholderService {
       }
     } catch (_) {}
     throw StakeholderException(
-      message != null && message.trim().isNotEmpty ? message.trim() : '$fallback Sunucu hatası: $statusCode',
+      message != null && message.trim().isNotEmpty ? message.trim() : '$fallback Lütfen daha sonra tekrar deneyiniz.',
     );
   }
 }

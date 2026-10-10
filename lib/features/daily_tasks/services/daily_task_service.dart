@@ -35,9 +35,11 @@ class DailyTaskService {
       }
       _throwForResponse(response.statusCode, body, 'Günlük işler alınamadı.');
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const DailyTaskException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -56,9 +58,11 @@ class DailyTaskService {
       }
       _throwForResponse(response.statusCode, body, 'Günlük iş detayı alınamadı.');
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const DailyTaskException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -89,9 +93,11 @@ class DailyTaskService {
       }
       _throwForResponse(response.statusCode, body, 'Günlük iş oluşturulamadı.');
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const DailyTaskException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -115,9 +121,11 @@ class DailyTaskService {
       }
       _throwForResponse(response.statusCode, body, 'Günlük iş güncellenemedi.');
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const DailyTaskException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -154,9 +162,11 @@ class DailyTaskService {
       }
       _throwForResponse(response.statusCode, body, 'Fotoğraflar yüklenemedi.');
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const DailyTaskException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const DailyTaskException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -190,7 +200,9 @@ class DailyTaskService {
       }
       _throwForResponse(response.statusCode, body, 'Sesli not yüklenemedi.');
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -213,7 +225,9 @@ class DailyTaskService {
       await file.writeAsBytes(bytes, flush: true);
       return file.path;
     } on SocketException {
-      throw DailyTaskException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -285,7 +299,7 @@ class DailyTaskService {
       }
     } catch (_) {}
     throw DailyTaskException(
-      message != null && message.trim().isNotEmpty ? message.trim() : '$fallback Sunucu hatası: $statusCode',
+      message != null && message.trim().isNotEmpty ? message.trim() : '$fallback Lütfen daha sonra tekrar deneyiniz.',
     );
   }
 }

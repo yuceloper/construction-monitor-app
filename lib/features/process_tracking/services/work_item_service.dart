@@ -31,9 +31,11 @@ class WorkItemService {
       }
       _throwForResponse(response.statusCode, body, 'Alt işler alınamadı.');
     } on SocketException {
-      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const WorkItemException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const WorkItemException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -57,9 +59,11 @@ class WorkItemService {
       }
       _throwForResponse(response.statusCode, body, 'İş detayı alınamadı.');
     } on SocketException {
-      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const WorkItemException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const WorkItemException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -78,7 +82,9 @@ class WorkItemService {
         _throwForResponse(response.statusCode, body, 'Uyarı eklenemedi.');
       }
     } on SocketException {
-      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const WorkItemException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -99,7 +105,9 @@ class WorkItemService {
         _throwForResponse(response.statusCode, body, 'Uyarı güncellenemedi.');
       }
     } on SocketException {
-      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const WorkItemException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -119,7 +127,9 @@ class WorkItemService {
         _throwForResponse(response.statusCode, body, 'Uyarı silinemedi.');
       }
     } on SocketException {
-      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const WorkItemException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } finally {
       client.close(force: true);
     }
@@ -144,9 +154,11 @@ class WorkItemService {
       }
       _throwForResponse(response.statusCode, body, 'Alt iş güncellenemedi.');
     } on SocketException {
-      throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const WorkItemException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const WorkItemException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     } finally {
       client.close(force: true);
     }
@@ -191,7 +203,7 @@ class WorkItemService {
     throw WorkItemException(
       message != null && message.trim().isNotEmpty
           ? message.trim()
-          : '$fallback Sunucu hatası: $statusCode',
+          : '$fallback Lütfen daha sonra tekrar deneyiniz.',
     );
   }
 }
