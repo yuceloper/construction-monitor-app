@@ -459,11 +459,18 @@ class _TitleBarShell extends StatelessWidget {
   }
 }
 
+/// Baslik yazisinin normal olcusu.
+const double kTitleSize = 21;
+
+/// Kuculmenin tabani: bunun altina inmiyor, okunmaz hale gelmesin diye.
+/// Bu olcude de sigmiyorsa yazi uc noktayla kesiliyor.
+const double kTitleMin = 17;
+
 /// Butun basliklarin ortak yazi bicimi. Tek baslikta da breadcrumb'in
 /// icinde de ayni; boylece sayfa degisince baslik buyuyup kucumuyor.
 TextStyle _titleStyle(AppColors c) => TextStyle(
   fontFamily: kDisplay,
-  fontSize: 21,
+  fontSize: kTitleSize,
   fontWeight: FontWeight.w700,
   letterSpacing: -.4,
   color: c.ink,
@@ -533,37 +540,67 @@ class BreadcrumbBar extends StatelessWidget {
       );
     }
 
-    // Dar ekranlarda en uzun baslik da kesilmesin diye yazi kirpilmak
-    // yerine az bir miktar kuculuyor.
+    // Dar ekranda yazi kirpilmak yerine kuculuyor, ama bunun bir tabani
+    // var: okunamayacak kadar ufalmasin diye en fazla kTitleMin'e kadar
+    // iniyor. O tabanda da sigmiyorsa uc noktayla kesiliyor.
     return _TitleBarShell(
       onBack: onBack,
       trailing: trailing,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        alignment: Alignment.centerLeft,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Pressable(
-              onTap: onParentTap,
-              child: Text(parentLabel, maxLines: 1, style: stil),
-            ),
-            // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
-            // Egik cizgi zeminden 20/255 ayriliyor, ekranda secilmiyordu;
-            // tire hem daha belirgin hem de okurken daha sakin.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 9),
-              child: Text(
-                '\u2013',
-                style: stil.copyWith(
-                  fontWeight: FontWeight.w400,
-                  color: c.muted,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final olcek = MediaQuery.textScalerOf(context);
+          double genislik(String metin, TextStyle bicim) {
+            final painter = TextPainter(
+              text: TextSpan(text: metin, style: bicim),
+              textScaler: olcek,
+              textDirection: TextDirection.ltr,
+            )..layout();
+            return painter.width;
+          }
+
+          final ayracBicim = stil.copyWith(fontWeight: FontWeight.w400);
+          final gereken = genislik(parentLabel, stil) +
+              18 + // ayracin iki yanindaki bosluk
+              genislik('\u2013', ayracBicim) +
+              genislik(title, stil);
+
+          var olcu = kTitleSize;
+          if (gereken > constraints.maxWidth && gereken > 0) {
+            olcu = (kTitleSize * constraints.maxWidth / gereken)
+                .clamp(kTitleMin, kTitleSize);
+          }
+          final kucuk = stil.copyWith(fontSize: olcu);
+
+          return Row(
+            children: [
+              Pressable(
+                onTap: onParentTap,
+                child: Text(parentLabel, maxLines: 1, style: kucuk),
+              ),
+              // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
+              // Egik cizgi zeminden 20/255 ayriliyor, ekranda secilmiyordu;
+              // tire hem daha belirgin hem de okurken daha sakin.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 9),
+                child: Text(
+                  '\u2013',
+                  style: kucuk.copyWith(
+                    fontWeight: FontWeight.w400,
+                    color: c.muted,
+                  ),
                 ),
               ),
-            ),
-            Text(title, maxLines: 1, style: stil),
-          ],
-        ),
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: kucuk,
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
