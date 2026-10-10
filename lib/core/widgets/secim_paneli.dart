@@ -150,6 +150,9 @@ Future<T?> secimPaneliAc<T>(
 }) {
   return showModalBottomSheet<T>(
     context: context,
+    // Kok navigator: aksi halde panel alt menunun ustune cikamiyor,
+    // menu panelin yaninda parlak kaliyordu.
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (sheetContext) => SecimPaneliKabugu(

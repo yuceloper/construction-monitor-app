@@ -66,6 +66,9 @@ class UserChip extends StatelessWidget {
   Future<void> _openSiteSwitcher(BuildContext context) async {
     final selected = await showModalBottomSheet<SiteSummary>(
       context: context,
+      // Kok navigator: aksi halde panel alt menunun ustune cikamiyor,
+      // menu panelin yaninda parlak kaliyordu.
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => const _SiteSwitchSheet(),

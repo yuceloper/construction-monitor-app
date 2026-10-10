@@ -273,6 +273,9 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   Future<void> _openProjectPicker() async {
     final selected = await showModalBottomSheet<int>(
       context: context,
+      // Kok navigator: aksi halde panel alt menunun ustune cikamiyor,
+      // menu panelin yaninda parlak kaliyordu.
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _ProjectPickerSheet(
@@ -483,13 +486,15 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           ),
         ),
         const SizedBox(height: 8),
+        // Ayni formdaki diger etiketlerle ayni bicim: Not tek basina
+        // Barlow 18 kalin yaziliyordu, digerleri IBM Plex 15.
         Text(
           'Not',
           style: TextStyle(
-            fontFamily: kDisplay,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -.2,
+            fontFamily: kBody,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .2,
             color: c.ink,
           ),
         ),

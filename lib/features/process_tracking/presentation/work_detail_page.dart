@@ -335,6 +335,8 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     final c = context.colors;
     final secim = await showModalBottomSheet<String>(
       context: context,
+      // Kok navigator: aksi halde panel alt menunun ustune cikamiyor.
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => Container(
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
