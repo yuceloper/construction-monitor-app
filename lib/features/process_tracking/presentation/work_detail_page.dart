@@ -661,9 +661,14 @@ class _HistoryEntry extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.text,
-                    style: TextStyle(
+                  // Uzun bir uyari eklendiginde tarihcedeki satir sekiz
+                  // satira kadar uzuyor, digerleri tek satir oldugu icin
+                  // zaman cizelgesi dagiliyordu. Uyari kartiyla ayni
+                  // sekilde iki satirda kesilip aciliyor.
+                  GenisleyenMetin(
+                    metin: item.text,
+                    satir: 2,
+                    bicim: TextStyle(
                       fontFamily: kBody,
                       fontSize: 15,
                       height: 1.4,

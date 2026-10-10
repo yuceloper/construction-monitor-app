@@ -331,9 +331,10 @@ class _TaskCard extends StatelessWidget {
     switch (task.priority) {
       case 'HIGH':
       case 'CRITICAL':
-      case 'LOW':
         return c.surface;
       default:
+        // Gri ve sari zeminde beyaz yazi okunmuyordu: olculdu, kontrast
+        // 3.1'e dusuyor, erisilebilirlik siniri 4.5. Koyu yaziyla 6.0.
         return c.ink;
     }
   }

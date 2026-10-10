@@ -286,43 +286,84 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             ),
           ),
           if (task.photoIds.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            Text(
-              'Fotoğraflar',
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.3,
-                color: c.ink,
+            const SizedBox(height: 14),
+            // Bolum artik panelin icinde: ekrandaki diger her bolum
+            // beyaz kartin icindeyken fotograflar disarida duruyordu.
+            Container(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: c.border),
+                boxShadow: kLiftShadow,
               ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 125,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: task.photoIds.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (_, index) {
-                  final id = task.photoIds[index];
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: SizedBox(
-                      width: 145,
-                      child: Image.network(
-                        _service.photoUrl(id),
-                        headers: _service.photoHeaders(),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: c.inset,
-                          alignment: Alignment.center,
-                          child: Icon(LucideIcons.imageOff, color: c.faint),
-                        ),
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fotoğraflar',
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -.3,
+                      color: c.ink,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 125,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: task.photoIds.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (_, index) {
+                        final id = task.photoIds[index];
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: SizedBox(
+                            width: 145,
+                            child: Image.network(
+                              _service.photoUrl(id),
+                              headers: _service.photoHeaders(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, hata, __) {
+                                // Sunucudaki bazi fotograflar bozuk geliyor
+                                // (yarida kesilmis PNG). Bos gri kutu yerine
+                                // ne oldugu yaziyor; kullanici yuklenmesini
+                                // beklemesin.
+                                debugPrint('Fotograf yuklenemedi ($id): $hata');
+                                return Container(
+                                  color: c.inset,
+                                  alignment: Alignment.center,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.imageOff,
+                                        size: 22,
+                                        color: c.faint,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Görsel açılamadı',
+                                        style: TextStyle(
+                                          fontFamily: kBody,
+                                          fontSize: 12.5,
+                                          color: c.muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -461,41 +502,41 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                 const SizedBox(height: 9),
                 ScrollableField(
                   builder: (scrollController) => TextField(
-                  controller: _noteController,
-                  scrollController: scrollController,
-                  enabled: !_isSaving,
-                  minLines: 5,
-                  maxLines: 8,
-                  maxLength: 500,
-                  inputFormatters: [LengthLimitingTextInputFormatter(500)],
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16,
-                    height: 1.4,
-                    color: c.ink,
-                  ),
-                  cursorColor: c.accent,
-                  decoration: InputDecoration(
-                    hintText: 'Lütfen detay giriniz.',
-                    hintStyle: TextStyle(
+                    controller: _noteController,
+                    scrollController: scrollController,
+                    enabled: !_isSaving,
+                    minLines: 5,
+                    maxLines: 8,
+                    maxLength: 500,
+                    inputFormatters: [LengthLimitingTextInputFormatter(500)],
+                    style: TextStyle(
                       fontFamily: kBody,
                       fontSize: 16,
-                      color: c.faint,
+                      height: 1.4,
+                      color: c.ink,
                     ),
-                    counterStyle: TextStyle(
-                      fontFamily: kBody,
-                      fontSize: 12,
-                      color: c.muted,
+                    cursorColor: c.accent,
+                    decoration: InputDecoration(
+                      hintText: 'Lütfen detay giriniz.',
+                      hintStyle: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 16,
+                        color: c.faint,
+                      ),
+                      counterStyle: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 12,
+                        color: c.muted,
+                      ),
+                      filled: true,
+                      fillColor: c.surface2,
+                      // Sagda kaydirma cubuguna yer birakiliyor.
+                      contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
+                      border: border(c.border2),
+                      enabledBorder: border(c.border2),
+                      disabledBorder: border(c.border),
+                      focusedBorder: border(c.accent, 1.8),
                     ),
-                    filled: true,
-                    fillColor: c.surface2,
-                    // Sagda kaydirma cubuguna yer birakiliyor.
-                    contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    disabledBorder: border(c.border),
-                    focusedBorder: border(c.accent, 1.8),
-                  ),
                   ),
                 ),
               ],
