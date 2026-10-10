@@ -67,20 +67,18 @@ class _DashboardPageState extends State<DashboardPage>
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    const gap = 14.0;
+                    // Iki buyuk kartin icinde bir ikon ve bir baslik var;
+                    // uzadikca ortalari bosaliyordu. Ekranin %30'u kadarlar,
+                    // en fazla 250dp. Artan pay alt panellere ve aralarindaki
+                    // bosluga gidiyor, kartlari sismiyor.
+                    const row = 88.0;
+                    var primary = constraints.maxHeight * .30;
+                    if (primary > 250) primary = 250;
+                    if (primary < 180) primary = 180;
 
-                    // Ana kartlar kisaldi; alttaki uc giris ayri birer panel
-                    // oldugu icin aralarinda bosluk var. Artan pay ustte ve
-                    // altta esit bolunur.
-                    const row = 72.0;
-                    var primary = constraints.maxHeight -
-                        gap -
-                        (row * 3 + gap * 2) -
-                        gap;
-                    // Ust sinir yukseltildi: kartlar daha cok pay alinca
-                    // logoyla aralarindaki olu bosluk kuculuyor.
-                    if (primary > 340) primary = 340;
-                    if (primary < 210) primary = 210;
+                    var gap = (constraints.maxHeight - primary - row * 3) / 5;
+                    if (gap < 14) gap = 14;
+                    if (gap > 32) gap = 32;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,7 +114,7 @@ class _DashboardPageState extends State<DashboardPage>
                             ],
                           ),
                         ),
-                        const SizedBox(height: gap),
+                        SizedBox(height: gap),
                         // Her giris kendi panelinde duruyor.
                         _entering(
                           3,
@@ -130,7 +128,7 @@ class _DashboardPageState extends State<DashboardPage>
                             ),
                           ),
                         ),
-                        const SizedBox(height: gap),
+                        SizedBox(height: gap),
                         _entering(
                           4,
                           SizedBox(
@@ -143,7 +141,7 @@ class _DashboardPageState extends State<DashboardPage>
                             ),
                           ),
                         ),
-                        const SizedBox(height: gap),
+                        SizedBox(height: gap),
                         _entering(
                           5,
                           SizedBox(
