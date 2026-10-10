@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../app/active_site.dart';
 import '../../app/theme.dart';
@@ -10,8 +9,6 @@ import '../../features/site_selection/services/site_service.dart';
 import 'brand_logo.dart';
 import 'pressable.dart';
 
-/// Brand row at the top of every signed-in screen: the logo on the left, the
-/// signed-in user and the active site on the right.
 class AppHeader extends StatelessWidget {
   const AppHeader({super.key});
 
@@ -42,24 +39,12 @@ class AppHeader extends StatelessWidget {
   }
 }
 
-/// Signed-in user: initials, name, and the site being worked on.
-///
-/// Kutuya dokununca santiye degistirme paneli aciliyor; baska bir santiye
-/// secilirse ana sayfaya donuluyor, boylece ekranda onceki santiyenin verisi
-/// kalmiyor.
 class UserChip extends StatelessWidget {
   const UserChip({super.key});
 
-  /// Kutunun en fazla genisligi.
   static const double _enBoy = 200;
-
-  /// Yazi disinda kalan paylar: sol bosluk + rozet + aradaki bosluk + sag
-  /// bosluk. Ad soyadin sigip sigmadigi bu paylar dusulerek olculuyor.
   static const double _cerceve = 6 + 36 + 10 + 12;
 
-  /// Ad soyad sigiyorsa oldugu gibi, sigmiyorsa ilk ad ve soyadin bas
-  /// harfi. Yuvarlak rozette zaten bas harfler duruyor, kisi yine
-  /// taniniyor; kutu buyutulse bu kez SAHADA logosu kuculuyordu.
   static String _adiSigdir(BuildContext context, String adSoyad) {
     final parcalar = adSoyad.split(' ').where((p) => p.isNotEmpty).toList();
     if (parcalar.length < 2) return adSoyad;
@@ -182,7 +167,7 @@ class UserChip extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.mapPin, size: 11, color: c.accent),
+                        Icon(Icons.location_on_outlined, size: 12, color: c.accent),
                         const SizedBox(width: 3),
                         Flexible(
                           child: Text(
@@ -199,11 +184,7 @@ class UserChip extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 3),
-                        Icon(
-                          LucideIcons.chevronDown,
-                          size: 13,
-                          color: c.accent,
-                        ),
+                        Icon(Icons.keyboard_arrow_down, size: 15, color: c.accent),
                       ],
                     ),
                   ],
@@ -217,7 +198,6 @@ class UserChip extends StatelessWidget {
   }
 }
 
-/// Santiye degistirme paneli: mevcut santiyeler listelenir, secili olanda tik.
 class _SiteSwitchSheet extends StatefulWidget {
   const _SiteSwitchSheet();
 
@@ -251,9 +231,7 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
       if (mounted) {
-        setState(
-          () => _errorMessage = 'Şantiyeler yüklenirken bir hata oluştu.',
-        );
+        setState(() => _errorMessage = 'Şantiyeler yüklenirken bir hata oluştu.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -266,9 +244,7 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
     final selectedId = SessionManager.instance.selectedSiteId;
 
     return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * .6,
-      ),
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .6),
       padding: EdgeInsets.fromLTRB(
         16,
         10,
@@ -314,10 +290,7 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
                 child: SizedBox(
                   width: 26,
                   height: 26,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.6,
-                    color: c.ink,
-                  ),
+                  child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
                 ),
               ),
             )
@@ -340,10 +313,7 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
                   Pressable(
                     onTap: _load,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
                         color: c.ink,
                         borderRadius: BorderRadius.circular(12),
@@ -399,7 +369,7 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
                             ),
                           ),
                           if (isSelected)
-                            Icon(LucideIcons.check, size: 20, color: c.accent),
+                            Icon(Icons.check, size: 20, color: c.accent),
                         ],
                       ),
                     ),
@@ -413,11 +383,6 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
   }
 }
 
-/// Baslik seridinin alt kenari.
-///
-/// Duz bir cizgiydi; tablo hissi veriyordu. Yerine cok hafif bir gecis
-/// kondu: ayirma isini goruyor ama cizgi cizmiyor. Ustteki ton her
-/// ekranda ayni, cunku iki baslik serisi de ayni yukseklikte.
 class TitleBarDivider extends StatelessWidget {
   const TitleBarDivider({super.key});
 
@@ -437,8 +402,6 @@ class TitleBarDivider extends StatelessWidget {
   }
 }
 
-/// Iki baslik seridinin ortak kabugu: ayni ic bosluk, ayni geri oku,
-/// ayni yukseklik. Ayrac her ekranda ayni yere dusuyor.
 class _TitleBarShell extends StatelessWidget {
   const _TitleBarShell({
     required this.onBack,
@@ -459,9 +422,6 @@ class _TitleBarShell extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 6, 20, 14),
           child: Row(
             children: [
-              // Yazi kutusunun ustunde altindan daha cok bosluk var; kutular
-              // ortalandiginda ok, harflerin gorsel merkezinin 1.5dp uzerinde
-              // kaliyordu. Ok o kadar asagi alindi, dokunma alani 44 kaldi.
               Pressable(
                 onTap: onBack,
                 child: const Padding(
@@ -481,8 +441,6 @@ class _TitleBarShell extends StatelessWidget {
   }
 }
 
-/// Butun basliklarin ortak yazi bicimi. Tek baslikta da breadcrumb'in
-/// icinde de ayni; boylece sayfa degisince baslik buyuyup kucumuyor.
 TextStyle _titleStyle(AppColors c) => TextStyle(
   fontFamily: kDisplay,
   fontSize: 21,
@@ -491,7 +449,6 @@ TextStyle _titleStyle(AppColors c) => TextStyle(
   color: c.ink,
 );
 
-/// Alt ekranlarin basligi: geri oku ve sayfanin adi.
 class ScreenTitleBar extends StatelessWidget {
   const ScreenTitleBar({
     super.key,
@@ -519,12 +476,6 @@ class ScreenTitleBar extends StatelessWidget {
   }
 }
 
-/// Alt ekranlarin basligi: geri oku, ust sayfanin adi ve bulunulan yer.
-///
-/// Ust sayfanin adi, o sayfadaki basligin birebir aynisi: ayni yazi tipi,
-/// ayni olcu, ayni yer. Boylece blok detayindan guncelleme sayfasina
-/// gecildiginde blok adi oynamiyor, sadece arkasina bulunulan sayfa
-/// ekleniyor.
 class BreadcrumbBar extends StatelessWidget {
   const BreadcrumbBar({
     super.key,
@@ -555,8 +506,6 @@ class BreadcrumbBar extends StatelessWidget {
       );
     }
 
-    // Dar ekranlarda en uzun baslik da kesilmesin diye yazi kirpilmak
-    // yerine az bir miktar kuculuyor.
     return _TitleBarShell(
       onBack: onBack,
       trailing: trailing,
@@ -570,9 +519,6 @@ class BreadcrumbBar extends StatelessWidget {
               onTap: onParentTap,
               child: Text(parentLabel, maxLines: 1, style: stil),
             ),
-            // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
-            // Egik cizgi zeminden 20/255 ayriliyor, ekranda secilmiyordu;
-            // tire hem daha belirgin hem de okurken daha sakin.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 9),
               child: Text(
@@ -591,15 +537,14 @@ class BreadcrumbBar extends StatelessWidget {
   }
 }
 
-/// Geri oku; rengini temadan kendisi okuyor.
 class _BackChevron extends StatelessWidget {
   const _BackChevron();
 
   @override
   Widget build(BuildContext context) {
     return Icon(
-      LucideIcons.chevronLeft,
-      size: 24,
+      Icons.chevron_left,
+      size: 28,
       color: context.colors.ink,
     );
   }
