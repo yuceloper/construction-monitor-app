@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
@@ -9,12 +10,12 @@ import '../models/work_item_summary.dart';
 class WorkItemService {
   Future<List<WorkItemSummary>> getByProject(int projectId) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/work-items/project/$projectId'));
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/project/$projectId'),
+        headers: _headers(token),
+      );
+      final body = response.body;
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
@@ -30,23 +31,21 @@ class WorkItemService {
         return items;
       }
       _throwForResponse(response.statusCode, body, 'Alt işler alınamadı.');
-    } on SocketException {
+    } on http.ClientException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
       throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<WorkItemDetail> getDetail(int id) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/work-items/$id/detail'));
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/$id/detail'),
+        headers: _headers(token),
+      );
+      final body = response.body;
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
@@ -56,84 +55,69 @@ class WorkItemService {
         return WorkItemDetail.fromJson(Map<String, dynamic>.from(data));
       }
       _throwForResponse(response.statusCode, body, 'İş detayı alınamadı.');
-    } on SocketException {
+    } on http.ClientException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
       throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<void> addWarning(int id, String text) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.postUrl(Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings'));
-      _auth(request, token, json: true);
-      request.write(jsonEncode({'text': text}));
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings'),
+        headers: _headers(token, json: true),
+        body: jsonEncode({'text': text}),
+      );
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        _throwForResponse(response.statusCode, body, 'Uyarı eklenemedi.');
+        _throwForResponse(response.statusCode, response.body, 'Uyarı eklenemedi.');
       }
-    } on SocketException {
+    } on http.ClientException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<void> updateWarning(int id, int warningId, String text) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.putUrl(
+      final response = await http.put(
         Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings/$warningId'),
+        headers: _headers(token, json: true),
+        body: jsonEncode({'text': text}),
       );
-      _auth(request, token, json: true);
-      request.write(jsonEncode({'text': text}));
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        _throwForResponse(response.statusCode, body, 'Uyarı güncellenemedi.');
+        _throwForResponse(response.statusCode, response.body, 'Uyarı güncellenemedi.');
       }
-    } on SocketException {
+    } on http.ClientException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<void> deleteWarning(int id, int warningId) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.deleteUrl(
+      final response = await http.delete(
         Uri.parse('${ApiConfig.baseUrl}/work-items/$id/warnings/$warningId'),
+        headers: _headers(token),
       );
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        _throwForResponse(response.statusCode, body, 'Uyarı silinemedi.');
+        _throwForResponse(response.statusCode, response.body, 'Uyarı silinemedi.');
       }
-    } on SocketException {
+    } on http.ClientException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<WorkItemSummary> updateStatus(int id, {required bool completed}) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.putUrl(Uri.parse('${ApiConfig.baseUrl}/work-items/$id/status'));
-      _auth(request, token, json: true);
-      request.write(jsonEncode({'status': completed ? 'COMPLETED' : 'WAITING'}));
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/work-items/$id/status'),
+        headers: _headers(token, json: true),
+        body: jsonEncode({'status': completed ? 'COMPLETED' : 'WAITING'}),
+      );
+      final body = response.body;
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
@@ -143,12 +127,10 @@ class WorkItemService {
         return WorkItemSummary.fromJson(Map<String, dynamic>.from(data));
       }
       _throwForResponse(response.statusCode, body, 'Alt iş güncellenemedi.');
-    } on SocketException {
+    } on http.ClientException {
       throw WorkItemException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
     } on FormatException {
       throw const WorkItemException('Sunucudan geçersiz bir yanıt geldi.');
-    } finally {
-      client.close(force: true);
     }
   }
 
@@ -160,11 +142,11 @@ class WorkItemService {
     return token;
   }
 
-  void _auth(HttpClientRequest request, String token, {bool json = false}) {
-    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-    request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
-    if (json) request.headers.contentType = ContentType.json;
-  }
+  Map<String, String> _headers(String token, {bool json = false}) => {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        if (json) 'Content-Type': 'application/json',
+      };
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
     if (statusCode == 401) {
@@ -184,9 +166,7 @@ class WorkItemService {
         message ??= decoded['detail']?.toString();
         message ??= decoded['error']?.toString();
       }
-    } catch (_) {
-      // Fallback below.
-    }
+    } catch (_) {}
 
     throw WorkItemException(
       message != null && message.trim().isNotEmpty
