@@ -9,6 +9,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
+import '../../../core/widgets/kisa_ad.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -272,7 +273,18 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   label: 'Blok',
                   value: '${task.typeLabel} - ${task.projectName}',
                 ),
-                _SummaryLine(label: 'İlgili Kişi', value: task.assignedToName),
+                _SummaryLine(
+                  label: 'İlgili Kişi',
+                  // Listede ve uyarilarda oldugu gibi: sigmiyorsa
+                  // "Muhammed A." Iki satira sarkip "Admin" tek basina
+                  // alt satirda kaliyordu.
+                  value: kisaKisiAdi(
+                    context,
+                    task.assignedToName,
+                    enBoy: 209,
+                    olcu: 15,
+                  ),
+                ),
                 _SummaryLine(label: 'Kritiklik', value: task.priorityLabel),
                 _SummaryLine(
                   label: 'Mevcut Durum',

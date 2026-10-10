@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
@@ -281,16 +282,26 @@ class _NotificationCard extends StatelessWidget {
                             ),
                             if (content.person.isNotEmpty) ...[
                               const SizedBox(width: 10),
+                              // Kisi gosterimi gunluk is kartiyla ayni:
+                              // ikon + soluk gri. Burada mavi ve kalindi,
+                              // blok adiyla ayni agirliktaydi; blok bir yer
+                              // etiketi, kisi degil.
+                              Icon(LucideIcons.user, size: 15, color: c.muted),
+                              const SizedBox(width: 6),
                               Text(
-                                content.person,
+                                kisaKisiAdi(
+                                  context,
+                                  content.person,
+                                  enBoy: 120,
+                                  olcu: 13,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontFamily: kBody,
                                   fontSize: 13,
                                   height: 1.25,
-                                  color: c.accent,
-                                  fontWeight: FontWeight.w600,
+                                  color: c.muted,
                                 ),
                               ),
                             ],

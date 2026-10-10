@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/genisleyen_metin.dart';
+import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/work_item_detail.dart';
@@ -695,7 +696,14 @@ class _HistoryEntry extends StatelessWidget {
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          item.user,
+                          // Ad her yerde ayni kuralla kisaliyor; burada
+                          // "Muhammed Abd..." diye ortasindan kesiliyordu.
+                          kisaKisiAdi(
+                            context,
+                            item.user,
+                            enBoy: 130,
+                            olcu: 12.5,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -811,7 +819,12 @@ class _WarningCardState extends State<_WarningCard> {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            item.user,
+                            kisaKisiAdi(
+                              context,
+                              item.user,
+                              enBoy: 130,
+                              olcu: 12.5,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
