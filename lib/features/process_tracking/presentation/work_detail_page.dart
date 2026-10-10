@@ -8,6 +8,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/genisleyen_metin.dart';
 import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/work_item_detail.dart';
 import '../services/work_item_service.dart';
@@ -436,24 +437,8 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
       );
     }
     if (_errorMessage != null && _detail == null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _errorMessage!,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-            ),
-            const SizedBox(height: 16),
-            SmallButton(
-              label: 'Tekrar Dene',
-              icon: LucideIcons.refreshCw,
-              onTap: _loadDetail,
-            ),
-          ],
-        ),
-      );
+      // Ortak bilesen: burada da hata ikonu yoktu.
+      return ErrorView(message: _errorMessage!, onRetry: _loadDetail);
     }
 
     final detail = _detail!;

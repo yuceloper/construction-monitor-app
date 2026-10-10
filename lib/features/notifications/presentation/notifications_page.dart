@@ -125,7 +125,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: SizedBox(
           width: 26,
           height: 26,
-          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.accent),
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
         ),
       );
     }

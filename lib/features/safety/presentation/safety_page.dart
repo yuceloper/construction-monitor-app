@@ -126,27 +126,9 @@ class _SafetyPageState extends State<SafetyPage> {
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
-              ),
-              const SizedBox(height: 16),
-              SmallButton(
-                label: 'Tekrar Dene',
-                icon: LucideIcons.refreshCw,
-                onTap: _load,
-              ),
-            ],
-          ),
-        ),
-      );
+      // Ortak bilesen: bu ekranda hata ikonu hic cikmiyordu, diger
+      // ekranlarda kirmizi uyari ikonu vardi.
+      return ErrorView(message: _errorMessage!, onRetry: _load);
     }
 
     final menuDocuments = _menuDocuments;
