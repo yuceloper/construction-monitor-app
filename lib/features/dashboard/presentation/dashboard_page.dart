@@ -413,7 +413,7 @@ class _SecondaryCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),

@@ -162,7 +162,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         itemCount: _items.isEmpty ? 1 : _items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
             return const Padding(
@@ -201,7 +201,7 @@ class _NotificationCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),

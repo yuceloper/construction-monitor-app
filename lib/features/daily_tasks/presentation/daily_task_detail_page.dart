@@ -251,7 +251,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
             decoration: BoxDecoration(
               color: c.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
               boxShadow: kLiftShadow,
             ),
@@ -305,7 +305,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
               decoration: BoxDecoration(
                 color: c.surface,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(Sizes.rCard),
                 border: Border.all(color: c.border),
                 boxShadow: kLiftShadow,
               ),
@@ -387,7 +387,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
               decoration: BoxDecoration(
                 color: c.surface,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(Sizes.rCard),
                 border: Border.all(color: c.border),
                 boxShadow: kLiftShadow,
               ),
@@ -478,7 +478,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
             decoration: BoxDecoration(
               color: c.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
               boxShadow: kLiftShadow,
             ),

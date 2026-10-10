@@ -228,7 +228,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: c.surface,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(Sizes.rCard),
             border: Border.all(color: c.border),
             boxShadow: kLiftShadow,
           ),

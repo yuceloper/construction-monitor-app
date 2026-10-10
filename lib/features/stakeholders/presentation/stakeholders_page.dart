@@ -226,7 +226,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           final item = items[index];
           // Telefonu olmayan paydasta Ara ve WhatsApp dugmeleri hicbir ise
@@ -240,7 +240,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
             padding: EdgeInsets.fromLTRB(16, 15, telefonVar ? 10 : 16, 15),
             decoration: BoxDecoration(
               color: c.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
               boxShadow: kLiftShadow,
             ),

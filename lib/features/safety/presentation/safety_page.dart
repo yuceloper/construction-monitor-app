@@ -176,7 +176,7 @@ class _SafetyPageState extends State<SafetyPage> {
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: menuDocuments.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           final document = menuDocuments[index];
           final isMonthly = document.documentType == 'MONTHLY_SITE_REPORT';
@@ -211,7 +211,7 @@ class _SafetyMenuCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),

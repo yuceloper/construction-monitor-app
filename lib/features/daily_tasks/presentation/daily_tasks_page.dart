@@ -248,7 +248,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
         itemCount: _tasks.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) => _TaskCard(
           task: _tasks[index],
           onTap: () => _openTask(_tasks[index]),
@@ -351,7 +351,7 @@ class _TaskCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
           boxShadow: kLiftShadow,
         ),
