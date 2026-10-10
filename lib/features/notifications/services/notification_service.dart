@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
@@ -23,18 +23,21 @@ class NotificationUnreadCount {
   static void clear() => value.value = 0;
 }
 
+/// Bildirim servisi.
+///
+/// dart:io'daki HttpClient tarayicida calismadigi icin istekler http
+/// paketiyle yapiliyor. Govde utf8.decode(bodyBytes) ile okunuyor: sunucu
+/// Content-Type'ta charset bildirmiyor, http paketi boyle durumda latin1
+/// varsayiyor.
 class NotificationService {
   Future<List<NotificationItem>> getNotifications() async {
     final token = _token();
-    final client = HttpClient();
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/notifications').replace(
         queryParameters: {'page': '0', 'size': '100'},
       );
-      final request = await client.getUrl(uri);
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.get(uri, headers: _headers(token));
+      final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
@@ -45,30 +48,33 @@ class NotificationService {
         if (content is! List) return const [];
         return content
             .whereType<Map>()
-            .map((item) => NotificationItem.fromJson(Map<String, dynamic>.from(item)))
+            .map(
+              (item) =>
+                  NotificationItem.fromJson(Map<String, dynamic>.from(item)),
+            )
             .where((item) => item.id > 0)
             .toList();
       }
       _throwForResponse(response.statusCode, body, 'Bildirimler alınamadı.');
-    } on SocketException {
+    } on http.ClientException {
       throw const NotificationException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const NotificationException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-    } finally {
-      client.close(force: true);
+      throw const NotificationException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 
   Future<int> getUnreadCount() async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/notifications/unread-count'));
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/notifications/unread-count'),
+        headers: _headers(token),
+      );
+      final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
@@ -76,19 +82,21 @@ class NotificationService {
         }
         final data = decoded['data'];
         final rawCount = data is Map<String, dynamic> ? data['count'] : null;
-        final count = rawCount is num ? rawCount.toInt() : int.tryParse('$rawCount') ?? 0;
+        final count = rawCount is num
+            ? rawCount.toInt()
+            : int.tryParse('$rawCount') ?? 0;
         NotificationUnreadCount.set(count);
         return count;
       }
       _throwForResponse(response.statusCode, body, 'Bildirim sayısı alınamadı.');
-    } on SocketException {
+    } on http.ClientException {
       throw const NotificationException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const NotificationException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-    } finally {
-      client.close(force: true);
+      throw const NotificationException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 
@@ -104,20 +112,21 @@ class NotificationService {
 
   Future<void> _patch(String path) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.patchUrl(Uri.parse('${ApiConfig.baseUrl}$path'));
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.patch(
+        Uri.parse('${ApiConfig.baseUrl}$path'),
+        headers: _headers(token),
+      );
       if (response.statusCode >= 200 && response.statusCode < 300) return;
-      _throwForResponse(response.statusCode, body, 'Bildirim güncellenemedi.');
-    } on SocketException {
+      _throwForResponse(
+        response.statusCode,
+        utf8.decode(response.bodyBytes),
+        'Bildirim güncellenemedi.',
+      );
+    } on http.ClientException {
       throw const NotificationException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
-    } finally {
-      client.close(force: true);
     }
   }
 
@@ -129,10 +138,10 @@ class NotificationService {
     return token;
   }
 
-  void _auth(HttpClientRequest request, String token) {
-    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-    request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-  }
+  Map<String, String> _headers(String token) => {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  };
 
   Never _throwForResponse(int statusCode, String body, String fallback) {
     String message = fallback;
@@ -140,15 +149,21 @@ class NotificationService {
       final decoded = jsonDecode(body);
       if (decoded is Map<String, dynamic>) {
         final candidate = decoded['message'] ?? decoded['error'];
-        if (candidate is String && candidate.trim().isNotEmpty) message = candidate.trim();
+        if (candidate is String && candidate.trim().isNotEmpty) {
+          message = candidate.trim();
+        }
       }
-    } catch (_) {}
-    throw NotificationException('$message ($statusCode)');
+    } catch (_) {
+      // Sunucu okunabilir bir mesaj dondurmediyse yukaridaki metin kalir.
+    }
+    // Durum kodu kullaniciya gosterilmiyor; diger servislerle ayni.
+    throw NotificationException(message);
   }
 }
 
 class NotificationException implements Exception {
   final String message;
+
   const NotificationException(this.message);
 
   @override

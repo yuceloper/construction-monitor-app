@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../../../app/theme.dart';
@@ -149,12 +148,6 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
 
   Widget build(BuildContext context) {
     final c = context.colors;
-
-    OutlineInputBorder border(Color color, [double width = 1.5]) =>
-        OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Sizes.rField),
-          borderSide: BorderSide(color: color, width: width),
-        );
 
     return Scaffold(
       backgroundColor: c.bg,

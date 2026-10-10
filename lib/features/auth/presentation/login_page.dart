@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/widgets/ekran_sigdir.dart';
 import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/panel.dart';
 import '../../site_selection/services/site_service.dart';
@@ -102,105 +103,139 @@ class _LoginPageState extends State<LoginPage> {
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  minHeight: (constraints.maxHeight - 44).clamp(0.0, double.infinity),
+            // Genis ekranda form tek sutuna sikisip ortalaniyor; aksi
+            // halde kullanici adi kutusu 1900 piksel genisliginde
+            // uzuyordu.
+            child: EkranSigdir(
+              enBoy: kFormEniMax,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 44).clamp(
+                    0.0,
+                    double.infinity,
+                  ),
                 ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  const Center(child: BrandLogo(height: 74)),
-                  const SizedBox(height: 34),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
-                    decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: c.border),
-                      boxShadow: kLiftShadow,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _Field(
-                          label: 'Kullanıcı Adı',
-                          child: TextField(
-                            controller: _usernameController,
-                            enabled: !_isLoading,
-                            onChanged: _hatayiTemizle,
-                            textInputAction: TextInputAction.next,
-                            inputFormatters: [LengthLimitingTextInputFormatter(25)],
-                            style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
-                            cursorColor: c.accent,
-                            decoration: _inputDecoration(c),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _Field(
-                          label: 'Parola',
-                          child: TextField(
-                            controller: _passwordController,
-                            enabled: !_isLoading,
-                            onChanged: _hatayiTemizle,
-                            obscureText: true,
-                            textInputAction: TextInputAction.done,
-                            inputFormatters: [LengthLimitingTextInputFormatter(25)],
-                            onSubmitted: (_) {
-                              if (!_isLoading) _login();
-                            },
-                            style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
-                            cursorColor: c.accent,
-                            decoration: _inputDecoration(c),
-                          ),
-                        ),
-                        if (_errorMessage != null) ...[
-                          const SizedBox(height: 18),
-                          Container(
-                            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                            decoration: BoxDecoration(
-                              color: c.bad.withValues(alpha: .08),
-                              borderRadius: BorderRadius.circular(14),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 8),
+                    const Center(child: BrandLogo(height: 74)),
+                    const SizedBox(height: 34),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: c.border),
+                        boxShadow: kLiftShadow,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _Field(
+                            label: 'Kullanıcı Adı',
+                            child: TextField(
+                              controller: _usernameController,
+                              enabled: !_isLoading,
+                              onChanged: _hatayiTemizle,
+                              textInputAction: TextInputAction.next,
+                              inputFormatters: [
+                                LengthLimitingTextInputFormatter(25),
+                              ],
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 17,
+                                color: c.ink,
+                              ),
+                              cursorColor: c.accent,
+                              decoration: _inputDecoration(c),
                             ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    _errorMessage!,
-                                    style: TextStyle(
-                                      fontFamily: kBody,
-                                      fontSize: 14.5,
-                                      height: 1.4,
-                                      fontWeight: FontWeight.w500,
-                                      color: c.bad,
+                          ),
+                          const SizedBox(height: 20),
+                          _Field(
+                            label: 'Parola',
+                            child: TextField(
+                              controller: _passwordController,
+                              enabled: !_isLoading,
+                              onChanged: _hatayiTemizle,
+                              obscureText: true,
+                              textInputAction: TextInputAction.done,
+                              inputFormatters: [
+                                LengthLimitingTextInputFormatter(25),
+                              ],
+                              onSubmitted: (_) {
+                                if (!_isLoading) _login();
+                              },
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 17,
+                                color: c.ink,
+                              ),
+                              cursorColor: c.accent,
+                              decoration: _inputDecoration(c),
+                            ),
+                          ),
+                          if (_errorMessage != null) ...[
+                            const SizedBox(height: 18),
+                            Container(
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                12,
+                                14,
+                                12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: c.bad.withValues(alpha: .08),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    LucideIcons.circleAlert,
+                                    size: 18,
+                                    color: c.bad,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: TextStyle(
+                                        fontFamily: kBody,
+                                        fontSize: 14.5,
+                                        height: 1.4,
+                                        fontWeight: FontWeight.w500,
+                                        color: c.bad,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                          ],
+                          const SizedBox(height: 26),
+                          PrimaryButton(
+                            label: 'GİRİŞ',
+                            busy: _isLoading,
+                            onPressed: _isLoading ? null : _login,
                           ),
                         ],
-                        const SizedBox(height: 26),
-                        PrimaryButton(
-                          label: 'GİRİŞ',
-                          busy: _isLoading,
-                          onPressed: _isLoading ? null : _login,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    '© Copyright 2026 SefaTech tüm hakları saklıdır.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                    const SizedBox(height: 22),
+                    Text(
+                      '© Copyright 2026 SefaTech tüm hakları saklıdır.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 12.5,
+                        color: c.faint,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ),
           ),

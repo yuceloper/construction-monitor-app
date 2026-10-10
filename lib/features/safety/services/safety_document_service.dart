@@ -1,56 +1,64 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
+
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/safety_document_summary.dart';
 
+/// ISG dokuman servisi.
+///
+/// dart:io'daki HttpClient tarayicida calismadigi icin istekler http
+/// paketiyle yapiliyor. Govde utf8.decode(bodyBytes) ile okunuyor: sunucu
+/// Content-Type'ta charset bildirmiyor, http paketi boyle durumda latin1
+/// varsayiyor.
 class SafetyDocumentService {
   Future<List<SafetyDocumentSummary>> getDocuments() async {
     final token = _token();
     final siteId = _siteId();
-    final client = HttpClient();
     try {
-      final request = await client.getUrl(
+      final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/safety-documents'),
+        headers: _headers(token),
       );
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
-        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! List) {
+        if (decoded is! Map<String, dynamic> ||
+            decoded['success'] != true ||
+            data is! List) {
           throw const SafetyDocumentException('İSG dokümanları alınamadı.');
         }
         return data
             .whereType<Map>()
-            .map((item) => SafetyDocumentSummary.fromJson(Map<String, dynamic>.from(item)))
+            .map(
+              (item) => SafetyDocumentSummary.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            )
             .where((item) => item.id > 0)
             .toList();
       }
       _throwForResponse(response.statusCode, body);
-    } on SocketException {
+    } on http.ClientException {
       throw const DailySafetyConnectionException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<SafetyDocumentSummary?> getLatest(String type) async {
     final token = _token();
     final siteId = _siteId();
-    final client = HttpClient();
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/safety-documents/latest')
-          .replace(queryParameters: {'type': type});
-      final request = await client.getUrl(uri);
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final uri =
+          Uri.parse(
+            '${ApiConfig.baseUrl}/sites/$siteId/safety-documents/latest',
+          ).replace(queryParameters: {'type': type});
+      final response = await http.get(uri, headers: _headers(token));
+      final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
@@ -58,49 +66,49 @@ class SafetyDocumentService {
           throw const SafetyDocumentException('İSG dokümanı alınamadı.');
         }
         if (data == null) return null;
-        if (data is! Map) throw const SafetyDocumentException('Geçersiz İSG doküman yanıtı.');
+        if (data is! Map) {
+          throw const SafetyDocumentException('Geçersiz İSG doküman yanıtı.');
+        }
         return SafetyDocumentSummary.fromJson(Map<String, dynamic>.from(data));
       }
       _throwForResponse(response.statusCode, body);
-    } on SocketException {
+    } on http.ClientException {
       throw const DailySafetyConnectionException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
-    } finally {
-      client.close(force: true);
     }
   }
 
   Future<Uint8List> getPdfBytes(int documentId) async {
     final token = _token();
-    final client = HttpClient();
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/safety-documents/$documentId/file'));
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      request.headers.set(HttpHeaders.acceptHeader, 'application/pdf');
-      final response = await request.close();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/safety-documents/$documentId/file'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/pdf',
+        },
+      );
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final bytes = <int>[];
-        await for (final chunk in response) {
-          bytes.addAll(chunk);
-        }
-        return Uint8List.fromList(bytes);
+        return response.bodyBytes;
       }
-      final body = await response.transform(utf8.decoder).join();
-      _throwForResponse(response.statusCode, body);
-    } on SocketException {
+      _throwForResponse(
+        response.statusCode,
+        utf8.decode(response.bodyBytes),
+      );
+    } on http.ClientException {
       throw const DailySafetyConnectionException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
-    } finally {
-      client.close(force: true);
     }
   }
 
   String _token() {
     final token = SessionManager.instance.accessToken;
     if (token == null || token.isEmpty) {
-      throw const SafetyDocumentException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      throw const SafetyDocumentException(
+        'Oturum bulunamadı. Lütfen tekrar giriş yapın.',
+      );
     }
     return token;
   }
@@ -113,14 +121,16 @@ class SafetyDocumentService {
     return siteId;
   }
 
-  void _auth(HttpClientRequest request, String token) {
-    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-    request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
-  }
+  Map<String, String> _headers(String token) => {
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  };
 
   Never _throwForResponse(int statusCode, String body) {
     if (statusCode == 401) {
-      throw const SafetyDocumentException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
+      throw const SafetyDocumentException(
+        'Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.',
+      );
     }
     if (statusCode == 403) {
       throw const SafetyDocumentException(
@@ -130,15 +140,25 @@ class SafetyDocumentService {
     String? message;
     try {
       final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) message = decoded['message']?.toString();
-    } catch (_) {}
-    throw SafetyDocumentException(message?.trim().isNotEmpty == true ? message!.trim() : 'İSG dokümanı alınamadı.');
+      if (decoded is Map<String, dynamic>) {
+        message = decoded['message']?.toString();
+      }
+    } catch (_) {
+      // Sunucu okunabilir bir mesaj dondurmediyse asagidaki metin kullanilir.
+    }
+    throw SafetyDocumentException(
+      message?.trim().isNotEmpty == true
+          ? message!.trim()
+          : 'İSG dokümanı alınamadı.',
+    );
   }
 }
 
 class SafetyDocumentException implements Exception {
   final String message;
+
   const SafetyDocumentException(this.message);
+
   @override
   String toString() => message;
 }

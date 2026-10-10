@@ -49,6 +49,31 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  Widget _paydaslar(BuildContext context) => _SecondaryCard(
+    title: 'Paydaşlar',
+    icon: LucideIcons.users,
+    color: context.colors.violet,
+    onTap: () => context.go('/stakeholders'),
+  );
+
+  Widget _isg(BuildContext context) => _SecondaryCard(
+    title: 'İSG Takip',
+    icon: LucideIcons.shieldCheck,
+    color: context.colors.warn,
+    onTap: () => context.go('/safety'),
+  );
+
+  Widget _bildirimler(BuildContext context) => ValueListenableBuilder<int>(
+    valueListenable: NotificationUnreadCount.value,
+    builder: (context, unreadCount, _) => _SecondaryCard(
+      title: 'Bildirimler',
+      icon: LucideIcons.bellRing,
+      color: context.colors.bad,
+      badgeCount: unreadCount,
+      onTap: () => context.go('/notifications'),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -82,15 +107,30 @@ class _DashboardPageState extends State<DashboardPage>
                     const gapMin = 12.0;
                     const gapMax = 30.0;
 
-                    var row = (constraints.maxHeight - 180 - gapMin * 3) / 3;
+                    // Genis ekranda uc alt panel yan yana geliyor:
+                    // alt alta dizilince her biri 966x117'lik bir serit
+                    // oluyor, ikon ile yazi solda kalip geri kalani bos
+                    // duruyordu.
+                    final genisEkran = constraints.maxWidth >= 700;
+                    final altSira = genisEkran ? 1 : 3;
+
+                    var row =
+                        (constraints.maxHeight - 180 - gapMin * altSira) /
+                        altSira;
                     if (row > rowMax) row = rowMax;
                     if (row < rowMin) row = rowMin;
+                    // Yan yana dizilince kutular daha dar oldugu icin
+                    // biraz daha yuksek duruyorlar.
+                    if (genisEkran) row = row.clamp(rowMin, 150.0);
 
                     var gap = gapMin;
-                    var primary = constraints.maxHeight - row * 3 - gap * 3;
+                    var primary =
+                        constraints.maxHeight - row * altSira - gap * altSira;
                     if (primary > 250) {
                       primary = 250;
-                      gap = (constraints.maxHeight - primary - row * 3) / 5;
+                      gap =
+                          (constraints.maxHeight - primary - row * altSira) /
+                          (altSira + 2);
                       if (gap < gapMin) gap = gapMin;
                       if (gap > gapMax) gap = gapMax;
                     }
@@ -131,50 +171,45 @@ class _DashboardPageState extends State<DashboardPage>
                           ),
                         ),
                         SizedBox(height: gap),
-                        // Her giris kendi panelinde duruyor.
-                        _entering(
-                          3,
+                        // Her giris kendi panelinde duruyor. Dar ekranda
+                        // alt alta, genis ekranda yan yana.
+                        if (genisEkran)
                           SizedBox(
                             height: row,
-                            child: _SecondaryCard(
-                              title: 'Paydaşlar',
-                              icon: LucideIcons.users,
-                              color: c.violet,
-                              onTap: () => context.go('/stakeholders'),
+                            child: Row(
+                              // Row varsayilan olarak cocuklari dikeyde
+                              // ortaliyor; paneller kendi dogal boyunda
+                              // kalip hap gibi gorunuyordu.
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: _entering(3, _paydaslar(context)),
+                                ),
+                                SizedBox(width: gap),
+                                Expanded(child: _entering(4, _isg(context))),
+                                SizedBox(width: gap),
+                                Expanded(
+                                  child: _entering(5, _bildirimler(context)),
+                                ),
+                              ],
                             ),
+                          )
+                        else ...[
+                          _entering(
+                            3,
+                            SizedBox(height: row, child: _paydaslar(context)),
                           ),
-                        ),
-                        SizedBox(height: gap),
-                        _entering(
-                          4,
-                          SizedBox(
-                            height: row,
-                            child: _SecondaryCard(
-                              title: 'İSG Takip',
-                              icon: LucideIcons.shieldCheck,
-                              color: c.warn,
-                              onTap: () => context.go('/safety'),
-                            ),
+                          SizedBox(height: gap),
+                          _entering(
+                            4,
+                            SizedBox(height: row, child: _isg(context)),
                           ),
-                        ),
-                        SizedBox(height: gap),
-                        _entering(
-                          5,
-                          SizedBox(
-                            height: row,
-                            child: ValueListenableBuilder<int>(
-                              valueListenable: NotificationUnreadCount.value,
-                              builder: (context, unreadCount, _) =>
-                                  _SecondaryCard(
-                                    title: 'Bildirimler',
-                                    icon: LucideIcons.bellRing,
-                                    color: c.bad,
-                                    badgeCount: unreadCount,
-                                    onTap: () => context.go('/notifications'),
-                                  ),
-                            ),
+                          SizedBox(height: gap),
+                          _entering(
+                            5,
+                            SizedBox(height: row, child: _bildirimler(context)),
                           ),
-                        ),
+                        ],
                       ],
                     );
                   },

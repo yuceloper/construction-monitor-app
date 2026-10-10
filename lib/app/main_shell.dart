@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../core/widgets/ekran_sigdir.dart';
 import '../features/notifications/services/notification_service.dart';
 import 'theme.dart';
 
 class MainShell extends StatefulWidget {
   final Widget child;
 
-  const MainShell({
-    super.key,
-    required this.child,
-  });
+  const MainShell({super.key, required this.child});
 
   @override
   State<MainShell> createState() => _MainShellState();
@@ -75,7 +73,9 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: widget.child,
+      // Genis ekranda icerik ortalanip makul bir sutunda tutuluyor;
+      // telefonda hicbir sey degismiyor.
+      body: EkranSigdir(child: widget.child),
       bottomNavigationBar: isDashboard
           ? null
           : ValueListenableBuilder<int>(

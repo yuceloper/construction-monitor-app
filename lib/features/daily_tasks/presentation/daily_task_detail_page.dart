@@ -94,7 +94,12 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       if (_audioPlayer.state == PlayerState.paused) {
         await _audioPlayer.resume();
       } else {
-        await _audioPlayer.play(DeviceFileSource(_audioPath!));
+        // Tarayicida dosya sistemi yok; servis sesi data adresi olarak
+        // donuyor, oynatici onu URL gibi aliyor.
+        final kaynak = _audioPath!.startsWith('data:')
+            ? UrlSource(_audioPath!)
+            : DeviceFileSource(_audioPath!);
+        await _audioPlayer.play(kaynak);
       }
       if (mounted) setState(() => _isAudioPlaying = true);
     } on DailyTaskException catch (error) {

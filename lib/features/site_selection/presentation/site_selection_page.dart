@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/widgets/ekran_sigdir.dart';
 import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
@@ -70,7 +71,10 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
+      setState(
+        () => _errorMessage =
+            'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -120,35 +124,46 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                  minHeight: (constraints.maxHeight - 44).clamp(0.0, double.infinity),
+            // Giris ekraniyla ayni: genis ekranda tek sutun, ortali.
+            child: EkranSigdir(
+              enBoy: kFormEniMax,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: (constraints.maxHeight - 44).clamp(
+                    0.0,
+                    double.infinity,
+                  ),
                 ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  const Center(child: BrandLogo(height: 74)),
-                  const SizedBox(height: 34),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
-                    decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: c.border),
-                      boxShadow: kLiftShadow,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 8),
+                    const Center(child: BrandLogo(height: 74)),
+                    const SizedBox(height: 34),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(22, 26, 22, 26),
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: c.border),
+                        boxShadow: kLiftShadow,
+                      ),
+                      child: _buildSelectorContent(),
                     ),
-                    child: _buildSelectorContent(),
-                  ),
-                  const SizedBox(height: 22),
-                  Text(
-                    '© Copyright 2026 SefaTech tüm hakları saklıdır.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontFamily: kBody, fontSize: 12.5, color: c.faint),
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                    const SizedBox(height: 22),
+                    Text(
+                      '© Copyright 2026 SefaTech tüm hakları saklıdır.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 12.5,
+                        color: c.faint,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
               ),
             ),
           ),
@@ -221,9 +236,7 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const EmptyView(
-            title: 'Bu kullanıcıya atanmış şantiye bulunmuyor.',
-          ),
+          const EmptyView(title: 'Bu kullanıcıya atanmış şantiye bulunmuyor.'),
           const SizedBox(height: 14),
           _BackToLogin(onTap: _goBackToLogin),
         ],
