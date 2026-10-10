@@ -7,6 +7,7 @@ import '../../../core/widgets/brand_logo.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/site_summary.dart';
 import '../services/site_service.dart';
@@ -89,107 +90,23 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
 
   /// Santiye secimi: acilir liste yerine alttan acilan panel - telefonda
   /// parmakla secmesi kolay, secili olan net gorunuyor.
+  /// Santiye secimi: acilir liste yerine alttan acilan panel - telefonda
+  /// parmakla secmesi kolay, secili olan net gorunuyor.
   Future<void> _openSitePicker() async {
-    final c = context.colors;
-    final selected = await showModalBottomSheet<SiteSummary>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) {
-        return Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(sheetContext).height * .6,
-          ),
-          padding: EdgeInsets.fromLTRB(
-            16,
-            10,
-            16,
-            16 + MediaQuery.paddingOf(sheetContext).bottom,
-          ),
-          decoration: BoxDecoration(
-            color: c.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.border2,
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 10),
-                child: Text(
-                  'Şantiye',
-                  style: TextStyle(
-                    fontFamily: kDisplay,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.3,
-                    color: c.ink,
-                  ),
-                ),
-              ),
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: _sites.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (_, index) {
-                    final site = _sites[index];
-                    final isSelected = site.id == _selectedSite?.id;
-                    return Pressable(
-                      onTap: () => Navigator.of(sheetContext).pop(site),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
-                        decoration: BoxDecoration(
-                          color: isSelected ? c.accent.withValues(alpha: .08) : c.surface2,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isSelected ? c.accent : c.border,
-                            width: isSelected ? 1.6 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                site.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: kBody,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                  color: c.ink,
-                                ),
-                              ),
-                            ),
-                            if (isSelected)
-                              Icon(LucideIcons.check, size: 20, color: c.accent),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    final selected = await secimPaneliAc<int>(
+      context,
+      baslik: 'Şantiye',
+      secenekler: [
+        for (final site in _sites) SecimSecenegi(site.id, site.name),
+      ],
+      secili: _selectedSite?.id,
     );
-
-    if (selected != null && mounted) {
-      setState(() => _selectedSite = selected);
+    if (selected == null || !mounted) return;
+    for (final site in _sites) {
+      if (site.id == selected) {
+        setState(() => _selectedSite = site);
+        break;
+      }
     }
   }
 

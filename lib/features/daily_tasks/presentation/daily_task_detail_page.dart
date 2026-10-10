@@ -8,6 +8,7 @@ import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -137,6 +138,34 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   void _show(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Durum kodunun ekranda gorunen adi.
+  String _durumAdi(String kod) {
+    switch (kod) {
+      case 'TODO':
+        return 'Başlanacak';
+      case 'IN_PROGRESS':
+        return 'Devam Ediyor';
+      case 'COMPLETED':
+        return 'Tamamlandı';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _durumSec() async {
+    final secim = await secimPaneliAc<String>(
+      context,
+      baslik: 'Durum',
+      secenekler: const [
+        SecimSecenegi('TODO', 'Başlanacak'),
+        SecimSecenegi('IN_PROGRESS', 'Devam Ediyor'),
+        SecimSecenegi('COMPLETED', 'Tamamlandı'),
+      ],
+      secili: _status,
+    );
+    if (secim != null && mounted) setState(() => _status = secim);
   }
 
   @override
@@ -414,67 +443,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 9),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  isExpanded: true,
-                  icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-                  dropdownColor: c.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16,
-                    color: c.ink,
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'TODO',
-                      child: Text(
-                        'Başlanacak',
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'IN_PROGRESS',
-                      child: Text(
-                        'Devam Ediyor',
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'COMPLETED',
-                      child: Text(
-                        'Tamamlandı',
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                  onChanged: _isSaving
-                      ? null
-                      : (value) => setState(() => _status = value ?? _status),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 17,
-                    ),
-                    filled: true,
-                    fillColor: c.surface2,
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    focusedBorder: border(c.accent, 1.8),
-                  ),
+                SeciciAlan(
+                  metin: _durumAdi(_status),
+                  onTap: _isSaving ? null : _durumSec,
                 ),
                 const SizedBox(height: 20),
                 Text(

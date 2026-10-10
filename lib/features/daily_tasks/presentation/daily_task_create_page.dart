@@ -11,6 +11,7 @@ import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
 import '../../auth/services/session_manager.dart';
 import '../../process_tracking/models/project_summary.dart';
 import '../../process_tracking/services/project_service.dart';
@@ -228,12 +229,13 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   }
 
   Future<void> _openPriorityPicker() async {
-    final secim = await _secimPaneli<String>(
+    final secim = await secimPaneliAc<String>(
+      context,
       baslik: 'Kritiklik Seviyesi',
       secenekler: const [
-        ('LOW', 'Düşük'),
-        ('MEDIUM', 'Orta'),
-        ('HIGH', 'Yüksek'),
+        SecimSecenegi('LOW', 'Düşük'),
+        SecimSecenegi('MEDIUM', 'Orta'),
+        SecimSecenegi('HIGH', 'Yüksek'),
       ],
       secili: _priority,
     );
@@ -241,113 +243,16 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   }
 
   Future<void> _openMemberPicker() async {
-    final secim = await _secimPaneli<int>(
+    final secim = await secimPaneliAc<int>(
+      context,
       baslik: 'İlgili Kişi',
       secenekler: [
-        for (final member in _members) (member.id, member.fullName),
+        for (final member in _members)
+          SecimSecenegi(member.id, member.fullName),
       ],
       secili: _memberId,
     );
     if (secim != null && mounted) setState(() => _memberId = secim);
-  }
-
-  /// Blok secimiyle ayni kalip: alttan acilan, yuvarlak koseli panel.
-  /// Acilan dropdown menusu ekrani kenardan kenara kapliyordu.
-  Future<T?> _secimPaneli<T>({
-    required String baslik,
-    required List<(T, String)> secenekler,
-    required T? secili,
-  }) {
-    final c = context.colors;
-    return showModalBottomSheet<T>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (sheetContext) => Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(sheetContext).size.height * .7,
-        ),
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(Sizes.rCard),
-          border: Border.all(color: c.border),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
-              Center(
-                child: Container(
-                  width: 38,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: c.border2,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
-                child: Text(
-                  baslik,
-                  style: TextStyle(
-                    fontFamily: kDisplay,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -.2,
-                    color: c.ink,
-                  ),
-                ),
-              ),
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(bottom: 6),
-                  itemCount: secenekler.length,
-                  separatorBuilder: (_, __) =>
-                      Divider(height: 1, color: c.line),
-                  itemBuilder: (_, i) {
-                    final (deger, ad) = secenekler[i];
-                    final isaretli = deger == secili;
-                    return Pressable(
-                      onTap: () => Navigator.of(sheetContext).pop(deger),
-                      child: Padding(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                ad,
-                                style: TextStyle(
-                                  fontFamily: kBody,
-                                  fontSize: 16,
-                                  fontWeight: isaretli
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  color: c.ink,
-                                ),
-                              ),
-                            ),
-                            if (isaretli)
-                              Icon(LucideIcons.check,
-                                  size: 20, color: c.accent),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   /// Alanda gorunen metin: secim yapilmadiysa bos birakiliyor ki
@@ -458,35 +363,28 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     }
 
     final hint = TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint);
-    final value = TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
         _FormRow(
           label: 'Ev/Dükkan Blok',
-          child: _PickerField(
-            text: _selectedProjectLabel,
-            hintStyle: hint,
-            valueStyle: value,
+          child: SeciciAlan(
+            metin: _selectedProjectLabel,
             onTap: _isSaving ? null : _openProjectPicker,
           ),
         ),
         _FormRow(
           label: 'Kritiklik Seviyesi',
-          child: _PickerField(
-            text: _selectedPriorityLabel,
-            hintStyle: hint,
-            valueStyle: value,
+          child: SeciciAlan(
+            metin: _selectedPriorityLabel,
             onTap: _isSaving ? null : _openPriorityPicker,
           ),
         ),
         _FormRow(
           label: 'İlgili Kişi',
-          child: _PickerField(
-            text: _selectedMemberLabel,
-            hintStyle: hint,
-            valueStyle: value,
+          child: SeciciAlan(
+            metin: _selectedMemberLabel,
             onTap: _isSaving ? null : _openMemberPicker,
           ),
         ),
@@ -660,54 +558,6 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
 
 /// Alan basligi ustte, kutu altta.
 /// Form alani gorunumunde duran, dokununca panel acan dugme.
-class _PickerField extends StatelessWidget {
-  const _PickerField({
-    required this.text,
-    required this.hintStyle,
-    required this.valueStyle,
-    required this.onTap,
-  });
-
-  final String text;
-  final TextStyle hintStyle;
-  final TextStyle valueStyle;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Pressable(
-      onTap: onTap,
-      child: Opacity(
-        opacity: onTap == null ? .5 : 1,
-        child: Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: c.surface2,
-            borderRadius: BorderRadius.circular(Sizes.rField),
-            border: Border.all(color: c.border2, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  text.isEmpty ? 'Seçiniz' : text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.isEmpty ? hintStyle : valueStyle,
-                ),
-              ),
-              Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Blok secme paneli: arama kutusu ve gruplu liste.
 class _ProjectPickerSheet extends StatefulWidget {
   const _ProjectPickerSheet({required this.projects, required this.selectedId});
 
@@ -840,18 +690,28 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
                         if (evler.isNotEmpty) ...[
                           _GrupBasligi(metin: 'Evler'),
                           for (final p in evler)
-                            _BlokSatiri(
-                              project: p,
-                              secili: p.id == widget.selectedId,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SecimSatiri(
+                                ad: p.name,
+                                secili: p.id == widget.selectedId,
+                                onTap: () =>
+                                    Navigator.of(context).pop(p.id),
+                              ),
                             ),
                         ],
                         if (dukkanlar.isNotEmpty) ...[
                           if (evler.isNotEmpty) const SizedBox(height: 6),
                           _GrupBasligi(metin: 'Dükkanlar'),
                           for (final p in dukkanlar)
-                            _BlokSatiri(
-                              project: p,
-                              secili: p.id == widget.selectedId,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SecimSatiri(
+                                ad: p.name,
+                                secili: p.id == widget.selectedId,
+                                onTap: () =>
+                                    Navigator.of(context).pop(p.id),
+                              ),
                             ),
                         ],
                       ],
@@ -882,54 +742,6 @@ class _GrupBasligi extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: .6,
           color: c.muted,
-        ),
-      ),
-    );
-  }
-}
-
-class _BlokSatiri extends StatelessWidget {
-  const _BlokSatiri({required this.project, required this.secili});
-
-  final ProjectSummary project;
-  final bool secili;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Pressable(
-        onTap: () => Navigator.of(context).pop(project.id),
-        child: Container(
-          height: 52,
-          padding: const EdgeInsets.fromLTRB(16, 0, 14, 0),
-          decoration: BoxDecoration(
-            color: secili ? c.accent.withValues(alpha: .08) : c.surface2,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: secili ? c.accent : c.border,
-              width: secili ? 1.6 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  project.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w600,
-                    color: c.ink,
-                  ),
-                ),
-              ),
-              if (secili) Icon(LucideIcons.check, size: 20, color: c.accent),
-            ],
-          ),
         ),
       ),
     );

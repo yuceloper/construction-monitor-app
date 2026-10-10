@@ -7,6 +7,7 @@ import 'package:pdfrx/pdfrx.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/secim_paneli.dart';
 import '../../../core/widgets/state_views.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
@@ -123,6 +124,29 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     return '${months[date.month - 1]} ${date.year}';
   }
 
+  /// Secili belgenin ay adi; yoksa bos.
+  String get _seciliAyAdi {
+    for (final document in _monthlyDocuments) {
+      if (document.id == _selectedDocumentId) return _monthLabel(document);
+    }
+    return '';
+  }
+
+  Future<void> _ayPaneliniAc() async {
+    final secim = await secimPaneliAc<int>(
+      context,
+      baslik: 'Ay seçiniz',
+      secenekler: [
+        for (final document in _monthlyDocuments)
+          SecimSecenegi(document.id, _monthLabel(document)),
+      ],
+      secili: _selectedDocumentId,
+    );
+    if (secim != null && mounted && secim != _selectedDocumentId) {
+      _loadPdf(secim);
+    }
+  }
+
   Widget build(BuildContext context) {
     final c = context.colors;
 
@@ -150,40 +174,25 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
             if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: DropdownButtonFormField<int>(
-                  value: _selectedDocumentId,
-                  isExpanded: true,
-                  icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-                  dropdownColor: c.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                  items: _monthlyDocuments
-                      .map(
-                        (document) => DropdownMenuItem<int>(
-                          value: document.id,
-                          child: Text(
-                            _monthLabel(document),
-                            style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null && value != _selectedDocumentId) {
-                      _loadPdf(value);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Ay seçiniz',
-                    labelStyle: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
-                    isDense: true,
-                    filled: true,
-                    fillColor: c.surface,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    focusedBorder: border(c.accent, 1.8),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ay seçiniz',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .2,
+                        color: c.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 9),
+                    SeciciAlan(
+                      metin: _seciliAyAdi,
+                      onTap: _ayPaneliniAc,
+                    ),
+                  ],
                 ),
               ),
             Expanded(child: ColoredBox(color: c.inset, child: _buildBody())),
