@@ -204,6 +204,152 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Secili kritiklik seviyesinin ekranda gorunen adi.
+  String get _selectedPriorityLabel {
+    switch (_priority) {
+      case 'LOW':
+        return 'Düşük';
+      case 'MEDIUM':
+        return 'Orta';
+      case 'HIGH':
+        return 'Yüksek';
+      default:
+        return '';
+    }
+  }
+
+  /// Secili kisinin adi.
+  String get _selectedMemberLabel {
+    if (_memberId == null) return '';
+    for (final member in _members) {
+      if (member.id == _memberId) return member.fullName;
+    }
+    return '';
+  }
+
+  Future<void> _openPriorityPicker() async {
+    final secim = await _secimPaneli<String>(
+      baslik: 'Kritiklik Seviyesi',
+      secenekler: const [
+        ('LOW', 'Düşük'),
+        ('MEDIUM', 'Orta'),
+        ('HIGH', 'Yüksek'),
+      ],
+      secili: _priority,
+    );
+    if (secim != null && mounted) setState(() => _priority = secim);
+  }
+
+  Future<void> _openMemberPicker() async {
+    final secim = await _secimPaneli<int>(
+      baslik: 'İlgili Kişi',
+      secenekler: [
+        for (final member in _members) (member.id, member.fullName),
+      ],
+      secili: _memberId,
+    );
+    if (secim != null && mounted) setState(() => _memberId = secim);
+  }
+
+  /// Blok secimiyle ayni kalip: alttan acilan, yuvarlak koseli panel.
+  /// Acilan dropdown menusu ekrani kenardan kenara kapliyordu.
+  Future<T?> _secimPaneli<T>({
+    required String baslik,
+    required List<(T, String)> secenekler,
+    required T? secili,
+  }) {
+    final c = context.colors;
+    return showModalBottomSheet<T>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(sheetContext).size.height * .7,
+        ),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(Sizes.rCard),
+          border: Border.all(color: c.border),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: c.border2,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
+                child: Text(
+                  baslik,
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.2,
+                    color: c.ink,
+                  ),
+                ),
+              ),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.only(bottom: 6),
+                  itemCount: secenekler.length,
+                  separatorBuilder: (_, __) =>
+                      Divider(height: 1, color: c.line),
+                  itemBuilder: (_, i) {
+                    final (deger, ad) = secenekler[i];
+                    final isaretli = deger == secili;
+                    return Pressable(
+                      onTap: () => Navigator.of(sheetContext).pop(deger),
+                      child: Padding(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                ad,
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 16,
+                                  fontWeight: isaretli
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ),
+                            if (isaretli)
+                              Icon(LucideIcons.check,
+                                  size: 20, color: c.accent),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// Alanda gorunen metin: secim yapilmadiysa bos birakiliyor ki
   /// ipucu yazisi gorunsun.
   String get _selectedProjectLabel {
@@ -328,41 +474,20 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         ),
         _FormRow(
           label: 'Kritiklik Seviyesi',
-          child: DropdownButtonFormField<String>(
-            initialValue: _priority,
-            hint: Text('Seçiniz', style: hint),
-            isExpanded: true,
-            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            dropdownColor: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            style: value,
-            items: [
-              DropdownMenuItem(value: 'LOW', child: Text('Düşük', style: value)),
-              DropdownMenuItem(value: 'MEDIUM', child: Text('Orta', style: value)),
-              DropdownMenuItem(value: 'HIGH', child: Text('Yüksek', style: value)),
-            ],
-            onChanged: _isSaving ? null : (value) => setState(() => _priority = value),
-            decoration: _fieldDecoration(c),
+          child: _PickerField(
+            text: _selectedPriorityLabel,
+            hintStyle: hint,
+            valueStyle: value,
+            onTap: _isSaving ? null : _openPriorityPicker,
           ),
         ),
         _FormRow(
           label: 'İlgili Kişi',
-          child: DropdownButtonFormField<int>(
-            initialValue: _memberId,
-            hint: Text('Seçiniz', style: hint),
-            isExpanded: true,
-            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            dropdownColor: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            style: value,
-            items: _members
-                .map((member) => DropdownMenuItem(
-                      value: member.id,
-                      child: Text(member.fullName, style: value),
-                    ))
-                .toList(),
-            onChanged: _isSaving ? null : (value) => setState(() => _memberId = value),
-            decoration: _fieldDecoration(c),
+          child: _PickerField(
+            text: _selectedMemberLabel,
+            hintStyle: hint,
+            valueStyle: value,
+            onTap: _isSaving ? null : _openMemberPicker,
           ),
         ),
         _FormRow(
