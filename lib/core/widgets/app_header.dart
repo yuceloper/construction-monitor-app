@@ -405,13 +405,33 @@ class TitleBarDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final renk = context.colors.headerLine;
-    return Container(
+    // Genis ekranda icerik ortali bir sutunda duruyor; ayrac o sutunun
+    // kenarinda kesilince ekranin ortasinda asili bir cizgi gibi
+    // goruluyordu. OverflowBox ile pencere genisligine yayiliyor, boylece
+    // dar ekranda oldugu gibi kenardan kenara gidiyor.
+    // OverflowBox dikeyde de serbest kalirsa Column icinde sonsuz
+    // yuksekligi aliyor; disindaki SizedBox yuksekligi 10'a sabitliyor.
+    return SizedBox(
       height: 10,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [renk.withValues(alpha: .70), renk.withValues(alpha: 0)],
+      child: OverflowBox(
+        maxWidth: double.infinity,
+        minHeight: 10,
+        maxHeight: 10,
+        child: SizedBox(
+          width: MediaQuery.sizeOf(context).width,
+          height: 10,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  renk.withValues(alpha: .70),
+                  renk.withValues(alpha: 0),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
