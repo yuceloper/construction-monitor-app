@@ -13,6 +13,8 @@ class SessionManager {
   String? get accessToken => _auth?.accessToken;
   String? get refreshToken => _auth?.refreshToken;
   bool get isAuthenticated => (_auth?.accessToken.isNotEmpty ?? false);
+  int? get companyId => _auth?.companyId;
+  String? get companyName => _auth?.companyName;
 
   SiteSummary? get selectedSite => _selectedSite;
   int? get selectedSiteId => _selectedSite?.id;

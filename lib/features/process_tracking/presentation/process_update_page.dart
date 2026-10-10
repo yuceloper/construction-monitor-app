@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/state_views.dart';
 import '../models/progress_stage.dart';
 import '../models/work_item_summary.dart';
 import '../services/progress_service.dart';
@@ -158,6 +159,23 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
       );
     }
 
+    if (_stages.isEmpty) {
+      return RefreshIndicator(
+        color: c.ink,
+        onRefresh: _loadStages,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          children: const [
+            SizedBox(height: 28),
+            EmptyView(
+              title: 'Bu proje tipi için süreç tanımlanmamış.',
+            ),
+          ],
+        ),
+      );
+    }
+
     return RefreshIndicator(
       color: c.ink,
       onRefresh: _loadStages,
@@ -270,6 +288,15 @@ class _StageUpdateCard extends StatelessWidget {
                       height: 1.2,
                       letterSpacing: -.2,
                       color: c.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${items.length} alt iş • %${percentage.round()}',
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 13.5,
+                      color: c.muted,
                     ),
                   ),
                 ],

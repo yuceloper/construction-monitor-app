@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
@@ -45,15 +46,15 @@ class ProgressService {
       throw const ProgressException('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
     }
 
-    final client = HttpClient();
-
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}$path'));
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-      request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
-
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}$path'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      final responseBody = response.body;
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(responseBody);
@@ -85,14 +86,12 @@ class ProgressService {
       throw const ProgressException(
         'Süreç bilgileri alınamadı. Lütfen daha sonra tekrar deneyiniz.',
       );
-    } on SocketException {
+    } on http.ClientException {
       throw ProgressException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
       throw const ProgressException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-    } finally {
-      client.close(force: true);
     }
   }
 }
