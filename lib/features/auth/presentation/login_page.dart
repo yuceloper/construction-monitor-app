@@ -87,6 +87,11 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  /// Kullanici yazmaya baslayinca eski hata mesaji kalkiyor.
+  void _hatayiTemizle(String _) {
+    if (_errorMessage != null) setState(() => _errorMessage = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -124,6 +129,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: TextField(
                             controller: _usernameController,
                             enabled: !_isLoading,
+                            onChanged: _hatayiTemizle,
                             textInputAction: TextInputAction.next,
                             inputFormatters: [LengthLimitingTextInputFormatter(25)],
                             style: TextStyle(fontFamily: kBody, fontSize: 17, color: c.ink),
@@ -137,6 +143,7 @@ class _LoginPageState extends State<LoginPage> {
                           child: TextField(
                             controller: _passwordController,
                             enabled: !_isLoading,
+                            onChanged: _hatayiTemizle,
                             obscureText: true,
                             textInputAction: TextInputAction.done,
                             inputFormatters: [LengthLimitingTextInputFormatter(25)],
