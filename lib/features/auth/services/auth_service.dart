@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../models/auth_response.dart';
@@ -9,23 +10,17 @@ class AuthService {
     required String username,
     required String password,
   }) async {
-    final client = HttpClient();
-
     try {
-      final request = await client.postUrl(
+      final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/auth/login'),
-      );
-
-      request.headers.contentType = ContentType.json;
-      request.write(
-        jsonEncode({
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({
           'username': username,
           'password': password,
         }),
       );
 
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
+      final responseBody = response.body;
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(responseBody);
@@ -60,14 +55,14 @@ class AuthService {
       }
 
       throw AuthException(_readErrorMessage(responseBody, response.statusCode));
-    } on SocketException {
+    } on http.ClientException {
       throw AuthException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const AuthException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-    } finally {
-      client.close(force: true);
+      throw const AuthException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 

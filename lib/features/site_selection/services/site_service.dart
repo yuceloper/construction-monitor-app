@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
@@ -9,12 +10,14 @@ import '../models/site_summary.dart';
 class SiteService {
   Future<List<SiteSummary>> getSites() async {
     final token = _token();
-    final client = HttpClient();
+
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/sites'));
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/sites'),
+        headers: _headers(token),
+      );
+
+      final body = utf8.decode(response.bodyBytes);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
@@ -22,38 +25,45 @@ class SiteService {
           throw const SiteException('Şantiyeler alınamadı.');
         }
         final data = decoded['data'];
-        if (data is! List) throw const SiteException('Sunucu şantiye listesi döndürmedi.');
+        if (data is! List) {
+          throw const SiteException('Sunucu şantiye listesi döndürmedi.');
+        }
         return data
             .whereType<Map>()
             .map((item) => SiteSummary.fromJson(Map<String, dynamic>.from(item)))
             .where((site) => site.id > 0 && site.name.isNotEmpty)
             .toList();
       }
+
       _throwForStatus(response.statusCode, 'Şantiyeler alınamadı.');
-    } on SocketException {
+    } on http.ClientException {
       throw const SiteException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const SiteException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-    } finally {
-      client.close(force: true);
+      throw const SiteException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 
   Future<List<SiteMemberSummary>> getMembers(int siteId) async {
     final token = _token();
-    final client = HttpClient();
+
     try {
-      final request = await client.getUrl(Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/members'));
-      _auth(request, token);
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/members'),
+        headers: _headers(token),
+      );
+
+      final body = utf8.decode(response.bodyBytes);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         final decoded = jsonDecode(body);
         final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
-        if (decoded is! Map<String, dynamic> || decoded['success'] != true || data is! List) {
+        if (decoded is! Map<String, dynamic> ||
+            decoded['success'] != true ||
+            data is! List) {
           throw const SiteException('Şantiye kullanıcıları alınamadı.');
         }
         return data
@@ -62,15 +72,16 @@ class SiteService {
             .where((item) => item.id > 0)
             .toList();
       }
+
       _throwForStatus(response.statusCode, 'Şantiye kullanıcıları alınamadı.');
-    } on SocketException {
+    } on http.ClientException {
       throw const SiteException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const SiteException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-    } finally {
-      client.close(force: true);
+      throw const SiteException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 
@@ -82,9 +93,11 @@ class SiteService {
     return token;
   }
 
-  void _auth(HttpClientRequest request, String token) {
-    request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
-    request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
+  Map<String, String> _headers(String token) {
+    return {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    };
   }
 
   Never _throwForStatus(int statusCode, String fallback) {
