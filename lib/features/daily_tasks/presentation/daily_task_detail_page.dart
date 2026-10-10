@@ -260,9 +260,11 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               children: [
                 Text(
                   'Özet',
+                  // Panel basliklari uygulamada 19: is detayindaki uc kardes
+                  // panel 22, 20 ve 19 ile yaziliyordu.
                   style: TextStyle(
                     fontFamily: kDisplay,
-                    fontSize: 22,
+                    fontSize: 19,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -.4,
                     color: c.ink,
@@ -316,7 +318,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                     'Fotoğraflar',
                     style: TextStyle(
                       fontFamily: kDisplay,
-                      fontSize: 20,
+                      fontSize: 19,
                       fontWeight: FontWeight.w700,
                       letterSpacing: -.3,
                       color: c.ink,
