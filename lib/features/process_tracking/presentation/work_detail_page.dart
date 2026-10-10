@@ -305,10 +305,10 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Vazgeç'),
+            child: const Text('İptal'),
           ),
+          // Onay butonu ekleme/guncelleme pencereleriyle ayni: koyu zemin.
           FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: context.colors.bad),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Sil'),
           ),
@@ -330,59 +330,6 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     } finally {
       if (mounted) setState(() => _isAddingWarning = false);
     }
-  }
-
-  /// Kartin ... dugmesine basilinca acilan panel.
-  Future<void> _openWarningMenu(WorkItemWarning warning) async {
-    final c = context.colors;
-    final secim = await showModalBottomSheet<String>(
-      context: context,
-      // Kok navigator: aksi halde panel alt menunun ustune cikamiyor.
-      useRootNavigator: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) => Container(
-        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(Sizes.rCard),
-          border: Border.all(color: c.border),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 8),
-              Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: c.border2,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 10),
-              _WarningMenuItem(
-                icon: LucideIcons.pencil,
-                label: 'Güncelle',
-                onTap: () => Navigator.of(sheetContext).pop('duzenle'),
-              ),
-              Divider(height: 1, color: c.line),
-              _WarningMenuItem(
-                icon: LucideIcons.trash2,
-                label: 'Sil',
-                danger: true,
-                onTap: () => Navigator.of(sheetContext).pop('sil'),
-              ),
-              const SizedBox(height: 6),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (secim == 'duzenle') await _editWarning(warning);
-    if (secim == 'sil') await _deleteWarning(warning);
   }
 
   /// Islem sonucunu kisa bir seritle bildirir.
@@ -485,7 +432,8 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                           child: _WarningCard(
                             item: item,
                             createdDate: _date(item.createdAt),
-                            onMenu: () => _openWarningMenu(item),
+                            onUpdate: () => _editWarning(item),
+                            onDelete: () => _deleteWarning(item),
                           ),
                         ),
                     ],
@@ -714,12 +662,14 @@ class _HistoryEntry extends StatelessWidget {
 class _WarningCard extends StatefulWidget {
   final WorkItemWarning item;
   final String createdDate;
-  final VoidCallback onMenu;
+  final VoidCallback onUpdate;
+  final VoidCallback onDelete;
 
   const _WarningCard({
     required this.item,
     required this.createdDate,
-    required this.onMenu,
+    required this.onUpdate,
+    required this.onDelete,
   });
 
   @override
@@ -731,7 +681,6 @@ class _WarningCardState extends State<_WarningCard> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final createdDate = widget.createdDate;
-    final onMenu = widget.onMenu;
     final c = context.colors;
     final overdue = item.isOverdue;
     final edge = overdue ? c.bad : c.border2;
@@ -768,20 +717,6 @@ class _WarningCardState extends State<_WarningCard> {
                               height: 1.4,
                               fontWeight: FontWeight.w500,
                               color: c.ink,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        // Dokunma alani 40, gorsel agirlik dusuk: kart
-                        // metnini bastirmasin diye soluk bir ... duruyor.
-                        Pressable(
-                          onTap: onMenu,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(8, 2, 2, 8),
-                            child: Icon(
-                              LucideIcons.ellipsis,
-                              size: 18,
-                              color: c.muted,
                             ),
                           ),
                         ),
@@ -822,6 +757,25 @@ class _WarningCardState extends State<_WarningCard> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    // Islemler ... menusunde gizliydi, anlasilmiyordu;
+                    // ikisi de kartin altinda acik yaziyla duruyor.
+                    Row(
+                      children: [
+                        const Spacer(),
+                        _UyariIslemButonu(
+                          icon: LucideIcons.pencil,
+                          label: 'Güncelle',
+                          onTap: widget.onUpdate,
+                        ),
+                        const SizedBox(width: 8),
+                        _UyariIslemButonu(
+                          icon: LucideIcons.trash2,
+                          label: 'Sil',
+                          onTap: widget.onDelete,
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -833,39 +787,43 @@ class _WarningCardState extends State<_WarningCard> {
   }
 }
 
-/// Uyari menusundeki tek satir.
-class _WarningMenuItem extends StatelessWidget {
-  const _WarningMenuItem({
+/// Uyari kartindaki islem butonu. Ikisi de ayni olcude; silme butonu da
+/// ayni gorunumde, kirmizi vurgu onay penceresinde degil burada da yok.
+class _UyariIslemButonu extends StatelessWidget {
+  const _UyariIslemButonu({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.danger = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool danger;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final renk = danger ? c.bad : c.ink;
     return Pressable(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(11, 9, 12, 9),
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: c.border),
+        ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 19, color: renk),
-            const SizedBox(width: 13),
+            Icon(icon, size: 14, color: c.ink),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontFamily: kBody,
-                fontSize: 15.5,
+                fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: renk,
+                color: c.ink,
               ),
             ),
           ],
@@ -874,3 +832,4 @@ class _WarningMenuItem extends StatelessWidget {
     );
   }
 }
+
