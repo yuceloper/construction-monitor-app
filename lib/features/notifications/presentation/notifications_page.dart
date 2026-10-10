@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/genisleyen_metin.dart';
 import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
@@ -249,11 +250,12 @@ class _NotificationCard extends StatelessWidget {
                       ),
                       if (content.detail.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        Text(
-                          content.detail,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                        // Bildirim metni de uzun olabiliyor; kesilince
+                        // devaminin oldugu anlasilmiyordu.
+                        GenisleyenMetin(
+                          metin: content.detail,
+                          satir: 2,
+                          bicim: TextStyle(
                             fontFamily: kBody,
                             fontSize: 13.5,
                             height: 1.35,

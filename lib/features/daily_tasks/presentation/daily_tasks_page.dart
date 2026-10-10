@@ -230,13 +230,30 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     }
 
     if (_tasks.isEmpty) {
+      // Hic is yokken sekme serisi ve ustteki "Ekle" satiri gizleniyor.
+      // Ekleme yolu da onlarla birlikte kaybolmasin diye bos durumun
+      // kendisi "Ekle" sunuyor: yoksa yeni bir santiyede ilk is hic
+      // olusturulamiyor.
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _loadTasks,
-        child: CenteredScrollMessage(
-          message: _showAll
-              ? 'Henüz günlük iş bulunmuyor.'
-              : 'Aktif günlük iş bulunmuyor.',
+        child: LayoutBuilder(
+          builder: (context, constraints) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: constraints.maxHeight,
+                child: EmptyView(
+                  title: _showAll
+                      ? 'Henüz günlük iş bulunmuyor.'
+                      : 'Aktif günlük iş bulunmuyor.',
+                  actionLabel: _hicIsYok ? 'Ekle' : null,
+                  actionIcon: _hicIsYok ? LucideIcons.plus : null,
+                  onAction: _hicIsYok ? _openCreate : null,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

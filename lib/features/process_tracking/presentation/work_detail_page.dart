@@ -580,11 +580,12 @@ class _DependencyRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              text,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
+            // Is Detayi'ndaki uc listenin ucunde de ayni kural: uzun metin
+            // kesiliyor ama "Devamini oku" ile ayni ekranda aciliyor.
+            // Uyarilar ve Tarihce'de vardi, burada yoktu.
+            child: GenisleyenMetin(
+              metin: text,
+              bicim: TextStyle(
                 fontFamily: kBody,
                 fontSize: 15.5,
                 height: 1.4,

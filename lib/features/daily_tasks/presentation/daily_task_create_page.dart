@@ -12,6 +12,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../auth/services/session_manager.dart';
 import '../../process_tracking/models/project_summary.dart';
 import '../../process_tracking/services/project_service.dart';
@@ -683,10 +684,19 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
             const SizedBox(height: 12),
             Flexible(
               child: bosmu
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: EmptyState(
-                        message: 'Aramanıza uygun blok bulunamadı.',
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      // Panelin icinde kucuk kutu hali duruyordu: isaret 46,
+                      // yazi 12 punto. Burasi yarim ekran, tam sayfa bos
+                      // durumla ayni olcude olmali.
+                      //
+                      // Mesaj da ayrisiyor: santiyede hic blok yoksa bu bir
+                      // arama sonucu degil, "aramaniza uygun blok yok"
+                      // demek yaniltiyordu.
+                      child: EmptyView(
+                        title: _query.isEmpty
+                            ? 'Bu şantiyede blok bulunmuyor.'
+                            : 'Aramanıza uygun blok bulunamadı.',
                       ),
                     )
                   : ListView(
