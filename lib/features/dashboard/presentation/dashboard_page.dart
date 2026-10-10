@@ -74,7 +74,10 @@ class _DashboardPageState extends State<DashboardPage>
                     // kisaldiginda (ornegin klavye acikken) once alt paneller
                     // kisiliyor, sonra kartlar. Sabit olculerle 478dp
                     // yukseklikte tasiyordu.
-                    const rowMax = 88.0;
+                    // Alt paneller artan payi daha cok emiyor: boylece
+                    // logo ile ilk kart arasindaki bosluk yariya iniyor.
+                    // Kartlarin boyu degismiyor, en fazla 250dp.
+                    const rowMax = 120.0;
                     const rowMin = 62.0;
                     const gapMin = 12.0;
                     const gapMax = 30.0;
