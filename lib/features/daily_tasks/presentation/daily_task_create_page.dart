@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +13,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
+import '../../../core/widgets/sesli_not_oynatici.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../auth/services/session_manager.dart';
 import '../../process_tracking/models/project_summary.dart';
@@ -33,11 +35,13 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   final _taskService = DailyTaskService();
   final _imagePicker = ImagePicker();
   final _recorder = AudioRecorder();
+  final _oynatici = AudioPlayer();
   final _noteController = TextEditingController();
 
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isRecording = false;
+  bool _sesOynuyor = false;
   String? _errorMessage;
   List<ProjectSummary> _projects = const [];
   List<SiteMemberSummary> _members = const [];
@@ -55,12 +59,16 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   void initState() {
     super.initState();
     _loadFormData();
+    _oynatici.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _sesOynuyor = false);
+    });
   }
 
   @override
   void dispose() {
     _noteController.dispose();
     _recorder.dispose();
+    _oynatici.dispose();
     super.dispose();
   }
 
@@ -143,18 +151,50 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     }
   }
 
+  /// Kaydi dinletir. Ikinci dokunusta duraklatir, sonrakinde kaldigi
+  /// yerden devam eder; is detayindaki oynatici ile ayni davranis.
+  Future<void> _sesiCal() async {
+    final path = _audioPath;
+    if (path == null) return;
+    try {
+      if (_sesOynuyor) {
+        await _oynatici.pause();
+        if (mounted) setState(() => _sesOynuyor = false);
+        return;
+      }
+      if (_oynatici.state == PlayerState.paused) {
+        await _oynatici.resume();
+      } else {
+        await _oynatici.play(DeviceFileSource(path));
+      }
+      if (mounted) setState(() => _sesOynuyor = true);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _sesOynuyor = false);
+        _show('Sesli not oynatılamadı.');
+      }
+    }
+  }
+
   Future<void> _removeAudio() async {
+    if (_isSaving) return;
     if (_isRecording) await _recorder.stop();
+    try {
+      await _oynatici.stop();
+    } catch (_) {}
     final path = _audioPath;
     if (path != null) {
       try {
         await File(path).delete();
       } catch (_) {}
     }
-    if (mounted) setState(() {
-      _isRecording = false;
-      _audioPath = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isRecording = false;
+        _sesOynuyor = false;
+        _audioPath = null;
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -427,62 +467,55 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Kayit yokken bu buton "Fotograf ekle" ile ayni agirlikta
-              // duruyor; ekranin birincil eylemi KAYDET. Kayit basladiginda
-              // dolu kirmiziya donuyor, cunku o an devam eden bir durum var.
-              Pressable(
-                onTap: _isSaving ? null : _toggleRecording,
-                child: Container(
-                  height: 52,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    // Kirmizi uygulamada hata ve silme rengi; kayit
-                    // sirasindaki buton siyah.
-                    color: _isRecording ? c.ink : c.surface2,
-                    borderRadius: BorderRadius.circular(Sizes.rField),
-                    border: _isRecording
-                        ? null
-                        : Border.all(color: c.border2, width: 1.5),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _isRecording ? LucideIcons.square : LucideIcons.mic,
-                        size: 19,
-                        color: _isRecording ? c.surface : c.accent,
-                      ),
-                      const SizedBox(width: 9),
-                      Text(
-                        _isRecording
-                            ? 'Kaydı Durdur'
-                            : (_audioPath == null
-                                  ? 'Sesli not kaydet'
-                                  : 'Yeni kayıt'),
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w600,
-                          color: _isRecording ? c.surface : c.ink,
+              // Kayit alindiktan sonra kaydet butonu yerini dinleme
+              // kutusuna birakiyor: once carpi ile silinip sonra yeni
+              // kayit aliniyor. Kutu is detayindakinin ayni.
+              if (_audioPath != null && !_isRecording)
+                SesliNotOynatici(
+                  oynuyor: _sesOynuyor,
+                  yukleniyor: false,
+                  onCal: _sesiCal,
+                  onSil: _removeAudio,
+                )
+              else
+                // Kayit yokken bu buton "Fotograf ekle" ile ayni agirlikta
+                // duruyor; ekranin birincil eylemi KAYDET. Kayit
+                // basladiginda dolu siyaha donuyor, cunku o an devam eden
+                // bir durum var.
+                Pressable(
+                  onTap: _isSaving ? null : _toggleRecording,
+                  child: Container(
+                    height: 52,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _isRecording ? c.ink : c.surface2,
+                      borderRadius: BorderRadius.circular(Sizes.rField),
+                      border: _isRecording
+                          ? null
+                          : Border.all(color: c.border2, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isRecording ? LucideIcons.square : LucideIcons.mic,
+                          size: 19,
+                          color: _isRecording ? c.surface : c.accent,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 9),
+                        Text(
+                          _isRecording ? 'Kaydı Durdur' : 'Sesli not kaydet',
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w600,
+                            color: _isRecording ? c.surface : c.ink,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              // Kayitli ses, secilen fotograflarla ayni kutu bicimi:
-              // ekranda ne eklendigi tek bakista goruluyor.
-              if (_audioPath != null && !_isRecording) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: _FileChip(
-                    name: 'Sesli not',
-                    icon: LucideIcons.mic,
-                    onRemove: _isSaving ? null : _removeAudio,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
@@ -841,12 +874,10 @@ class _FileChip extends StatelessWidget {
   const _FileChip({
     required this.name,
     required this.onRemove,
-    this.icon = LucideIcons.image,
   });
 
   final String name;
   final VoidCallback? onRemove;
-  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -861,7 +892,7 @@ class _FileChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 17, color: c.muted),
+          Icon(LucideIcons.image, size: 17, color: c.muted),
           const SizedBox(width: 7),
           SizedBox(
             width: 92,

@@ -7,9 +7,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
-import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
 import '../../../core/widgets/kisa_ad.dart';
+import '../../../core/widgets/sesli_not_oynatici.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -412,67 +412,10 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Pressable(
-                    onTap: _toggleAudio,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: c.accent.withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: c.accent.withValues(alpha: .22),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: c.accent,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: _isAudioLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: c.surface,
-                                    ),
-                                  )
-                                : Icon(
-                                    _isAudioPlaying
-                                        ? LucideIcons.pause
-                                        : LucideIcons.play,
-                                    color: c.surface,
-                                    size: 22,
-                                  ),
-                          ),
-                          const SizedBox(width: 13),
-                          Expanded(
-                            child: Text(
-                              _isAudioPlaying
-                                  ? 'Sesli not oynatılıyor'
-                                  : 'Sesli notu dinle',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15.5,
-                                color: c.ink,
-                              ),
-                            ),
-                          ),
-                          Icon(LucideIcons.volume2, color: c.accent, size: 21),
-                        ],
-                      ),
-                    ),
+                  SesliNotOynatici(
+                    oynuyor: _isAudioPlaying,
+                    yukleniyor: _isAudioLoading,
+                    onCal: _toggleAudio,
                   ),
                 ],
               ),
