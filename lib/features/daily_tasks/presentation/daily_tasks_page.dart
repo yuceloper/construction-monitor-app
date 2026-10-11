@@ -370,7 +370,7 @@ class _TaskCard extends StatelessWidget {
           color: c.surface,
           borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
+          boxShadow: kartGolgesi(context),
         ),
         child: Row(
           children: [

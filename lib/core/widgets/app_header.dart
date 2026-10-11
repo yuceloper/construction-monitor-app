@@ -119,7 +119,7 @@ class UserChip extends StatelessWidget {
           color: c.surface,
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
+          boxShadow: kartGolgesi(context),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -406,32 +406,20 @@ class TitleBarDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final renk = context.colors.headerLine;
     // Genis ekranda icerik ortali bir sutunda duruyor; ayrac o sutunun
-    // kenarinda kesilince ekranin ortasinda asili bir cizgi gibi
-    // goruluyordu. OverflowBox ile pencere genisligine yayiliyor, boylece
-    // dar ekranda oldugu gibi kenardan kenara gidiyor.
-    // OverflowBox dikeyde de serbest kalirsa Column icinde sonsuz
-    // yuksekligi aliyor; disindaki SizedBox yuksekligi 10'a sabitliyor.
-    return SizedBox(
+    // kenarinda kesilip havada asili bir cizgi gibi goruluyordu.
+    // Tasirip pencere genisligine yaymak da ise yaramadi, ustteki
+    // katman kirpiyor. Buyuk ekranda cizgi hic cizilmiyor: baslik
+    // zaten bosluk ile ayriliyor.
+    if (MediaQuery.sizeOf(context).width >= 700) {
+      return const SizedBox(height: 10);
+    }
+    return Container(
       height: 10,
-      child: OverflowBox(
-        maxWidth: double.infinity,
-        minHeight: 10,
-        maxHeight: 10,
-        child: SizedBox(
-          width: MediaQuery.sizeOf(context).width,
-          height: 10,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  renk.withValues(alpha: .70),
-                  renk.withValues(alpha: 0),
-                ],
-              ),
-            ),
-          ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [renk.withValues(alpha: .70), renk.withValues(alpha: 0)],
         ),
       ),
     );

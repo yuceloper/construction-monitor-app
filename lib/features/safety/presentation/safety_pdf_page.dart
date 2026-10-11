@@ -241,7 +241,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
                   color: c.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: c.border),
-                  boxShadow: kLiftShadow,
+                  boxShadow: kartGolgesi(context),
                 ),
                 child: PdfViewer.data(
                   bytes,
@@ -293,7 +293,7 @@ class _BelgeIskeletiState extends State<_BelgeIskeleti>
             color: c.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: c.border),
-            boxShadow: kLiftShadow,
+            boxShadow: kartGolgesi(context),
           ),
           child: FadeTransition(
             opacity: Tween<double>(begin: .45, end: .9).animate(_nabiz),

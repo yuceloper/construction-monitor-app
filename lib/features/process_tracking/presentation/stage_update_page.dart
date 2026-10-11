@@ -230,7 +230,7 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
             color: c.surface,
             borderRadius: BorderRadius.circular(Sizes.rCard),
             border: Border.all(color: c.border),
-            boxShadow: kLiftShadow,
+            boxShadow: kartGolgesi(context),
           ),
           child: _works.isEmpty
               ? const Padding(

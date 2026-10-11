@@ -258,7 +258,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               color: c.surface,
               borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
-              boxShadow: kLiftShadow,
+              boxShadow: kartGolgesi(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,7 +314,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                 color: c.surface,
                 borderRadius: BorderRadius.circular(Sizes.rCard),
                 border: Border.all(color: c.border),
-                boxShadow: kLiftShadow,
+                boxShadow: kartGolgesi(context),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -396,7 +396,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                 color: c.surface,
                 borderRadius: BorderRadius.circular(Sizes.rCard),
                 border: Border.all(color: c.border),
-                boxShadow: kLiftShadow,
+                boxShadow: kartGolgesi(context),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -430,7 +430,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               color: c.surface,
               borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
-              boxShadow: kLiftShadow,
+              boxShadow: kartGolgesi(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

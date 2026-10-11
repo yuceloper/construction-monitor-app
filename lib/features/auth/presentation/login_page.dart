@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                         color: c.surface,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: c.border),
-                        boxShadow: kLiftShadow,
+                        boxShadow: kartGolgesi(context),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

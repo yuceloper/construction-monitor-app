@@ -147,7 +147,7 @@ class _SiteSelectionPageState extends State<SiteSelectionPage> {
                         color: c.surface,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: c.border),
-                        boxShadow: kLiftShadow,
+                        boxShadow: kartGolgesi(context),
                       ),
                       child: _buildSelectorContent(),
                     ),

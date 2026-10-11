@@ -419,9 +419,11 @@ class _PrimaryCardState extends State<_PrimaryCard> {
           child: Container(
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              color: c.surface,
+              // Tarayicida golge kartin cevresinde dikdortgen bir leke
+              // birakiyordu; beyaz kart gri zeminden kendiliginden
+              // ayriliyor. Fare uzerindeyken zemin cok hafif renkleniyor.
+              color: _uzerinde ? Color.lerp(c.surface, color, .05) : c.surface,
               borderRadius: BorderRadius.circular(24),
-              boxShadow: _uzerinde ? kWebShadowHover : kWebShadow,
             ),
             child: govde,
           ),
@@ -516,12 +518,12 @@ class _SecondaryCardState extends State<_SecondaryCard> {
       clipBehavior: Clip.antiAlias,
       padding: EdgeInsets.symmetric(horizontal: genis ? 18 : 14),
       decoration: BoxDecoration(
-        color: c.surface,
+        color: genis && _uzerinde
+            ? Color.lerp(c.surface, color, .05)
+            : c.surface,
         borderRadius: BorderRadius.circular(Sizes.rCard),
         border: genis ? null : Border.all(color: c.border),
-        boxShadow: genis
-            ? (_uzerinde ? kWebShadowHover : kWebShadow)
-            : kLiftShadow,
+        boxShadow: genis ? const [] : kLiftShadow,
       ),
       child: Row(
           children: [
