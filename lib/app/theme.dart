@@ -192,6 +192,22 @@ const kLiftShadow = <BoxShadow>[
   BoxShadow(color: Color(0x0D0E141C), blurRadius: 8, offset: Offset(0, 3)),
 ];
 
+/// Genis ekranda kartlarin yukseltisi.
+///
+/// Telefonda kartlar renkli golge ve ince cerceveyle ayriliyor; buyuk
+/// ekranda ayni golge renkli bir lekeye, cerceve de cizgiye donusuyordu.
+/// Burada ikisi de yok: yakin ve uzak iki notr katman, sitelerdeki gibi.
+const kWebShadow = <BoxShadow>[
+  BoxShadow(color: Color(0x0F101828), blurRadius: 2, offset: Offset(0, 1)),
+  BoxShadow(color: Color(0x14101828), blurRadius: 28, offset: Offset(0, 12)),
+];
+
+/// Imlec kartin uzerindeyken: ayni golge biraz derinlesiyor.
+const kWebShadowHover = <BoxShadow>[
+  BoxShadow(color: Color(0x14101828), blurRadius: 4, offset: Offset(0, 2)),
+  BoxShadow(color: Color(0x21101828), blurRadius: 42, offset: Offset(0, 20)),
+];
+
 /// Light or dark, chosen by the user from the top bar.
 ///
 /// Kept in memory for the session. It is not persisted yet: that needs a

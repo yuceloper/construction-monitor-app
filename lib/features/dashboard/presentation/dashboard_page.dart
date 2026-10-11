@@ -49,30 +49,34 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
-  Widget _paydaslar(BuildContext context) => _SecondaryCard(
+  Widget _paydaslar(BuildContext context, bool genis) => _SecondaryCard(
     title: 'Paydaşlar',
     icon: LucideIcons.users,
     color: context.colors.violet,
+    genis: genis,
     onTap: () => context.go('/stakeholders'),
   );
 
-  Widget _isg(BuildContext context) => _SecondaryCard(
+  Widget _isg(BuildContext context, bool genis) => _SecondaryCard(
     title: 'İSG Takip',
     icon: LucideIcons.shieldCheck,
     color: context.colors.warn,
+    genis: genis,
     onTap: () => context.go('/safety'),
   );
 
-  Widget _bildirimler(BuildContext context) => ValueListenableBuilder<int>(
-    valueListenable: NotificationUnreadCount.value,
-    builder: (context, unreadCount, _) => _SecondaryCard(
-      title: 'Bildirimler',
-      icon: LucideIcons.bellRing,
-      color: context.colors.bad,
-      badgeCount: unreadCount,
-      onTap: () => context.go('/notifications'),
-    ),
-  );
+  Widget _bildirimler(BuildContext context, bool genis) =>
+      ValueListenableBuilder<int>(
+        valueListenable: NotificationUnreadCount.value,
+        builder: (context, unreadCount, _) => _SecondaryCard(
+          title: 'Bildirimler',
+          icon: LucideIcons.bellRing,
+          color: context.colors.bad,
+          badgeCount: unreadCount,
+          genis: genis,
+          onTap: () => context.go('/notifications'),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -121,13 +125,16 @@ class _DashboardPageState extends State<DashboardPage>
                     if (row < rowMin) row = rowMin;
                     // Yan yana dizilince kutular daha dar oldugu icin
                     // biraz daha yuksek duruyorlar.
-                    if (genisEkran) row = row.clamp(rowMin, 150.0);
+                    if (genisEkran) row = row.clamp(rowMin, 124.0);
 
                     var gap = gapMin;
+                    // Tarayicida sayfa cok bos duruyordu; buyuk kartlar
+                    // orada biraz daha dolgun.
+                    final primaryMax = genisEkran ? 300.0 : 250.0;
                     var primary =
                         constraints.maxHeight - row * altSira - gap * altSira;
-                    if (primary > 250) {
-                      primary = 250;
+                    if (primary > primaryMax) {
+                      primary = primaryMax;
                       gap =
                           (constraints.maxHeight - primary - row * altSira) /
                           (altSira + 2);
@@ -135,6 +142,11 @@ class _DashboardPageState extends State<DashboardPage>
                       if (gap > gapMax) gap = gapMax;
                     }
                     if (primary < 0) primary = 0;
+
+                    // Tarayicida kartlar arasindaki aciklik esitleniyor;
+                    // blok da buyudugu icin bos alan altta yigilmak yerine
+                    // alta ve ustune esit dagiliyor.
+                    if (genisEkran) gap = 20;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -151,11 +163,12 @@ class _DashboardPageState extends State<DashboardPage>
                                     title: 'Süreç Takip',
                                     icon: LucideIcons.chartGantt,
                                     color: c.accent,
+                                    genis: genisEkran,
                                     onTap: () => context.go('/process'),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: gap),
                               Expanded(
                                 child: _entering(
                                   2,
@@ -163,6 +176,7 @@ class _DashboardPageState extends State<DashboardPage>
                                     title: 'Günlük İşler',
                                     icon: LucideIcons.clipboardList,
                                     color: c.teal,
+                                    genis: genisEkran,
                                     onTap: () => context.go('/daily-tasks'),
                                   ),
                                 ),
@@ -183,13 +197,13 @@ class _DashboardPageState extends State<DashboardPage>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: _entering(3, _paydaslar(context)),
+                                  child: _entering(3, _paydaslar(context, genisEkran)),
                                 ),
                                 SizedBox(width: gap),
-                                Expanded(child: _entering(4, _isg(context))),
+                                Expanded(child: _entering(4, _isg(context, genisEkran))),
                                 SizedBox(width: gap),
                                 Expanded(
-                                  child: _entering(5, _bildirimler(context)),
+                                  child: _entering(5, _bildirimler(context, genisEkran)),
                                 ),
                               ],
                             ),
@@ -197,17 +211,17 @@ class _DashboardPageState extends State<DashboardPage>
                         else ...[
                           _entering(
                             3,
-                            SizedBox(height: row, child: _paydaslar(context)),
+                            SizedBox(height: row, child: _paydaslar(context, genisEkran)),
                           ),
                           SizedBox(height: gap),
                           _entering(
                             4,
-                            SizedBox(height: row, child: _isg(context)),
+                            SizedBox(height: row, child: _isg(context, genisEkran)),
                           ),
                           SizedBox(height: gap),
                           _entering(
                             5,
-                            SizedBox(height: row, child: _bildirimler(context)),
+                            SizedBox(height: row, child: _bildirimler(context, genisEkran)),
                           ),
                         ],
                       ],
@@ -313,12 +327,13 @@ class _ArcPainter extends CustomPainter {
 ///
 /// Raf kartin altindan gorunuyor; derinlik renkle degil katmanla veriliyor,
 /// boylece kart beyaz kalirken asagidaki listeden ayrilabiliyor.
-class _PrimaryCard extends StatelessWidget {
+class _PrimaryCard extends StatefulWidget {
   const _PrimaryCard({
     required this.title,
     required this.icon,
     required this.color,
     required this.onTap,
+    this.genis = false,
   });
 
   final String title;
@@ -326,11 +341,97 @@ class _PrimaryCard extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
+  /// Genis ekran (tarayici) duzeni.
+  final bool genis;
+
+  @override
+  State<_PrimaryCard> createState() => _PrimaryCardState();
+}
+
+class _PrimaryCardState extends State<_PrimaryCard> {
+  bool _uzerinde = false;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final genis = widget.genis;
+    final color = widget.color;
+
+    final govde = Stack(
+      children: [
+        Positioned(
+          right: genis ? -70 : -30,
+          bottom: genis ? -60 : -26,
+          width: genis ? 330 : 190,
+          height: genis ? 200 : 118,
+          child: _ArcMotif(color: color),
+        ),
+        Positioned.fill(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: genis ? 72 : 64,
+                height: genis ? 72 : 64,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color.lerp(c.surface, color, .14),
+                  borderRadius: BorderRadius.circular(genis ? 20 : 18),
+                ),
+                child: Icon(widget.icon, size: genis ? 33 : 30, color: color),
+              ),
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: genis ? 24 : 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.05,
+                      letterSpacing: -.5,
+                      color: c.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // Tarayicida kart tek katman: renkli raf genis ekranda kartin altinda
+    // ayri bir blok gibi duruyordu, renkli golge de leke birakiyordu.
+    if (genis) {
+      return Pressable(
+        onTap: widget.onTap,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _uzerinde = true),
+          onExit: (_) => setState(() => _uzerinde = false),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: c.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: _uzerinde ? kWebShadowHover : kWebShadow,
+            ),
+            child: govde,
+          ),
+        ),
+      );
+    }
+
+    // Telefon duzeni: beyaz kart, arkasinda kendi renginde bir raf.
     return Pressable(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Stack(
         children: [
           Positioned(
@@ -364,56 +465,7 @@ class _PrimaryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -30,
-                    bottom: -26,
-                    width: 190,
-                    height: 118,
-                    child: _ArcMotif(color: color),
-                  ),
-                  Positioned.fill(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Color.lerp(c.surface, color, .14),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Icon(icon, size: 30, color: color),
-                        ),
-                        const SizedBox(height: 14),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              title,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.visible,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: kDisplay,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                height: 1.05,
-                                letterSpacing: -.5,
-                                color: c.ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              child: govde,
             ),
           ),
         ],
@@ -426,13 +478,14 @@ class _PrimaryCard extends StatelessWidget {
 ///
 /// Ikon ana kartlardaki gibi tonlu bir karenin icinde; aradaki tek fark
 /// olculer, boylece bes giris ayni dili konusuyor.
-class _SecondaryCard extends StatelessWidget {
+class _SecondaryCard extends StatefulWidget {
   const _SecondaryCard({
     required this.title,
     required this.icon,
     required this.color,
     required this.onTap,
     this.badgeCount,
+    this.genis = false,
   });
 
   final String title;
@@ -441,21 +494,36 @@ class _SecondaryCard extends StatelessWidget {
   final VoidCallback onTap;
   final int? badgeCount;
 
+  /// Genis ekran (tarayici) duzeni.
+  final bool genis;
+
+  @override
+  State<_SecondaryCard> createState() => _SecondaryCardState();
+}
+
+class _SecondaryCardState extends State<_SecondaryCard> {
+  bool _uzerinde = false;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(Sizes.rCard),
-          border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
-        ),
-        child: Row(
+    final genis = widget.genis;
+    final title = widget.title;
+    final color = widget.color;
+    final badgeCount = widget.badgeCount;
+
+    final kart = Container(
+      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.symmetric(horizontal: genis ? 18 : 14),
+      decoration: BoxDecoration(
+        color: c.surface,
+        borderRadius: BorderRadius.circular(Sizes.rCard),
+        border: genis ? null : Border.all(color: c.border),
+        boxShadow: genis
+            ? (_uzerinde ? kWebShadowHover : kWebShadow)
+            : kLiftShadow,
+      ),
+      child: Row(
           children: [
             Container(
               width: 44,
@@ -465,7 +533,7 @@ class _SecondaryCard extends StatelessWidget {
                 color: Color.lerp(c.surface, color, .14),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 21, color: color),
+              child: Icon(widget.icon, size: 21, color: color),
             ),
             const SizedBox(width: 13),
             Expanded(
@@ -504,6 +572,15 @@ class _SecondaryCard extends StatelessWidget {
               ),
           ],
         ),
+    );
+
+    if (!genis) return Pressable(onTap: widget.onTap, child: kart);
+    return Pressable(
+      onTap: widget.onTap,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _uzerinde = true),
+        onExit: (_) => setState(() => _uzerinde = false),
+        child: kart,
       ),
     );
   }
