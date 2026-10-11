@@ -70,6 +70,32 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     }
   }
 
+  /// Uyari penceresindeki metin kutusu. Paydas ve gunluk is
+  /// formlarindaki alanla ayni: yuvarlak kose, dolgu, odakta altin
+  /// cerceve. Burada Material'in varsayilan gri cercevesi duruyordu.
+  InputDecoration _uyariAlani() {
+    final c = context.colors;
+    OutlineInputBorder cerceve(Color renk, [double kalinlik = 1.5]) =>
+        OutlineInputBorder(
+          borderRadius: BorderRadius.circular(Sizes.rField),
+          borderSide: BorderSide(color: renk, width: kalinlik),
+        );
+    return InputDecoration(
+      hintText: 'Lütfen detay giriniz.',
+      hintStyle: TextStyle(fontFamily: kBody, fontSize: 15.5, color: c.faint),
+      counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
+      isDense: true,
+      filled: true,
+      fillColor: c.surface2,
+      // Sagda kaydirma cubuguna yer birakiliyor.
+      contentPadding: const EdgeInsets.fromLTRB(16, 15, 22, 15),
+      border: cerceve(c.border2),
+      enabledBorder: cerceve(c.border2),
+      disabledBorder: cerceve(c.border),
+      focusedBorder: cerceve(c.accent, 1.8),
+    );
+  }
+
   Future<void> _addWarning() async {
     final result = await showDialog<String>(
       context: context,
@@ -100,12 +126,13 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                         LengthLimitingTextInputFormatter(500),
                       ],
                       onChanged: (value) => draft = value,
-                      decoration: const InputDecoration(
-                        hintText: 'Lütfen detay giriniz.',
-                        border: OutlineInputBorder(),
-                        // Sagda kaydirma cubuguna yer birakiliyor.
-                        contentPadding: EdgeInsets.fromLTRB(12, 14, 20, 14),
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 15.5,
+                        color: context.colors.ink,
                       ),
+                      cursorColor: context.colors.accent,
+                      decoration: _uyariAlani(),
                     ),
                   ),
                   if (validationMessage != null) ...[
@@ -191,11 +218,13 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(500),
                       ],
-                      decoration: const InputDecoration(
-                        hintText: 'Lütfen detay giriniz.',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.fromLTRB(12, 14, 20, 14),
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 15.5,
+                        color: context.colors.ink,
                       ),
+                      cursorColor: context.colors.accent,
+                      decoration: _uyariAlani(),
                     ),
                   ),
                   if (validationMessage != null) ...[
