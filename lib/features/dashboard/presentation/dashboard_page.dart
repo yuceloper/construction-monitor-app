@@ -96,57 +96,27 @@ class _DashboardPageState extends State<DashboardPage>
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    // Iki buyuk kartin icinde bir ikon ve bir baslik var;
-                    // uzadikca ortalari bosaliyordu, en fazla 250dp.
+                    // Telefon duzeni sefa-fixes'teki ile birebir ayni:
+                    // alttaki uc panel 72 yuksekliginde, butun araliklar
+                    // 14, kalan pay buyuk kartlara gidiyor (en az 210,
+                    // en cok 300). Artan bosluk ustte ve altta esit
+                    // bolunuyor.
                     //
-                    // Olculer kalan yerden hesaplaniyor, sabit degil: ekran
-                    // kisaldiginda (ornegin klavye acikken) once alt paneller
-                    // kisiliyor, sonra kartlar. Sabit olculerle 478dp
-                    // yukseklikte tasiyordu.
-                    // Alt paneller artan payi daha cok emiyor: boylece
-                    // logo ile ilk kart arasindaki bosluk yariya iniyor.
-                    // Kartlarin boyu degismiyor, en fazla 250dp.
-                    const rowMax = 120.0;
-                    const rowMin = 62.0;
-                    const gapMin = 12.0;
-                    const gapMax = 30.0;
-
-                    // Genis ekranda uc alt panel yan yana geliyor:
-                    // alt alta dizilince her biri 966x117'lik bir serit
-                    // oluyor, ikon ile yazi solda kalip geri kalani bos
-                    // duruyordu.
+                    // Genis ekranda (tarayici) uc panel yan yana geldigi
+                    // icin satir daha yuksek ve aralik 20.
                     final genisEkran = constraints.maxWidth >= 700;
                     final altSira = genisEkran ? 1 : 3;
 
-                    var row =
-                        (constraints.maxHeight - 180 - gapMin * altSira) /
-                        altSira;
-                    if (row > rowMax) row = rowMax;
-                    if (row < rowMin) row = rowMin;
-                    // Yan yana dizilince kutular daha dar oldugu icin
-                    // biraz daha yuksek duruyorlar.
-                    if (genisEkran) row = row.clamp(rowMin, 124.0);
+                    final gap = genisEkran ? 20.0 : 14.0;
+                    final row = genisEkran ? 124.0 : 72.0;
 
-                    var gap = gapMin;
-                    // Tarayicida sayfa cok bos duruyordu; buyuk kartlar
-                    // orada biraz daha dolgun.
-                    final primaryMax = genisEkran ? 300.0 : 250.0;
                     var primary =
-                        constraints.maxHeight - row * altSira - gap * altSira;
-                    if (primary > primaryMax) {
-                      primary = primaryMax;
-                      gap =
-                          (constraints.maxHeight - primary - row * altSira) /
-                          (altSira + 2);
-                      if (gap < gapMin) gap = gapMin;
-                      if (gap > gapMax) gap = gapMax;
-                    }
-                    if (primary < 0) primary = 0;
-
-                    // Tarayicida kartlar arasindaki aciklik esitleniyor;
-                    // blok da buyudugu icin bos alan altta yigilmak yerine
-                    // alta ve ustune esit dagiliyor.
-                    if (genisEkran) gap = 20;
+                        constraints.maxHeight -
+                        gap -
+                        (row * altSira + gap * (altSira - 1)) -
+                        gap;
+                    if (primary > 300) primary = 300;
+                    if (primary < 210) primary = 210;
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,7 +138,7 @@ class _DashboardPageState extends State<DashboardPage>
                                   ),
                                 ),
                               ),
-                              SizedBox(width: gap),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: _entering(
                                   2,
@@ -197,13 +167,24 @@ class _DashboardPageState extends State<DashboardPage>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
-                                  child: _entering(3, _paydaslar(context, genisEkran)),
+                                  child: _entering(
+                                    3,
+                                    _paydaslar(context, genisEkran),
+                                  ),
                                 ),
                                 SizedBox(width: gap),
-                                Expanded(child: _entering(4, _isg(context, genisEkran))),
+                                Expanded(
+                                  child: _entering(
+                                    4,
+                                    _isg(context, genisEkran),
+                                  ),
+                                ),
                                 SizedBox(width: gap),
                                 Expanded(
-                                  child: _entering(5, _bildirimler(context, genisEkran)),
+                                  child: _entering(
+                                    5,
+                                    _bildirimler(context, genisEkran),
+                                  ),
                                 ),
                               ],
                             ),
@@ -211,17 +192,26 @@ class _DashboardPageState extends State<DashboardPage>
                         else ...[
                           _entering(
                             3,
-                            SizedBox(height: row, child: _paydaslar(context, genisEkran)),
+                            SizedBox(
+                              height: row,
+                              child: _paydaslar(context, genisEkran),
+                            ),
                           ),
                           SizedBox(height: gap),
                           _entering(
                             4,
-                            SizedBox(height: row, child: _isg(context, genisEkran)),
+                            SizedBox(
+                              height: row,
+                              child: _isg(context, genisEkran),
+                            ),
                           ),
                           SizedBox(height: gap),
                           _entering(
                             5,
-                            SizedBox(height: row, child: _bildirimler(context, genisEkran)),
+                            SizedBox(
+                              height: row,
+                              child: _bildirimler(context, genisEkran),
+                            ),
                           ),
                         ],
                       ],
@@ -526,54 +516,54 @@ class _SecondaryCardState extends State<_SecondaryCard> {
         boxShadow: genis ? const [] : kLiftShadow,
       ),
       child: Row(
-          children: [
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Color.lerp(c.surface, color, .14),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(widget.icon, size: 21, color: color),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.3,
+                color: c.ink,
+              ),
+            ),
+          ),
+          if ((badgeCount ?? 0) > 0)
             Container(
-              width: 44,
-              height: 44,
+              height: 26,
+              constraints: const BoxConstraints(minWidth: 26),
               alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: Color.lerp(c.surface, color, .14),
-                borderRadius: BorderRadius.circular(14),
+                color: c.bad,
+                borderRadius: BorderRadius.circular(13),
               ),
-              child: Icon(widget.icon, size: 21, color: color),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
               child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                badgeCount! > 99 ? '99+' : '$badgeCount',
                 style: TextStyle(
-                  fontFamily: kDisplay,
-                  fontSize: 18,
+                  fontFamily: kBody,
+                  color: c.surface,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -.3,
-                  color: c.ink,
                 ),
               ),
             ),
-            if ((badgeCount ?? 0) > 0)
-              Container(
-                height: 26,
-                constraints: const BoxConstraints(minWidth: 26),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: c.bad,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Text(
-                  badgeCount! > 99 ? '99+' : '$badgeCount',
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    color: c.surface,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ],
+      ),
     );
 
     if (!genis) return Pressable(onTap: widget.onTap, child: kart);
