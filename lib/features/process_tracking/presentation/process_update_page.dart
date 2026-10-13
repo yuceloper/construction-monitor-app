@@ -292,7 +292,7 @@ class _StageUpdateCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${items.length} alt iş • %${percentage.round()}',
+                    '${items.length} Alt İş • %${percentage.round()}',
                     style: TextStyle(
                       fontFamily: kBody,
                       fontSize: 13.5,

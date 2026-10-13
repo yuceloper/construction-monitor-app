@@ -299,6 +299,19 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Soru once soruluyor: altta ve soluk kalinca
+              // goze carpmiyordu.
+              Text(
+                'Bu uyarı silinecek. Devam edilsin mi?',
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 15.5,
+                  height: 1.4,
+                  fontWeight: FontWeight.w600,
+                  color: c.ink,
+                ),
+              ),
+              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
@@ -311,21 +324,11 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                   warning.text,
                   style: TextStyle(
                     fontFamily: kBody,
-                    fontSize: 15.5,
+                    fontSize: 14.5,
                     height: 1.4,
                     fontWeight: FontWeight.w500,
-                    color: c.ink,
+                    color: c.sub,
                   ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Bu uyarı silinecek. Devam edilsin mi?',
-                style: TextStyle(
-                  fontFamily: kBody,
-                  fontSize: 14,
-                  height: 1.45,
-                  color: c.sub,
                 ),
               ),
             ],
@@ -790,14 +793,14 @@ class _WarningCardState extends State<_WarningCard> {
                     // Islemler ... menusunde gizliydi, anlasilmiyordu;
                     // ikisi de kartin altinda acik yaziyla duruyor.
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Spacer(),
                         _UyariIslemButonu(
                           icon: LucideIcons.pencil,
                           label: 'Güncelle',
                           onTap: widget.onUpdate,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         _UyariIslemButonu(
                           icon: LucideIcons.trash2,
                           label: 'Sil',

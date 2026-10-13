@@ -55,12 +55,26 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
       _errorMessage = null;
     });
 
+    // Kaydedilmemis isaretler: detaya girip cikinca liste yeniden
+    // cekiliyor ve kullanicinin isaretledikleri kayboluyordu.
+    final kaydedilmemis = {
+      for (final work in _works)
+        if (work.changed) work.id: work.completed,
+    };
+
     try {
       final items = await _workItemService.getByProject(widget.projectId);
       final stageItems = items
           .where((item) => item.progressBlockId == widget.stageId)
           .map(_EditableWork.fromSummary)
           .toList();
+
+      for (var i = 0; i < stageItems.length; i++) {
+        final isaret = kaydedilmemis[stageItems[i].id];
+        if (isaret != null && isaret != stageItems[i].completed) {
+          stageItems[i] = stageItems[i].copy(completed: isaret);
+        }
+      }
 
       if (!mounted) return;
       setState(() => _works = stageItems);
@@ -293,7 +307,11 @@ class _StageUpdatePageState extends State<StageUpdatePage> {
                                           fontSize: 18,
                                           height: 1.3,
                                           fontWeight: FontWeight.w500,
-                                          color: work.completed ? c.sub : c.ink,
+                                          // Isaretli olan koyu,
+                                          // isaretsiz gri duruyor.
+                                          color: work.completed
+                                              ? c.ink
+                                              : c.sub,
                                         ),
                                       ),
                                     ),
