@@ -81,46 +81,56 @@ class _MainShellState extends State<MainShell> {
           : ValueListenableBuilder<int>(
               valueListenable: NotificationUnreadCount.value,
               builder: (context, unreadCount, _) {
+                // Tarayicida dort sekme butun pencereye yayiliyordu;
+                // cizgi kenardan kenara gidiyor ama menu icerikle ayni
+                // genislikte, ortali duruyor.
+                final en = MediaQuery.sizeOf(context).width;
+                final yanPay = en >= 700 ? (en - 620) / 2 : 0.0;
                 return DecoratedBox(
                   decoration: BoxDecoration(
                     border: Border(top: BorderSide(color: c.border)),
                   ),
-                  child: BottomNavigationBar(
-                    currentIndex: currentIndex,
-                    onTap: (index) => _onTap(context, index),
-                    type: BottomNavigationBarType.fixed,
-                    elevation: 0,
-                    selectedItemColor: c.accent,
-                    unselectedItemColor: c.muted,
-                    backgroundColor: c.surface,
-                    selectedFontSize: 13,
-                    unselectedFontSize: 12.5,
-                    selectedLabelStyle: const TextStyle(
-                      fontFamily: kBody,
-                      fontWeight: FontWeight.w700,
+                  // Center/ConstrainedBox menuyu dikeyde de buyutuyor;
+                  // genislik yandan bosluk vererek daraltiliyor.
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: yanPay),
+                    child: BottomNavigationBar(
+                      currentIndex: currentIndex,
+                      onTap: (index) => _onTap(context, index),
+                      type: BottomNavigationBarType.fixed,
+                      elevation: 0,
+                      selectedItemColor: c.accent,
+                      unselectedItemColor: c.muted,
+                      backgroundColor: c.surface,
+                      selectedFontSize: 13,
+                      unselectedFontSize: 12.5,
+                      selectedLabelStyle: const TextStyle(
+                        fontFamily: kBody,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      unselectedLabelStyle: const TextStyle(
+                        fontFamily: kBody,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      items: [
+                        const BottomNavigationBarItem(
+                          icon: Icon(LucideIcons.house, size: 24),
+                          label: 'Ana Sayfa',
+                        ),
+                        const BottomNavigationBarItem(
+                          icon: Icon(LucideIcons.chartGantt, size: 24),
+                          label: 'Süreç Takip',
+                        ),
+                        const BottomNavigationBarItem(
+                          icon: Icon(LucideIcons.clipboardList, size: 24),
+                          label: 'Günlük İşler',
+                        ),
+                        BottomNavigationBarItem(
+                          icon: _NotificationNavIcon(count: unreadCount),
+                          label: 'Bildirimler',
+                        ),
+                      ],
                     ),
-                    unselectedLabelStyle: const TextStyle(
-                      fontFamily: kBody,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    items: [
-                      const BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.house, size: 24),
-                        label: 'Ana Sayfa',
-                      ),
-                      const BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.chartGantt, size: 24),
-                        label: 'Süreç Takip',
-                      ),
-                      const BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.clipboardList, size: 24),
-                        label: 'Günlük İşler',
-                      ),
-                      BottomNavigationBarItem(
-                        icon: _NotificationNavIcon(count: unreadCount),
-                        label: 'Bildirimler',
-                      ),
-                    ],
                   ),
                 );
               },

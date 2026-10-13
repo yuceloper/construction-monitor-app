@@ -142,12 +142,30 @@ class SecimSatiri extends StatelessWidget {
 }
 
 /// Secim panelini acar, secilen degeri dondurur. Vazgecilirse null.
+/// Son dokunulan secim alaninin ekrandaki yeri.
+///
+/// Tarayicida liste bu alanin altina yapisik aciliyor. [SeciciAlan]
+/// dokunuldugunda burayi dolduruyor; baska bir yerden acilirsa (olcu
+/// bilinmiyorsa) liste ekranin ustunde ortalanir.
+Rect? _sonAlanKutusu;
+
 Future<T?> secimPaneliAc<T>(
   BuildContext context, {
   required String baslik,
   required List<SecimSecenegi<T>> secenekler,
   required T? secili,
 }) {
+  // Telefonda alttan panel; tarayicida alana yapisik liste. Mobil
+  // davranis hic degismiyor.
+  if (MediaQuery.sizeOf(context).width >= 700) {
+    return _webListesiAc<T>(
+      context,
+      baslik: baslik,
+      secenekler: secenekler,
+      secili: secili,
+    );
+  }
+
   return showModalBottomSheet<T>(
     context: context,
     // Kok navigator: aksi halde panel alt menunun ustune cikamiyor,
@@ -192,7 +210,12 @@ class SeciciAlan extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     return Pressable(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              _alaninYeriniKaydet(context);
+              onTap!();
+            },
       child: Opacity(
         opacity: onTap == null ? .5 : 1,
         child: Container(
@@ -226,4 +249,115 @@ class SeciciAlan extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Dokunulan alanin ekrandaki dikdortgenini olcer.
+void _alaninYeriniKaydet(BuildContext context) {
+  final nesne = context.findRenderObject();
+  if (nesne is! RenderBox || !nesne.hasSize) {
+    _sonAlanKutusu = null;
+    return;
+  }
+  final sol = nesne.localToGlobal(Offset.zero);
+  _sonAlanKutusu = sol & nesne.size;
+}
+
+/// Tarayicidaki secim listesi: alanin altina yapisik, alanla ayni
+/// genislikte, disina tiklayinca kapanan bir kart.
+Future<T?> _webListesiAc<T>(
+  BuildContext context, {
+  required String baslik,
+  required List<SecimSecenegi<T>> secenekler,
+  required T? secili,
+}) {
+  final kutu = _sonAlanKutusu;
+  return showGeneralDialog<T>(
+    context: context,
+    useRootNavigator: true,
+    barrierDismissible: true,
+    barrierLabel: baslik,
+    barrierColor: Colors.transparent,
+    transitionDuration: const Duration(milliseconds: 130),
+    pageBuilder: (dialogContext, animasyon, ikinci) {
+      final c = dialogContext.colors;
+      final ekran = MediaQuery.sizeOf(dialogContext);
+      const kenar = 16.0;
+      const bosluk = 6.0;
+
+      final en = kutu == null ? 340.0 : kutu.width;
+      final sol = kutu == null
+          ? (ekran.width - en) / 2
+          : kutu.left.clamp(kenar, ekran.width - en - kenar);
+
+      // Asagida yer varsa alana yapisik acilir, yoksa yukari dogru.
+      final altBosluk = kutu == null
+          ? ekran.height - 160
+          : ekran.height - kutu.bottom - bosluk - kenar;
+      final ustBosluk = kutu == null ? 0.0 : kutu.top - bosluk - kenar;
+      final asagi = kutu == null || altBosluk >= 180 || altBosluk >= ustBosluk;
+      final enYuksek = (asagi ? altBosluk : ustBosluk).clamp(120.0, 360.0);
+      final yukariAcilisUst = kutu == null
+          ? 0.0
+          : ekran.height - kutu.top + bosluk;
+
+      final liste = Material(
+        color: Colors.transparent,
+        child: Container(
+          width: en,
+          constraints: BoxConstraints(maxHeight: enYuksek),
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.border),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x1F101828),
+                blurRadius: 26,
+                offset: Offset(0, 12),
+              ),
+            ],
+          ),
+          child: ListView.separated(
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            itemCount: secenekler.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 4),
+            itemBuilder: (_, i) {
+              final secenek = secenekler[i];
+              return SecimSatiri(
+                ad: secenek.ad,
+                secili: secenek.deger == secili,
+                onTap: () => Navigator.of(dialogContext).pop(secenek.deger),
+              );
+            },
+          ),
+        ),
+      );
+
+      return Stack(
+        children: [
+          Positioned(
+            left: sol,
+            top: asagi ? (kutu == null ? 120.0 : kutu.bottom + bosluk) : null,
+            bottom: asagi ? null : yukariAcilisUst,
+            child: liste,
+          ),
+        ],
+      );
+    },
+    transitionBuilder: (context, animasyon, ikinci, cocuk) {
+      final egri = CurvedAnimation(parent: animasyon, curve: Curves.easeOut);
+      return FadeTransition(
+        opacity: egri,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, -.02),
+            end: Offset.zero,
+          ).animate(egri),
+          child: cocuk,
+        ),
+      );
+    },
+  );
 }

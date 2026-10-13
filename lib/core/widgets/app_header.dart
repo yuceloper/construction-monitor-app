@@ -51,8 +51,10 @@ class AppHeader extends StatelessWidget {
 class UserChip extends StatelessWidget {
   const UserChip({super.key});
 
-  /// Kutunun en fazla genisligi.
-  static const double _enBoy = 200;
+  /// Kutunun en fazla genisligi. Tarayicida yer bol oldugu icin ad
+  /// kisaltilmadan sigsin diye daha genis.
+  static double _enBoyOlc(BuildContext context) =>
+      MediaQuery.sizeOf(context).width >= 700 ? 330 : 200;
 
   /// Yazi disinda kalan paylar: sol bosluk + rozet + aradaki bosluk + sag
   /// bosluk. Ad soyadin sigip sigmadigi bu paylar dusulerek olculuyor.
@@ -61,7 +63,7 @@ class UserChip extends StatelessWidget {
   /// Kutuya sigacak ad. Kural ortak dosyada; ayni kisi listede de ayni
   /// bicimde yaziliyor.
   static String _adiSigdir(BuildContext context, String adSoyad) =>
-      kisaKisiAdi(context, adSoyad, enBoy: _enBoy - _cerceve);
+      kisaKisiAdi(context, adSoyad, enBoy: _enBoyOlc(context) - _cerceve);
 
   Future<void> _openSiteSwitcher(BuildContext context) async {
     final selected = await showModalBottomSheet<SiteSummary>(
@@ -113,7 +115,7 @@ class UserChip extends StatelessWidget {
     return Pressable(
       onTap: () => _openSiteSwitcher(context),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: _enBoy),
+        constraints: BoxConstraints(maxWidth: _enBoyOlc(context)),
         padding: const EdgeInsets.fromLTRB(6, 6, 12, 6),
         decoration: BoxDecoration(
           color: c.surface,
