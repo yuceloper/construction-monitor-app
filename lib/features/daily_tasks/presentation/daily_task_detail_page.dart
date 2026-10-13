@@ -7,7 +7,9 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
-import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
+import '../../../core/widgets/kisa_ad.dart';
+import '../../../core/widgets/sesli_not_oynatici.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -92,7 +94,12 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       if (_audioPlayer.state == PlayerState.paused) {
         await _audioPlayer.resume();
       } else {
-        await _audioPlayer.play(DeviceFileSource(_audioPath!));
+        // Tarayicida dosya sistemi yok; servis sesi data adresi olarak
+        // donuyor, oynatici onu URL gibi aliyor.
+        final kaynak = _audioPath!.startsWith('data:')
+            ? UrlSource(_audioPath!)
+            : DeviceFileSource(_audioPath!);
+        await _audioPlayer.play(kaynak);
       }
       if (mounted) setState(() => _isAudioPlaying = true);
     } on DailyTaskException catch (error) {
@@ -137,6 +144,34 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   void _show(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Durum kodunun ekranda gorunen adi.
+  String _durumAdi(String kod) {
+    switch (kod) {
+      case 'TODO':
+        return 'Başlanacak';
+      case 'IN_PROGRESS':
+        return 'Devam Ediyor';
+      case 'COMPLETED':
+        return 'Tamamlandı';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _durumSec() async {
+    final secim = await secimPaneliAc<String>(
+      context,
+      baslik: 'Durum',
+      secenekler: const [
+        SecimSecenegi('TODO', 'Başlanacak'),
+        SecimSecenegi('IN_PROGRESS', 'Devam Ediyor'),
+        SecimSecenegi('COMPLETED', 'Tamamlandı'),
+      ],
+      secili: _status,
+    );
+    if (secim != null && mounted) setState(() => _status = secim);
   }
 
   @override
@@ -221,18 +256,20 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 8),
             decoration: BoxDecoration(
               color: c.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
-              boxShadow: kLiftShadow,
+              boxShadow: kartGolgesi(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Özet',
+                  // Panel basliklari uygulamada 19: is detayindaki uc kardes
+                  // panel 22, 20 ve 19 ile yaziliyordu.
                   style: TextStyle(
                     fontFamily: kDisplay,
-                    fontSize: 22,
+                    fontSize: 19,
                     fontWeight: FontWeight.w700,
                     letterSpacing: -.4,
                     color: c.ink,
@@ -243,7 +280,18 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   label: 'Blok',
                   value: '${task.typeLabel} - ${task.projectName}',
                 ),
-                _SummaryLine(label: 'İlgili Kişi', value: task.assignedToName),
+                _SummaryLine(
+                  label: 'İlgili Kişi',
+                  // Listede ve uyarilarda oldugu gibi: sigmiyorsa
+                  // "Muhammed A." Iki satira sarkip "Admin" tek basina
+                  // alt satirda kaliyordu.
+                  value: kisaKisiAdi(
+                    context,
+                    task.assignedToName,
+                    enBoy: 209,
+                    olcu: 15,
+                  ),
+                ),
                 _SummaryLine(label: 'Kritiklik', value: task.priorityLabel),
                 _SummaryLine(
                   label: 'Mevcut Durum',
@@ -257,43 +305,84 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             ),
           ),
           if (task.photoIds.isNotEmpty) ...[
-            const SizedBox(height: 22),
-            Text(
-              'Fotoğraflar',
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.3,
-                color: c.ink,
+            const SizedBox(height: 14),
+            // Bolum artik panelin icinde: ekrandaki diger her bolum
+            // beyaz kartin icindeyken fotograflar disarida duruyordu.
+            Container(
+              padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+              decoration: BoxDecoration(
+                color: c.surface,
+                borderRadius: BorderRadius.circular(Sizes.rCard),
+                border: Border.all(color: c.border),
+                boxShadow: kartGolgesi(context),
               ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 125,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: task.photoIds.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (_, index) {
-                  final id = task.photoIds[index];
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: SizedBox(
-                      width: 145,
-                      child: Image.network(
-                        _service.photoUrl(id),
-                        headers: _service.photoHeaders(),
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: c.inset,
-                          alignment: Alignment.center,
-                          child: Icon(LucideIcons.imageOff, color: c.faint),
-                        ),
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Fotoğraflar',
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -.3,
+                      color: c.ink,
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 125,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: task.photoIds.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (_, index) {
+                        final id = task.photoIds[index];
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: SizedBox(
+                            width: 145,
+                            child: Image.network(
+                              _service.photoUrl(id),
+                              headers: _service.photoHeaders(),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, hata, __) {
+                                // Sunucudaki bazi fotograflar bozuk geliyor
+                                // (yarida kesilmis PNG). Bos gri kutu yerine
+                                // ne oldugu yaziyor; kullanici yuklenmesini
+                                // beklemesin.
+                                debugPrint('Fotograf yuklenemedi ($id): $hata');
+                                return Container(
+                                  color: c.inset,
+                                  alignment: Alignment.center,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        LucideIcons.imageOff,
+                                        size: 22,
+                                        color: c.faint,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Görsel açılamadı',
+                                        style: TextStyle(
+                                          fontFamily: kBody,
+                                          fontSize: 12.5,
+                                          color: c.muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -305,9 +394,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
               decoration: BoxDecoration(
                 color: c.surface,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(Sizes.rCard),
                 border: Border.all(color: c.border),
-                boxShadow: kLiftShadow,
+                boxShadow: kartGolgesi(context),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -323,67 +412,10 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Pressable(
-                    onTap: _toggleAudio,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: c.accent.withValues(alpha: .08),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: c.accent.withValues(alpha: .22),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: c.accent,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: _isAudioLoading
-                                ? SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: c.surface,
-                                    ),
-                                  )
-                                : Icon(
-                                    _isAudioPlaying
-                                        ? LucideIcons.pause
-                                        : LucideIcons.play,
-                                    color: c.surface,
-                                    size: 22,
-                                  ),
-                          ),
-                          const SizedBox(width: 13),
-                          Expanded(
-                            child: Text(
-                              _isAudioPlaying
-                                  ? 'Sesli not oynatılıyor'
-                                  : 'Sesli notu dinle',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15.5,
-                                color: c.ink,
-                              ),
-                            ),
-                          ),
-                          Icon(LucideIcons.volume2, color: c.accent, size: 21),
-                        ],
-                      ),
-                    ),
+                  SesliNotOynatici(
+                    oynuyor: _isAudioPlaying,
+                    yukleniyor: _isAudioLoading,
+                    onCal: _toggleAudio,
                   ),
                 ],
               ),
@@ -396,9 +428,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
             decoration: BoxDecoration(
               color: c.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
-              boxShadow: kLiftShadow,
+              boxShadow: kartGolgesi(context),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,67 +446,9 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 9),
-                DropdownButtonFormField<String>(
-                  value: _status,
-                  isExpanded: true,
-                  icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-                  dropdownColor: c.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16,
-                    color: c.ink,
-                  ),
-                  items: [
-                    DropdownMenuItem(
-                      value: 'TODO',
-                      child: Text(
-                        'Başlanacak',
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'IN_PROGRESS',
-                      child: Text(
-                        'Devam Ediyor',
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'COMPLETED',
-                      child: Text(
-                        'Tamamlandı',
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                  ],
-                  onChanged: _isSaving
-                      ? null
-                      : (value) => setState(() => _status = value ?? _status),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 17,
-                    ),
-                    filled: true,
-                    fillColor: c.surface2,
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    focusedBorder: border(c.accent, 1.8),
-                  ),
+                SeciciAlan(
+                  metin: _durumAdi(_status),
+                  onTap: _isSaving ? null : _durumSec,
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -490,41 +464,41 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                 const SizedBox(height: 9),
                 ScrollableField(
                   builder: (scrollController) => TextField(
-                  controller: _noteController,
-                  scrollController: scrollController,
-                  enabled: !_isSaving,
-                  minLines: 5,
-                  maxLines: 8,
-                  maxLength: 500,
-                  inputFormatters: [LengthLimitingTextInputFormatter(500)],
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16,
-                    height: 1.4,
-                    color: c.ink,
-                  ),
-                  cursorColor: c.accent,
-                  decoration: InputDecoration(
-                    hintText: 'Lütfen detay giriniz.',
-                    hintStyle: TextStyle(
+                    controller: _noteController,
+                    scrollController: scrollController,
+                    enabled: !_isSaving,
+                    minLines: 5,
+                    maxLines: 8,
+                    maxLength: 500,
+                    inputFormatters: [LengthLimitingTextInputFormatter(500)],
+                    style: TextStyle(
                       fontFamily: kBody,
                       fontSize: 16,
-                      color: c.faint,
+                      height: 1.4,
+                      color: c.ink,
                     ),
-                    counterStyle: TextStyle(
-                      fontFamily: kBody,
-                      fontSize: 12,
-                      color: c.muted,
+                    cursorColor: c.accent,
+                    decoration: InputDecoration(
+                      hintText: 'Lütfen detay giriniz.',
+                      hintStyle: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 16,
+                        color: c.faint,
+                      ),
+                      counterStyle: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 12,
+                        color: c.muted,
+                      ),
+                      filled: true,
+                      fillColor: c.surface2,
+                      // Sagda kaydirma cubuguna yer birakiliyor.
+                      contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
+                      border: border(c.border2),
+                      enabledBorder: border(c.border2),
+                      disabledBorder: border(c.border),
+                      focusedBorder: border(c.accent, 1.8),
                     ),
-                    filled: true,
-                    fillColor: c.surface2,
-                    // Sagda kaydirma cubuguna yer birakiliyor.
-                    contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    disabledBorder: border(c.border),
-                    focusedBorder: border(c.accent, 1.8),
-                  ),
                   ),
                 ),
               ],

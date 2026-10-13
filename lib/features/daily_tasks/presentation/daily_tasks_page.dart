@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
@@ -31,6 +32,9 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     _loadTasks();
   }
 
+  /// Iki sekmede de hic is yok. Sekme serisi bu durumda gizleniyor.
+  bool _hicIsYok = false;
+
   Future<void> _loadTasks() async {
     setState(() {
       _isLoading = true;
@@ -40,13 +44,27 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     try {
       final tasks = await _service.getTasks(includeCompleted: _showAll);
       if (!mounted) return;
-      setState(() => _tasks = tasks);
+      // Aktif liste bossa, tamamlanmislar dahil de bos mu diye bir kez
+      // bakiliyor; sadece bu durumda ek istek atiliyor.
+      var hicYok = tasks.isEmpty;
+      if (hicYok && !_showAll) {
+        final tumu = await _service.getTasks(includeCompleted: true);
+        hicYok = tumu.isEmpty;
+      }
+      if (!mounted) return;
+      setState(() {
+        _tasks = tasks;
+        _hicIsYok = hicYok;
+      });
     } on DailyTaskException catch (error) {
       if (!mounted) return;
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
+      setState(
+        () => _errorMessage =
+            'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -75,63 +93,95 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     final c = context.colors;
 
     return ColoredBox(
-          color: c.bg,
-          child: SafeArea(
-            child: Column(
-              children: [
-                const AppHeader(),
-                ScreenTitleBar(
-                  title: 'Günlük İşler',
-                  onBack: () => context.go('/dashboard'),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: c.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: c.border),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _TabButton(
-                            label: 'AKTİF İŞLER',
-                            selected: !_showAll,
-                            onTap: () => _selectTab(false),
-                          ),
-                        ),
-                        Expanded(
-                          child: _TabButton(
-                            label: 'TÜM İŞLER',
-                            selected: _showAll,
-                            onTap: () => _selectTab(true),
-                          ),
-                        ),
-                      ],
-                    ),
+      color: c.bg,
+      child: SafeArea(
+        child: Column(
+          children: [
+            const AppHeader(),
+            ScreenTitleBar(
+              title: 'Günlük İşler',
+              onBack: () => context.go('/dashboard'),
+            ),
+            if (!_hicIsYok)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: c.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: c.border),
                   ),
-                ),
-                // Ekle butonu sekmelerin hemen altinda, listenin ustunde:
-                // listeyi ortmuyor ve kaydirmadan hep elde.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
                   child: Row(
                     children: [
-                      const Spacer(),
-                      SmallButton(
-                        label: 'Ekle',
-                        icon: LucideIcons.plus,
-                        onTap: _openCreate,
+                      Expanded(
+                        child: _TabButton(
+                          label: 'AKTİF İŞLER',
+                          selected: !_showAll,
+                          onTap: () => _selectTab(false),
+                        ),
+                      ),
+                      Expanded(
+                        child: _TabButton(
+                          label: 'TÜM İŞLER',
+                          selected: _showAll,
+                          onTap: () => _selectTab(true),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Expanded(child: _buildContent()),
-              ],
-            ),
-          ),
+              ),
+            // Ekle tek basina bir kutu degil; solda kac is oldugunu
+            // soyleyen satirin sag ucu. Bosta asili durmuyor, yer
+            // kaplamasi en az ve ustelik bilgi de tasiyor.
+            if (!_hicIsYok && _errorMessage == null && !_isLoading)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 2, 18, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      _showAll
+                          ? '${_tasks.length} iş'
+                          : '${_tasks.length} aktif iş',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .2,
+                        color: c.muted,
+                      ),
+                    ),
+                    const Spacer(),
+                    Pressable(
+                      onTap: _openCreate,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 6, 2, 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(LucideIcons.plus, size: 18, color: c.accent),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Ekle',
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: c.accent,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(child: _buildContent()),
+          ],
+        ),
+      ),
     );
   }
 
@@ -160,7 +210,12 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  height: 1.45,
+                  color: c.ink,
+                ),
               ),
               const SizedBox(height: 18),
               SmallButton(
@@ -175,13 +230,30 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     }
 
     if (_tasks.isEmpty) {
+      // Hic is yokken sekme serisi ve ustteki "Ekle" satiri gizleniyor.
+      // Ekleme yolu da onlarla birlikte kaybolmasin diye bos durumun
+      // kendisi "Ekle" sunuyor: yoksa yeni bir santiyede ilk is hic
+      // olusturulamiyor.
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _loadTasks,
-        child: CenteredScrollMessage(
-          message: _showAll
-              ? 'Henüz günlük iş bulunmuyor.'
-              : 'Aktif günlük iş bulunmuyor.',
+        child: LayoutBuilder(
+          builder: (context, constraints) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(
+                height: constraints.maxHeight,
+                child: EmptyView(
+                  title: _showAll
+                      ? 'Henüz günlük iş bulunmuyor.'
+                      : 'Aktif günlük iş bulunmuyor.',
+                  actionLabel: _hicIsYok ? 'Ekle' : null,
+                  actionIcon: _hicIsYok ? LucideIcons.plus : null,
+                  onAction: _hicIsYok ? _openCreate : null,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -193,7 +265,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
         itemCount: _tasks.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) => _TaskCard(
           task: _tasks[index],
           onTap: () => _openTask(_tasks[index]),
@@ -209,7 +281,11 @@ class _TabButton extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TabButton({required this.label, required this.selected, required this.onTap});
+  const _TabButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +338,21 @@ class _TaskCard extends StatelessWidget {
       case 'LOW':
         return c.muted;
       default:
-        return c.warn;
+        return c.priorityMid;
+    }
+  }
+
+  /// Sari zeminde beyaz yazi okunmuyor; olculdu, kontrast 3.0'a dusuyor.
+  /// Orta oncelikte yazi koyu, digerlerinde beyaz kaliyor.
+  Color badgeTextColor(AppColors c) {
+    switch (task.priority) {
+      case 'HIGH':
+      case 'CRITICAL':
+        return c.surface;
+      default:
+        // Gri ve sari zeminde beyaz yazi okunmuyordu: olculdu, kontrast
+        // 3.1'e dusuyor, erisilebilirlik siniri 4.5. Koyu yaziyla 6.0.
+        return c.ink;
     }
   }
 
@@ -270,6 +360,7 @@ class _TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     final badge = badgeColor(c);
+    final badgeText = badgeTextColor(c);
 
     return Pressable(
       onTap: onTap,
@@ -277,9 +368,9 @@ class _TaskCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
+          boxShadow: kartGolgesi(context),
         ),
         child: Row(
           children: [
@@ -287,14 +378,47 @@ class _TaskCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${task.typeLabel} - ${task.projectName}',
-                    style: TextStyle(
-                      fontFamily: kBody,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: c.accent,
-                    ),
+                  // Statu blok adiyla ayni satirda: alt satirda kisi
+                  // adiyla oncelik rozeti arasinda sikisiyordu.
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${task.typeLabel} - ${task.projectName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: c.accent,
+                          ),
+                        ),
+                      ),
+                      if (showStatus) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: c.inset,
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: c.border2),
+                          ),
+                          child: Text(
+                            task.statusLabel,
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: c.sub,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 7),
                   Text(
@@ -314,38 +438,25 @@ class _TaskCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          task.assignedToName,
+                          // Ust kosedeki kullanici kutusuyla ayni kural:
+                          // ayni kisi her yerde ayni yaziliyor.
+                          kisaKisiAdi(context, task.assignedToName, enBoy: 150),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.sub),
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 14,
+                            color: c.sub,
+                          ),
                         ),
                       ),
-                      if (showStatus) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: c.inset,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: c.border2),
-                          ),
-                          child: Text(
-                            task.statusLabel,
-                            style: TextStyle(
-                              fontFamily: kBody,
-                              color: c.sub,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
+                      const SizedBox(width: 8),
                       Container(
                         constraints: const BoxConstraints(minWidth: 88),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: badge,
@@ -353,9 +464,9 @@ class _TaskCard extends StatelessWidget {
                         ),
                         child: Text(
                           task.priorityLabel,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: kBody,
-                            color: Colors.white,
+                            color: badgeText,
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
                           ),

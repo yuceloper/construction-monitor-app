@@ -49,6 +49,35 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  Widget _paydaslar(BuildContext context, bool genis) => _SecondaryCard(
+    title: 'Paydaşlar',
+    icon: LucideIcons.users,
+    color: context.colors.violet,
+    genis: genis,
+    onTap: () => context.go('/stakeholders'),
+  );
+
+  Widget _isg(BuildContext context, bool genis) => _SecondaryCard(
+    title: 'İSG Takip',
+    icon: LucideIcons.shieldCheck,
+    color: context.colors.warn,
+    genis: genis,
+    onTap: () => context.go('/safety'),
+  );
+
+  Widget _bildirimler(BuildContext context, bool genis) =>
+      ValueListenableBuilder<int>(
+        valueListenable: NotificationUnreadCount.value,
+        builder: (context, unreadCount, _) => _SecondaryCard(
+          title: 'Bildirimler',
+          icon: LucideIcons.bellRing,
+          color: context.colors.bad,
+          badgeCount: unreadCount,
+          genis: genis,
+          onTap: () => context.go('/notifications'),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -67,15 +96,24 @@ class _DashboardPageState extends State<DashboardPage>
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    const gap = 14.0;
+                    // Telefon duzeni sefa-fixes'teki ile birebir ayni:
+                    // alttaki uc panel 72 yuksekliginde, butun araliklar
+                    // 14, kalan pay buyuk kartlara gidiyor (en az 210,
+                    // en cok 300). Artan bosluk ustte ve altta esit
+                    // bolunuyor.
+                    //
+                    // Genis ekranda (tarayici) uc panel yan yana geldigi
+                    // icin satir daha yuksek ve aralik 20.
+                    final genisEkran = constraints.maxWidth >= 700;
+                    final altSira = genisEkran ? 1 : 3;
 
-                    // Ana kartlar kisaldi; alttaki uc giris ayri birer panel
-                    // oldugu icin aralarinda bosluk var. Artan pay ustte ve
-                    // altta esit bolunur.
-                    const row = 72.0;
-                    var primary = constraints.maxHeight -
+                    final gap = genisEkran ? 20.0 : 14.0;
+                    final row = genisEkran ? 124.0 : 72.0;
+
+                    var primary =
+                        constraints.maxHeight -
                         gap -
-                        (row * 3 + gap * 2) -
+                        (row * altSira + gap * (altSira - 1)) -
                         gap;
                     if (primary > 300) primary = 300;
                     if (primary < 210) primary = 210;
@@ -95,6 +133,7 @@ class _DashboardPageState extends State<DashboardPage>
                                     title: 'Süreç Takip',
                                     icon: LucideIcons.chartGantt,
                                     color: c.accent,
+                                    genis: genisEkran,
                                     onTap: () => context.go('/process'),
                                   ),
                                 ),
@@ -107,6 +146,7 @@ class _DashboardPageState extends State<DashboardPage>
                                     title: 'Günlük İşler',
                                     icon: LucideIcons.clipboardList,
                                     color: c.teal,
+                                    genis: genisEkran,
                                     onTap: () => context.go('/daily-tasks'),
                                   ),
                                 ),
@@ -114,51 +154,66 @@ class _DashboardPageState extends State<DashboardPage>
                             ],
                           ),
                         ),
-                        const SizedBox(height: gap),
-                        // Her giris kendi panelinde duruyor.
-                        _entering(
-                          3,
+                        SizedBox(height: gap),
+                        // Her giris kendi panelinde duruyor. Dar ekranda
+                        // alt alta, genis ekranda yan yana.
+                        if (genisEkran)
                           SizedBox(
                             height: row,
-                            child: _SecondaryCard(
-                              title: 'Paydaşlar',
-                              icon: LucideIcons.users,
-                              color: c.violet,
-                              onTap: () => context.go('/stakeholders'),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: gap),
-                        _entering(
-                          4,
-                          SizedBox(
-                            height: row,
-                            child: _SecondaryCard(
-                              title: 'İSG Takip',
-                              icon: LucideIcons.shieldCheck,
-                              color: c.warn,
-                              onTap: () => context.go('/safety'),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: gap),
-                        _entering(
-                          5,
-                          SizedBox(
-                            height: row,
-                            child: ValueListenableBuilder<int>(
-                              valueListenable: NotificationUnreadCount.value,
-                              builder: (context, unreadCount, _) =>
-                                  _SecondaryCard(
-                                    title: 'Bildirimler',
-                                    icon: LucideIcons.bellRing,
-                                    color: c.bad,
-                                    badgeCount: unreadCount,
-                                    onTap: () => context.go('/notifications'),
+                            child: Row(
+                              // Row varsayilan olarak cocuklari dikeyde
+                              // ortaliyor; paneller kendi dogal boyunda
+                              // kalip hap gibi gorunuyordu.
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
+                                  child: _entering(
+                                    3,
+                                    _paydaslar(context, genisEkran),
                                   ),
+                                ),
+                                SizedBox(width: gap),
+                                Expanded(
+                                  child: _entering(
+                                    4,
+                                    _isg(context, genisEkran),
+                                  ),
+                                ),
+                                SizedBox(width: gap),
+                                Expanded(
+                                  child: _entering(
+                                    5,
+                                    _bildirimler(context, genisEkran),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          _entering(
+                            3,
+                            SizedBox(
+                              height: row,
+                              child: _paydaslar(context, genisEkran),
                             ),
                           ),
-                        ),
+                          SizedBox(height: gap),
+                          _entering(
+                            4,
+                            SizedBox(
+                              height: row,
+                              child: _isg(context, genisEkran),
+                            ),
+                          ),
+                          SizedBox(height: gap),
+                          _entering(
+                            5,
+                            SizedBox(
+                              height: row,
+                              child: _bildirimler(context, genisEkran),
+                            ),
+                          ),
+                        ],
                       ],
                     );
                   },
@@ -262,12 +317,13 @@ class _ArcPainter extends CustomPainter {
 ///
 /// Raf kartin altindan gorunuyor; derinlik renkle degil katmanla veriliyor,
 /// boylece kart beyaz kalirken asagidaki listeden ayrilabiliyor.
-class _PrimaryCard extends StatelessWidget {
+class _PrimaryCard extends StatefulWidget {
   const _PrimaryCard({
     required this.title,
     required this.icon,
     required this.color,
     required this.onTap,
+    this.genis = false,
   });
 
   final String title;
@@ -275,11 +331,99 @@ class _PrimaryCard extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
+  /// Genis ekran (tarayici) duzeni.
+  final bool genis;
+
+  @override
+  State<_PrimaryCard> createState() => _PrimaryCardState();
+}
+
+class _PrimaryCardState extends State<_PrimaryCard> {
+  bool _uzerinde = false;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final genis = widget.genis;
+    final color = widget.color;
+
+    final govde = Stack(
+      children: [
+        Positioned(
+          right: genis ? -70 : -30,
+          bottom: genis ? -60 : -26,
+          width: genis ? 330 : 190,
+          height: genis ? 200 : 118,
+          child: _ArcMotif(color: color),
+        ),
+        Positioned.fill(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: genis ? 72 : 64,
+                height: genis ? 72 : 64,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Color.lerp(c.surface, color, .14),
+                  borderRadius: BorderRadius.circular(genis ? 20 : 18),
+                ),
+                child: Icon(widget.icon, size: genis ? 33 : 30, color: color),
+              ),
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    widget.title,
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontFamily: kDisplay,
+                      fontSize: genis ? 24 : 22,
+                      fontWeight: FontWeight.w700,
+                      height: 1.05,
+                      letterSpacing: -.5,
+                      color: c.ink,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+
+    // Tarayicida kart tek katman: renkli raf genis ekranda kartin altinda
+    // ayri bir blok gibi duruyordu, renkli golge de leke birakiyordu.
+    if (genis) {
+      return Pressable(
+        onTap: widget.onTap,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _uzerinde = true),
+          onExit: (_) => setState(() => _uzerinde = false),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              // Tarayicida golge kartin cevresinde dikdortgen bir leke
+              // birakiyordu; beyaz kart gri zeminden kendiliginden
+              // ayriliyor. Fare uzerindeyken zemin cok hafif renkleniyor.
+              color: _uzerinde ? Color.lerp(c.surface, color, .05) : c.surface,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: govde,
+          ),
+        ),
+      );
+    }
+
+    // Telefon duzeni: beyaz kart, arkasinda kendi renginde bir raf.
     return Pressable(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Stack(
         children: [
           Positioned(
@@ -313,56 +457,7 @@ class _PrimaryCard extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -30,
-                    bottom: -26,
-                    width: 190,
-                    height: 118,
-                    child: _ArcMotif(color: color),
-                  ),
-                  Positioned.fill(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Color.lerp(c.surface, color, .14),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Icon(icon, size: 30, color: color),
-                        ),
-                        const SizedBox(height: 14),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              title,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.visible,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: kDisplay,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                height: 1.05,
-                                letterSpacing: -.5,
-                                color: c.ink,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+              child: govde,
             ),
           ),
         ],
@@ -375,13 +470,14 @@ class _PrimaryCard extends StatelessWidget {
 ///
 /// Ikon ana kartlardaki gibi tonlu bir karenin icinde; aradaki tek fark
 /// olculer, boylece bes giris ayni dili konusuyor.
-class _SecondaryCard extends StatelessWidget {
+class _SecondaryCard extends StatefulWidget {
   const _SecondaryCard({
     required this.title,
     required this.icon,
     required this.color,
     required this.onTap,
     this.badgeCount,
+    this.genis = false,
   });
 
   final String title;
@@ -390,69 +486,93 @@ class _SecondaryCard extends StatelessWidget {
   final VoidCallback onTap;
   final int? badgeCount;
 
+  /// Genis ekran (tarayici) duzeni.
+  final bool genis;
+
+  @override
+  State<_SecondaryCard> createState() => _SecondaryCardState();
+}
+
+class _SecondaryCardState extends State<_SecondaryCard> {
+  bool _uzerinde = false;
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: c.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
-        ),
-        child: Row(
-          children: [
+    final genis = widget.genis;
+    final title = widget.title;
+    final color = widget.color;
+    final badgeCount = widget.badgeCount;
+
+    final kart = Container(
+      clipBehavior: Clip.antiAlias,
+      padding: EdgeInsets.symmetric(horizontal: genis ? 18 : 14),
+      decoration: BoxDecoration(
+        color: genis && _uzerinde
+            ? Color.lerp(c.surface, color, .05)
+            : c.surface,
+        borderRadius: BorderRadius.circular(Sizes.rCard),
+        border: genis ? null : Border.all(color: c.border),
+        boxShadow: genis ? const [] : kLiftShadow,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Color.lerp(c.surface, color, .14),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(widget.icon, size: 21, color: color),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: kDisplay,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.3,
+                color: c.ink,
+              ),
+            ),
+          ),
+          if ((badgeCount ?? 0) > 0)
             Container(
-              width: 44,
-              height: 44,
+              height: 26,
+              constraints: const BoxConstraints(minWidth: 26),
               alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: Color.lerp(c.surface, color, .14),
-                borderRadius: BorderRadius.circular(14),
+                color: c.bad,
+                borderRadius: BorderRadius.circular(13),
               ),
-              child: Icon(icon, size: 21, color: color),
-            ),
-            const SizedBox(width: 13),
-            Expanded(
               child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                badgeCount! > 99 ? '99+' : '$badgeCount',
                 style: TextStyle(
-                  fontFamily: kDisplay,
-                  fontSize: 18,
+                  fontFamily: kBody,
+                  color: c.surface,
+                  fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -.3,
-                  color: c.ink,
                 ),
               ),
             ),
-            if ((badgeCount ?? 0) > 0)
-              Container(
-                height: 26,
-                constraints: const BoxConstraints(minWidth: 26),
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: c.bad,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Text(
-                  badgeCount! > 99 ? '99+' : '$badgeCount',
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    color: c.surface,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-          ],
-        ),
+        ],
+      ),
+    );
+
+    if (!genis) return Pressable(onTap: widget.onTap, child: kart);
+    return Pressable(
+      onTap: widget.onTap,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _uzerinde = true),
+        onExit: (_) => setState(() => _uzerinde = false),
+        child: kart,
       ),
     );
   }

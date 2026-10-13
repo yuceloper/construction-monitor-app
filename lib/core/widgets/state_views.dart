@@ -15,10 +15,10 @@ class LoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: SizedBox(
-        width: 24,
-        height: 24,
+        width: 26,
+        height: 26,
         child: CircularProgressIndicator(
-          strokeWidth: 2.4,
+          strokeWidth: 2.6,
           color: context.colors.ink,
         ),
       ),
@@ -43,16 +43,19 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            IconBox(icon: LucideIcons.cloudOff, color: c.bad, size: 48),
-            const SizedBox(height: 14),
+            // Uygulamadaki bes ana ekran hatayi boyle gosteriyordu; bu
+            // bilesen ise kutulu bir bulut ikonu ve daha kucuk yaziyla
+            // cizip farkli duruyordu. Ayni duruma ayni yuz.
+            Icon(LucideIcons.circleAlert, size: 42, color: c.bad),
+            const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontFamily: kBody,
-                fontSize: 13.5,
-                height: 1.5,
-                color: c.sub,
+                fontSize: 16,
+                height: 1.45,
+                color: c.ink,
               ),
             ),
             if (onRetry != null) ...[

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,9 @@ import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
+import '../../../core/widgets/sesli_not_oynatici.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../auth/services/session_manager.dart';
 import '../../process_tracking/models/project_summary.dart';
 import '../../process_tracking/services/project_service.dart';
@@ -31,15 +35,21 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   final _taskService = DailyTaskService();
   final _imagePicker = ImagePicker();
   final _recorder = AudioRecorder();
+  final _oynatici = AudioPlayer();
   final _noteController = TextEditingController();
 
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isRecording = false;
+  bool _sesOynuyor = false;
   String? _errorMessage;
   List<ProjectSummary> _projects = const [];
   List<SiteMemberSummary> _members = const [];
   List<XFile> _photos = const [];
+
+  /// Zorunlu alan uyarisi. Giris ekranindaki gibi formun icinde duruyor;
+  /// alttan gecen serit kacirilabiliyordu.
+  String? _formHatasi;
   int? _projectId;
   int? _memberId;
   String? _priority;
@@ -49,12 +59,16 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   void initState() {
     super.initState();
     _loadFormData();
+    _oynatici.onPlayerComplete.listen((_) {
+      if (mounted) setState(() => _sesOynuyor = false);
+    });
   }
 
   @override
   void dispose() {
     _noteController.dispose();
     _recorder.dispose();
+    _oynatici.dispose();
     super.dispose();
   }
 
@@ -137,18 +151,50 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     }
   }
 
+  /// Kaydi dinletir. Ikinci dokunusta duraklatir, sonrakinde kaldigi
+  /// yerden devam eder; is detayindaki oynatici ile ayni davranis.
+  Future<void> _sesiCal() async {
+    final path = _audioPath;
+    if (path == null) return;
+    try {
+      if (_sesOynuyor) {
+        await _oynatici.pause();
+        if (mounted) setState(() => _sesOynuyor = false);
+        return;
+      }
+      if (_oynatici.state == PlayerState.paused) {
+        await _oynatici.resume();
+      } else {
+        await _oynatici.play(DeviceFileSource(path));
+      }
+      if (mounted) setState(() => _sesOynuyor = true);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _sesOynuyor = false);
+        _show('Sesli not oynatılamadı.');
+      }
+    }
+  }
+
   Future<void> _removeAudio() async {
+    if (_isSaving) return;
     if (_isRecording) await _recorder.stop();
+    try {
+      await _oynatici.stop();
+    } catch (_) {}
     final path = _audioPath;
     if (path != null) {
       try {
         await File(path).delete();
       } catch (_) {}
     }
-    if (mounted) setState(() {
-      _isRecording = false;
-      _audioPath = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isRecording = false;
+        _sesOynuyor = false;
+        _audioPath = null;
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -158,12 +204,24 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       return;
     }
     final note = _noteController.text.trim();
-    if (_projectId == null) return _show('Ev/Dükkan blok seçmelisiniz.');
-    if (_priority == null) return _show('Kritiklik seviyesi seçmelisiniz.');
-    if (_memberId == null) return _show('İlgili kişi seçmelisiniz.');
-    if (note.isEmpty) return _show('Not alanı zorunludur.');
+    final eksik = _projectId == null
+        ? 'Ev/Dükkan blok seçmelisiniz.'
+        : _priority == null
+        ? 'Kritiklik seviyesi seçmelisiniz.'
+        : _memberId == null
+        ? 'İlgili kişi seçmelisiniz.'
+        : note.isEmpty
+        ? 'Not alanı zorunludur.'
+        : null;
+    if (eksik != null) {
+      setState(() => _formHatasi = eksik);
+      return;
+    }
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _formHatasi = null;
+      _isSaving = true;
+    });
     try {
       final task = await _taskService.createTask(
         projectId: _projectId!,
@@ -178,7 +236,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       _show('Günlük iş kaydedildi.');
       context.pop(true);
     } on DailyTaskException catch (error) {
-      if (mounted) _show(error.message);
+      if (mounted) setState(() => _formHatasi = error.message);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -186,6 +244,56 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
 
   void _show(String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Secili kritiklik seviyesinin ekranda gorunen adi.
+  String get _selectedPriorityLabel {
+    switch (_priority) {
+      case 'LOW':
+        return 'Düşük';
+      case 'MEDIUM':
+        return 'Orta';
+      case 'HIGH':
+        return 'Yüksek';
+      default:
+        return '';
+    }
+  }
+
+  /// Secili kisinin adi.
+  String get _selectedMemberLabel {
+    if (_memberId == null) return '';
+    for (final member in _members) {
+      if (member.id == _memberId) return member.fullName;
+    }
+    return '';
+  }
+
+  Future<void> _openPriorityPicker() async {
+    final secim = await secimPaneliAc<String>(
+      context,
+      baslik: 'Kritiklik Seviyesi',
+      secenekler: const [
+        SecimSecenegi('LOW', 'Düşük'),
+        SecimSecenegi('MEDIUM', 'Orta'),
+        SecimSecenegi('HIGH', 'Yüksek'),
+      ],
+      secili: _priority,
+    );
+    if (secim != null && mounted) setState(() => _priority = secim);
+  }
+
+  Future<void> _openMemberPicker() async {
+    final secim = await secimPaneliAc<int>(
+      context,
+      baslik: 'İlgili Kişi',
+      secenekler: [
+        for (final member in _members)
+          SecimSecenegi(member.id, member.fullName),
+      ],
+      secili: _memberId,
+    );
+    if (secim != null && mounted) setState(() => _memberId = secim);
   }
 
   /// Alanda gorunen metin: secim yapilmadiysa bos birakiliyor ki
@@ -206,6 +314,9 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   Future<void> _openProjectPicker() async {
     final selected = await showModalBottomSheet<int>(
       context: context,
+      // Kok navigator: aksi halde panel alt menunun ustune cikamiyor,
+      // menu panelin yaninda parlak kaliyordu.
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _ProjectPickerSheet(
@@ -296,57 +407,29 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     }
 
     final hint = TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint);
-    final value = TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
       children: [
         _FormRow(
           label: 'Ev/Dükkan Blok',
-          child: _PickerField(
-            text: _selectedProjectLabel,
-            hintStyle: hint,
-            valueStyle: value,
+          child: SeciciAlan(
+            metin: _selectedProjectLabel,
             onTap: _isSaving ? null : _openProjectPicker,
           ),
         ),
         _FormRow(
           label: 'Kritiklik Seviyesi',
-          child: DropdownButtonFormField<String>(
-            initialValue: _priority,
-            hint: Text('Seçiniz', style: hint),
-            isExpanded: true,
-            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            dropdownColor: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            style: value,
-            items: [
-              DropdownMenuItem(value: 'LOW', child: Text('Düşük', style: value)),
-              DropdownMenuItem(value: 'MEDIUM', child: Text('Orta', style: value)),
-              DropdownMenuItem(value: 'HIGH', child: Text('Yüksek', style: value)),
-            ],
-            onChanged: _isSaving ? null : (value) => setState(() => _priority = value),
-            decoration: _fieldDecoration(c),
+          child: SeciciAlan(
+            metin: _selectedPriorityLabel,
+            onTap: _isSaving ? null : _openPriorityPicker,
           ),
         ),
         _FormRow(
           label: 'İlgili Kişi',
-          child: DropdownButtonFormField<int>(
-            initialValue: _memberId,
-            hint: Text('Seçiniz', style: hint),
-            isExpanded: true,
-            icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            dropdownColor: c.surface,
-            borderRadius: BorderRadius.circular(16),
-            style: value,
-            items: _members
-                .map((member) => DropdownMenuItem(
-                      value: member.id,
-                      child: Text(member.fullName, style: value),
-                    ))
-                .toList(),
-            onChanged: _isSaving ? null : (value) => setState(() => _memberId = value),
-            decoration: _fieldDecoration(c),
+          child: SeciciAlan(
+            metin: _selectedMemberLabel,
+            onTap: _isSaving ? null : _openMemberPicker,
           ),
         ),
         _FormRow(
@@ -384,84 +467,68 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Kayit yokken bu buton "Fotograf ekle" ile ayni agirlikta
-              // duruyor; ekranin birincil eylemi KAYDET. Kayit basladiginda
-              // dolu kirmiziya donuyor, cunku o an devam eden bir durum var.
-              Pressable(
-                onTap: _isSaving ? null : _toggleRecording,
-                child: Container(
-                  height: 52,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _isRecording ? c.bad : c.surface2,
-                    borderRadius: BorderRadius.circular(Sizes.rField),
-                    border: _isRecording
-                        ? null
-                        : Border.all(color: c.border2, width: 1.5),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _isRecording ? LucideIcons.square : LucideIcons.mic,
-                        size: 19,
-                        color: _isRecording ? c.surface : c.accent,
-                      ),
-                      const SizedBox(width: 9),
-                      Text(
-                        _isRecording
-                            ? 'Kaydı Durdur'
-                            : (_audioPath == null ? 'Sesli not kaydet' : 'Yeniden kaydet'),
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 15.5,
-                          fontWeight: FontWeight.w600,
-                          color: _isRecording ? c.surface : c.ink,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              // Kayit alindiktan sonra kaydet butonu yerini dinleme
+              // kutusuna birakiyor: once carpi ile silinip sonra yeni
+              // kayit aliniyor. Kutu is detayindakinin ayni.
               if (_audioPath != null && !_isRecording)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Sesli not hazır',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                SesliNotOynatici(
+                  oynuyor: _sesOynuyor,
+                  yukleniyor: false,
+                  onCal: _sesiCal,
+                  onSil: _removeAudio,
+                )
+              else
+                // Kayit yokken bu buton "Fotograf ekle" ile ayni agirlikta
+                // duruyor; ekranin birincil eylemi KAYDET. Kayit
+                // basladiginda dolu siyaha donuyor, cunku o an devam eden
+                // bir durum var.
+                Pressable(
+                  onTap: _isSaving ? null : _toggleRecording,
+                  child: Container(
+                    height: 52,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: _isRecording ? c.ink : c.surface2,
+                      borderRadius: BorderRadius.circular(Sizes.rField),
+                      border: _isRecording
+                          ? null
+                          : Border.all(color: c.border2, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isRecording ? LucideIcons.square : LucideIcons.mic,
+                          size: 19,
+                          color: _isRecording ? c.surface : c.accent,
+                        ),
+                        const SizedBox(width: 9),
+                        Text(
+                          _isRecording ? 'Kaydı Durdur' : 'Sesli not kaydet',
                           style: TextStyle(
                             fontFamily: kBody,
-                            fontSize: 14.5,
-                            color: c.ok,
+                            fontSize: 15.5,
                             fontWeight: FontWeight.w600,
+                            color: _isRecording ? c.surface : c.ink,
                           ),
                         ),
-                      ),
-                      Pressable(
-                        onTap: _removeAudio,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Icon(LucideIcons.trash2, size: 19, color: c.bad),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
             ],
           ),
         ),
         const SizedBox(height: 8),
+        // Ayni formdaki diger etiketlerle ayni bicim: Not tek basina
+        // Barlow 18 kalin yaziliyordu, digerleri IBM Plex 15.
         Text(
           'Not',
           style: TextStyle(
-            fontFamily: kDisplay,
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            letterSpacing: -.2,
+            fontFamily: kBody,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: .2,
             color: c.ink,
           ),
         ),
@@ -486,6 +553,37 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
           ),
           ),
         ),
+        // Uyari butonun hemen ustunde: kullanici KAYDET'e basinca
+        // gozunun gittigi yer burasi.
+        if (_formHatasi != null) ...[
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+            decoration: BoxDecoration(
+              color: c.bad.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(LucideIcons.circleAlert, size: 18, color: c.bad),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _formHatasi!,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 14.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w600,
+                      color: c.bad,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         PrimaryButton(
           label: 'KAYDET',
@@ -499,54 +597,6 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
 
 /// Alan basligi ustte, kutu altta.
 /// Form alani gorunumunde duran, dokununca panel acan dugme.
-class _PickerField extends StatelessWidget {
-  const _PickerField({
-    required this.text,
-    required this.hintStyle,
-    required this.valueStyle,
-    required this.onTap,
-  });
-
-  final String text;
-  final TextStyle hintStyle;
-  final TextStyle valueStyle;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Pressable(
-      onTap: onTap,
-      child: Opacity(
-        opacity: onTap == null ? .5 : 1,
-        child: Container(
-          height: 52,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: c.surface2,
-            borderRadius: BorderRadius.circular(Sizes.rField),
-            border: Border.all(color: c.border2, width: 1.5),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  text.isEmpty ? 'Seçiniz' : text,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.isEmpty ? hintStyle : valueStyle,
-                ),
-              ),
-              Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Blok secme paneli: arama kutusu ve gruplu liste.
 class _ProjectPickerSheet extends StatefulWidget {
   const _ProjectPickerSheet({required this.projects, required this.selectedId});
 
@@ -667,10 +717,19 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
             const SizedBox(height: 12),
             Flexible(
               child: bosmu
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: EmptyState(
-                        message: 'Aramanıza uygun blok bulunamadı.',
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      // Panelin icinde kucuk kutu hali duruyordu: isaret 46,
+                      // yazi 12 punto. Burasi yarim ekran, tam sayfa bos
+                      // durumla ayni olcude olmali.
+                      //
+                      // Mesaj da ayrisiyor: santiyede hic blok yoksa bu bir
+                      // arama sonucu degil, "aramaniza uygun blok yok"
+                      // demek yaniltiyordu.
+                      child: EmptyView(
+                        title: _query.isEmpty
+                            ? 'Bu şantiyede blok bulunmuyor.'
+                            : 'Aramanıza uygun blok bulunamadı.',
                       ),
                     )
                   : ListView(
@@ -679,18 +738,28 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
                         if (evler.isNotEmpty) ...[
                           _GrupBasligi(metin: 'Evler'),
                           for (final p in evler)
-                            _BlokSatiri(
-                              project: p,
-                              secili: p.id == widget.selectedId,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SecimSatiri(
+                                ad: p.name,
+                                secili: p.id == widget.selectedId,
+                                onTap: () =>
+                                    Navigator.of(context).pop(p.id),
+                              ),
                             ),
                         ],
                         if (dukkanlar.isNotEmpty) ...[
                           if (evler.isNotEmpty) const SizedBox(height: 6),
                           _GrupBasligi(metin: 'Dükkanlar'),
                           for (final p in dukkanlar)
-                            _BlokSatiri(
-                              project: p,
-                              secili: p.id == widget.selectedId,
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SecimSatiri(
+                                ad: p.name,
+                                secili: p.id == widget.selectedId,
+                                onTap: () =>
+                                    Navigator.of(context).pop(p.id),
+                              ),
                             ),
                         ],
                       ],
@@ -721,54 +790,6 @@ class _GrupBasligi extends StatelessWidget {
           fontWeight: FontWeight.w700,
           letterSpacing: .6,
           color: c.muted,
-        ),
-      ),
-    );
-  }
-}
-
-class _BlokSatiri extends StatelessWidget {
-  const _BlokSatiri({required this.project, required this.secili});
-
-  final ProjectSummary project;
-  final bool secili;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Pressable(
-        onTap: () => Navigator.of(context).pop(project.id),
-        child: Container(
-          height: 52,
-          padding: const EdgeInsets.fromLTRB(16, 0, 14, 0),
-          decoration: BoxDecoration(
-            color: secili ? c.accent.withValues(alpha: .08) : c.surface2,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: secili ? c.accent : c.border,
-              width: secili ? 1.6 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  project.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16.5,
-                    fontWeight: FontWeight.w600,
-                    color: c.ink,
-                  ),
-                ),
-              ),
-              if (secili) Icon(LucideIcons.check, size: 20, color: c.accent),
-            ],
-          ),
         ),
       ),
     );
@@ -850,7 +871,10 @@ class _OutlineAction extends StatelessWidget {
 }
 
 class _FileChip extends StatelessWidget {
-  const _FileChip({required this.name, required this.onRemove});
+  const _FileChip({
+    required this.name,
+    required this.onRemove,
+  });
 
   final String name;
   final VoidCallback? onRemove;

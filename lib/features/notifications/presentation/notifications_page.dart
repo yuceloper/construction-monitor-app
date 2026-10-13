@@ -4,6 +4,8 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/genisleyen_metin.dart';
+import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
@@ -124,7 +126,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: SizedBox(
           width: 26,
           height: 26,
-          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.accent),
+          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
         ),
       );
     }
@@ -161,7 +163,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
         itemCount: _items.isEmpty ? 1 : _items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
             return const Padding(
@@ -200,9 +202,9 @@ class _NotificationCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
+          boxShadow: kartGolgesi(context),
         ),
         child: IntrinsicHeight(
           child: Row(
@@ -248,11 +250,12 @@ class _NotificationCard extends StatelessWidget {
                       ),
                       if (content.detail.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        Text(
-                          content.detail,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                        // Bildirim metni de uzun olabiliyor; kesilince
+                        // devaminin oldugu anlasilmiyordu.
+                        GenisleyenMetin(
+                          metin: content.detail,
+                          satir: 2,
+                          bicim: TextStyle(
                             fontFamily: kBody,
                             fontSize: 13.5,
                             height: 1.35,
@@ -281,16 +284,26 @@ class _NotificationCard extends StatelessWidget {
                             ),
                             if (content.person.isNotEmpty) ...[
                               const SizedBox(width: 10),
+                              // Kisi gosterimi gunluk is kartiyla ayni:
+                              // ikon + soluk gri. Burada mavi ve kalindi,
+                              // blok adiyla ayni agirliktaydi; blok bir yer
+                              // etiketi, kisi degil.
+                              Icon(LucideIcons.user, size: 15, color: c.muted),
+                              const SizedBox(width: 6),
                               Text(
-                                content.person,
+                                kisaKisiAdi(
+                                  context,
+                                  content.person,
+                                  enBoy: 120,
+                                  olcu: 13,
+                                ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontFamily: kBody,
                                   fontSize: 13,
                                   height: 1.25,
-                                  color: c.accent,
-                                  fontWeight: FontWeight.w600,
+                                  color: c.muted,
                                 ),
                               ),
                             ],

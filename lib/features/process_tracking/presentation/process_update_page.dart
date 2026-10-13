@@ -183,7 +183,7 @@ class _ProcessUpdatePageState extends State<ProcessUpdatePage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 18),
         itemCount: _stages.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (context, index) {
           final stage = _stages[index];
           final items = _workItemsByStage[stage.id] ?? const <WorkItemSummary>[];
@@ -259,9 +259,9 @@ class _StageUpdateCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 14, 16),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
+          boxShadow: kartGolgesi(context),
         ),
         child: Row(
           children: [

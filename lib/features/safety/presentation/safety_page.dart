@@ -4,7 +4,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
-import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../models/safety_document_summary.dart';
@@ -126,27 +125,9 @@ class _SafetyPageState extends State<SafetyPage> {
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
-              ),
-              const SizedBox(height: 16),
-              SmallButton(
-                label: 'Tekrar Dene',
-                icon: LucideIcons.refreshCw,
-                onTap: _load,
-              ),
-            ],
-          ),
-        ),
-      );
+      // Ortak bilesen: bu ekranda hata ikonu hic cikmiyordu, diger
+      // ekranlarda kirmizi uyari ikonu vardi.
+      return ErrorView(message: _errorMessage!, onRetry: _load);
     }
 
     final menuDocuments = _menuDocuments;
@@ -176,7 +157,7 @@ class _SafetyPageState extends State<SafetyPage> {
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: menuDocuments.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           final document = menuDocuments[index];
           final isMonthly = document.documentType == 'MONTHLY_SITE_REPORT';
@@ -211,9 +192,9 @@ class _SafetyMenuCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: c.surface,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(Sizes.rCard),
           border: Border.all(color: c.border),
-          boxShadow: kLiftShadow,
+          boxShadow: kartGolgesi(context),
         ),
         child: Row(
           children: [

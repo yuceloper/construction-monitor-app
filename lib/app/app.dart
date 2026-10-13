@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/widgets/brand_splash.dart';
 import 'router.dart';
@@ -14,8 +15,17 @@ class ConstructionMonitorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,
-      builder: (context, child) =>
-          BrandSplash(child: child ?? const SizedBox.shrink()),
+      // Durum cubugu bicimi burada da duruyor: tam ekran belge gibi koyu
+      // zeminli bir ekran kendi bicimini uygulayip kapandiginda, sistem
+      // eski haline donmuyor ve simgeler acik zeminde beyaz kaliyordu.
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+          statusBarBrightness: Brightness.light,
+        ),
+        child: BrandSplash(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

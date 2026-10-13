@@ -65,9 +65,11 @@ class ProjectService {
 
       throw ProjectException(_readErrorMessage(responseBody, response.statusCode));
     } on http.ClientException {
-      throw ProjectException('Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).');
+      throw const ProjectException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
     } on FormatException {
-      throw const ProjectException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const ProjectException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
     }
   }
 
@@ -79,7 +81,7 @@ class ProjectService {
         if (message != null && message.isNotEmpty) return message;
       }
     } catch (_) {}
-    return 'Projeler alınamadı. Sunucu hatası: $statusCode';
+    return 'Projeler alınamadı. Lütfen daha sonra tekrar deneyiniz.';
   }
 }
 

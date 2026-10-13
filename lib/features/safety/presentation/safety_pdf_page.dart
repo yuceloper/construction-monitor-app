@@ -1,13 +1,14 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:pdfrx/pdfrx.dart';
 
 import '../../../app/theme.dart';
-import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
+import '../../../core/widgets/state_views.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
@@ -49,16 +50,22 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
 
     try {
       final documents = await _service.getDocuments();
-      final current = documents.where((document) => document.id == widget.documentId).firstOrNull;
+      final current = documents
+          .where((document) => document.id == widget.documentId)
+          .firstOrNull;
       final isMonthly = current?.documentType == 'MONTHLY_SITE_REPORT';
 
       final monthlyByKey = <String, SafetyDocumentSummary>{};
       if (isMonthly) {
-        final monthly = documents
-            .where((document) =>
-                document.documentType == 'MONTHLY_SITE_REPORT' && document.documentDate != null)
-            .toList()
-          ..sort((a, b) => b.documentDate!.compareTo(a.documentDate!));
+        final monthly =
+            documents
+                .where(
+                  (document) =>
+                      document.documentType == 'MONTHLY_SITE_REPORT' &&
+                      document.documentDate != null,
+                )
+                .toList()
+              ..sort((a, b) => b.documentDate!.compareTo(a.documentDate!));
 
         for (final document in monthly) {
           final date = document.documentDate!;
@@ -72,7 +79,9 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
         _isMonthlyReport = isMonthly;
         _monthlyDocuments = monthlyByKey.values.toList();
         if (_isMonthlyReport &&
-            !_monthlyDocuments.any((document) => document.id == _selectedDocumentId) &&
+            !_monthlyDocuments.any(
+              (document) => document.id == _selectedDocumentId,
+            ) &&
             _monthlyDocuments.isNotEmpty) {
           _selectedDocumentId = _monthlyDocuments.first.id;
         }
@@ -82,7 +91,11 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
-      if (mounted) setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
+      if (mounted)
+        setState(
+          () => _errorMessage =
+              'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+        );
     }
   }
 
@@ -100,7 +113,11 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
-      if (mounted) setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
+      if (mounted)
+        setState(
+          () => _errorMessage =
+              'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+        );
     }
   }
 
@@ -123,14 +140,31 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     return '${months[date.month - 1]} ${date.year}';
   }
 
+  /// Secili belgenin ay adi; yoksa bos.
+  String get _seciliAyAdi {
+    for (final document in _monthlyDocuments) {
+      if (document.id == _selectedDocumentId) return _monthLabel(document);
+    }
+    return '';
+  }
+
+  Future<void> _ayPaneliniAc() async {
+    final secim = await secimPaneliAc<int>(
+      context,
+      baslik: 'Ay seçiniz',
+      secenekler: [
+        for (final document in _monthlyDocuments)
+          SecimSecenegi(document.id, _monthLabel(document)),
+      ],
+      secili: _selectedDocumentId,
+    );
+    if (secim != null && mounted && secim != _selectedDocumentId) {
+      _loadPdf(secim);
+    }
+  }
+
   Widget build(BuildContext context) {
     final c = context.colors;
-
-    OutlineInputBorder border(Color color, [double width = 1.5]) =>
-        OutlineInputBorder(
-          borderRadius: BorderRadius.circular(Sizes.rField),
-          borderSide: BorderSide(color: color, width: width),
-        );
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -138,82 +172,84 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
         bottom: false,
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 20, 14),
-              decoration: BoxDecoration(
-                color: c.surface,
-                border: Border(bottom: BorderSide(color: c.border)),
-              ),
-              child: Row(
-                children: [
-                  Pressable(
-                    onTap: () => context.pop(),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(LucideIcons.chevronLeft, size: 24, color: c.ink),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      widget.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kDisplay,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -.3,
-                        color: c.ink,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            // Butun alt ekranlarla ayni serit: marka + breadcrumb.
+            // Bu ekran kendi basligini ciziyordu, uygulamadan kopuktu.
+            const AppHeader(),
+            BreadcrumbBar(
+              title: widget.title,
+              parent: 'İSG Takip',
+              onBack: () => context.pop(),
+              onParentTap: () => context.pop(),
             ),
             if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: DropdownButtonFormField<int>(
-                  value: _selectedDocumentId,
-                  isExpanded: true,
-                  icon: Icon(LucideIcons.chevronDown, size: 20, color: c.sub),
-                  dropdownColor: c.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                  items: _monthlyDocuments
-                      .map(
-                        (document) => DropdownMenuItem<int>(
-                          value: document.id,
-                          child: Text(
-                            _monthLabel(document),
-                            style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null && value != _selectedDocumentId) {
-                      _loadPdf(value);
-                    }
-                  },
-                  decoration: InputDecoration(
-                    labelText: 'Ay seçiniz',
-                    labelStyle: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
-                    isDense: true,
-                    filled: true,
-                    fillColor: c.surface,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    focusedBorder: border(c.accent, 1.8),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ay seçiniz',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: .2,
+                        color: c.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 9),
+                    SeciciAlan(metin: _seciliAyAdi, onTap: _ayPaneliniAc),
+                  ],
                 ),
               ),
-            Expanded(child: ColoredBox(color: c.inset, child: _buildBody())),
+            // Belge, secim alaninin hemen altina kenardan kenara biniyordu.
+            // Artik kendi panelinde duruyor: ustte ince ayrac, icerde cukur
+            // zemin; sayfa bu zeminin uzerinde ayri bir kagit gibi.
+            Expanded(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: c.inset,
+                  border: Border(top: BorderSide(color: c.border)),
+                ),
+                child: _buildBody(),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Belgeyi tam ekran acar. Onizleme cercevesinde A4 bir sayfanin
+  /// yazisi okunmuyordu; burada ekranin tamami belgenin ve parmakla
+  /// yakinlastirilabiliyor.
+  Future<void> _tamEkranAc(Uint8List bytes) async {
+    await showGeneralDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      barrierLabel: 'Belge',
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (sayfaContext, animasyon, ikinci) => _TamEkranBelge(
+        bytes: bytes,
+        baslik: widget.title,
+        kaynakAdi:
+            'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
+      ),
+      transitionBuilder: (context, animasyon, _, cocuk) {
+        final egri = CurvedAnimation(
+          parent: animasyon,
+          curve: Curves.easeOutCubic,
+        );
+        return FadeTransition(
+          opacity: egri,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: .97, end: 1).animate(egri),
+            child: cocuk,
+          ),
+        );
+      },
     );
   }
 
@@ -221,51 +257,249 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     final c = context.colors;
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.fileText, size: 52, color: c.bad),
-              const SizedBox(height: 14),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
-              ),
-              const SizedBox(height: 18),
-              SmallButton(
-                label: 'Tekrar Dene',
-                icon: LucideIcons.refreshCw,
-                onTap: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
-              ),
-            ],
-          ),
-        ),
+      // Diger ekranlardaki hata gorunumuyle ayni.
+      return ErrorView(
+        message: _errorMessage!,
+        onRetry: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
       );
     }
 
     final bytes = _pdfBytes;
-    if (bytes == null) {
-      return Center(
-        child: SizedBox(
-          width: 26,
-          height: 26,
-          child: CircularProgressIndicator(strokeWidth: 2.6, color: c.ink),
-        ),
-      );
-    }
 
-    return PdfViewer.data(
-      bytes,
-      sourceName: 'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
-      params: PdfViewerParams(backgroundColor: c.inset),
+    // Belge hazir olunca birden belirip goz yoruyordu; iskelet sayfa ile
+    // ayni cercevede duruyor ve yerini yumusak bir gecisle biraktiriyor.
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: bytes == null
+          ? const _BelgeIskeleti(key: ValueKey('iskelet'))
+          : Padding(
+              key: ValueKey(
+                'belge-${_selectedDocumentId ?? widget.documentId}',
+              ),
+              padding: const EdgeInsets.all(14),
+              // pdfrx'in kendi margin'i sayfayla birlikte olceklendigi icin
+              // gorunmuyordu; cerceve disaridan kuruluyor. Belge boylece
+              // cukur zeminin uzerinde kendi kagidinda duruyor.
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: c.border),
+                        boxShadow: kartGolgesi(context),
+                      ),
+                      child: PdfViewer.data(
+                        bytes,
+                        sourceName:
+                            'safety_document_${_selectedDocumentId ?? widget.documentId}.pdf',
+                        params: PdfViewerParams(
+                          backgroundColor: c.surface,
+                          margin: 0,
+                          pageDropShadow: const BoxShadow(
+                            color: Colors.transparent,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Onizleme cercevesinde A4 sayfa kucuk kaliyor; bu
+                  // dugme belgeyi tam ekran aciyor.
+                  Positioned(
+                    right: 10,
+                    top: 10,
+                    child: Pressable(
+                      onTap: () => _tamEkranAc(bytes),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
+                        decoration: BoxDecoration(
+                          color: c.ink.withValues(alpha: .88),
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              LucideIcons.expand,
+                              size: 15,
+                              color: c.surface,
+                            ),
+                            const SizedBox(width: 7),
+                            Text(
+                              'Tam ekran',
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: c.surface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
 
+/// Belge yuklenirken gosterilen bos sayfa. Gercek sayfayla ayni yerde,
+/// ayni olcude duruyor; icerik gelince sadece ustune yazilmis gibi oluyor.
+class _BelgeIskeleti extends StatefulWidget {
+  const _BelgeIskeleti({super.key});
+
+  @override
+  State<_BelgeIskeleti> createState() => _BelgeIskeletiState();
+}
+
+class _BelgeIskeletiState extends State<_BelgeIskeleti>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _nabiz = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _nabiz.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Padding(
+      padding: const EdgeInsets.all(14),
+      child: SizedBox.expand(
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(26, 30, 26, 30),
+          decoration: BoxDecoration(
+            color: c.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.border),
+            boxShadow: kartGolgesi(context),
+          ),
+          child: FadeTransition(
+            opacity: Tween<double>(begin: .45, end: .9).animate(_nabiz),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _cizgi(c.inset, 160, 14),
+                const SizedBox(height: 18),
+                for (var i = 0; i < 7; i++) ...[
+                  _cizgi(c.inset, double.infinity, 9),
+                  const SizedBox(height: 11),
+                ],
+                _cizgi(c.inset, 190, 9),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _cizgi(Color renk, double en, double boy) => Container(
+    width: en,
+    height: boy,
+    decoration: BoxDecoration(
+      color: renk,
+      borderRadius: BorderRadius.circular(boy / 2),
+    ),
+  );
+}
 
 extension _FirstOrNullExtension<T> on Iterable<T> {
   T? get firstOrNull => isEmpty ? null : first;
+}
+
+/// Belgenin tam ekran hali: koyu zemin, ustte kapatma ve belge adi.
+class _TamEkranBelge extends StatelessWidget {
+  const _TamEkranBelge({
+    required this.bytes,
+    required this.baslik,
+    required this.kaynakAdi,
+  });
+
+  final Uint8List bytes;
+  final String baslik;
+  final String kaynakAdi;
+
+  @override
+  Widget build(BuildContext context) {
+    const zemin = Color(0xFF0E141C);
+    // Uygulama genelinde durum cubugu simgeleri koyu; bu ekranin zemini
+    // koyu oldugu icin saat ve sinyal gorunmuyordu.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: zemin,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
+                child: Row(
+                  children: [
+                    Pressable(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(
+                          LucideIcons.x,
+                          size: 22,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        baslik,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: kDisplay,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -.2,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PdfViewer.data(
+                  bytes,
+                  sourceName: kaynakAdi,
+                  params: const PdfViewerParams(
+                    backgroundColor: zemin,
+                    margin: 10,
+                    pageDropShadow: BoxShadow(
+                      color: Colors.black54,
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

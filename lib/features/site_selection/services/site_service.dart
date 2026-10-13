@@ -37,11 +37,13 @@ class SiteService {
 
       _throwForStatus(response.statusCode, 'Şantiyeler alınamadı.');
     } on http.ClientException {
-      throw SiteException(
-        'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
+      throw const SiteException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const SiteException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const SiteException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 
@@ -73,11 +75,13 @@ class SiteService {
 
       _throwForStatus(response.statusCode, 'Şantiye kullanıcıları alınamadı.');
     } on http.ClientException {
-      throw SiteException(
-        'Backend sunucusuna ulaşılamadı (${ApiConfig.baseUrl}).',
+      throw const SiteException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     } on FormatException {
-      throw const SiteException('Sunucudan geçersiz bir yanıt geldi.');
+      throw const SiteException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     }
   }
 
@@ -105,7 +109,7 @@ class SiteService {
         'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
       );
     }
-    throw SiteException('$fallback Sunucu hatası: $statusCode');
+    throw SiteException('$fallback Lütfen daha sonra tekrar deneyiniz.');
   }
 }
 

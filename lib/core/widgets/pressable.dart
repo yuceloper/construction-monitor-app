@@ -26,22 +26,27 @@ class _PressableState extends State<Pressable> {
   @override
   Widget build(BuildContext context) {
     final enabled = widget.onTap != null;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: enabled
-          ? () {
-              HapticFeedback.selectionClick();
-              widget.onTap!();
-            }
-          : null,
-      onTapDown: enabled ? (_) => _set(true) : null,
-      onTapUp: enabled ? (_) => _set(false) : null,
-      onTapCancel: () => _set(false),
-      child: AnimatedScale(
-        scale: _down ? .985 : 1,
-        duration: const Duration(milliseconds: 130),
-        curve: Curves.easeOut,
-        child: widget.child,
+    // Fare ile gezilirken tiklanabilir seyin uzerinde el imleci cikmiyordu;
+    // tarayicida her sey yaziymis gibi duruyordu.
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled
+            ? () {
+                HapticFeedback.selectionClick();
+                widget.onTap!();
+              }
+            : null,
+        onTapDown: enabled ? (_) => _set(true) : null,
+        onTapUp: enabled ? (_) => _set(false) : null,
+        onTapCancel: () => _set(false),
+        child: AnimatedScale(
+          scale: _down ? .985 : 1,
+          duration: const Duration(milliseconds: 130),
+          curve: Curves.easeOut,
+          child: widget.child,
+        ),
       ),
     );
   }

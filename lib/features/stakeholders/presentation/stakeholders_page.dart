@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/genisleyen_metin.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/state_views.dart';
@@ -225,19 +226,30 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         itemCount: items.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           final item = items[index];
+          // Telefonu olmayan paydasta Ara ve WhatsApp dugmeleri hicbir ise
+          // yaramiyordu; KONACIK'taki 68 kaydin 56'sinda telefon yok.
+          // Dugmeler kalkinca kart da ismin boyuna oturuyor, yarisi bos
+          // durmuyor.
+          final telefonVar = item.phoneNumber.isNotEmpty;
+          final altSatirVar =
+              item.detail.isNotEmpty || item.contactPerson.isNotEmpty;
           return Container(
-            padding: const EdgeInsets.fromLTRB(16, 15, 10, 15),
+            padding: EdgeInsets.fromLTRB(16, 15, telefonVar ? 10 : 16, 15),
             decoration: BoxDecoration(
               color: c.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Sizes.rCard),
               border: Border.all(color: c.border),
-              boxShadow: kLiftShadow,
+              boxShadow: kartGolgesi(context),
             ),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              // Tek satirlik isimde yazi, dugmelerin hizasina ortaliyor;
+              // alt satirlar varsa yukaridan basliyor.
+              crossAxisAlignment: altSatirVar
+                  ? CrossAxisAlignment.start
+                  : CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: Column(
@@ -245,9 +257,15 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                     children: [
                       Text(
                         item.companyName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: kDisplay,
-                          fontSize: 19,
+                          // Firma adlari bir santiyede tamamen buyuk harf
+                          // ("3S KARADENIZ SU"), digerinde normal yazim
+                          // ("Bitez Yapi Market") giriliyor. Ayni puntoda
+                          // buyuk harf cok daha iri okunuyordu.
+                          fontSize: 17,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -.2,
                           color: c.ink,
@@ -255,9 +273,12 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                       ),
                       if (item.detail.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        Text(
-                          item.detail,
-                          style: TextStyle(
+                        // Kart hicbir yere gitmiyor; kesilen aciklama
+                        // okunamiyordu, acilip kapanabiliyor.
+                        GenisleyenMetin(
+                          metin: item.detail,
+                          satir: 2,
+                          bicim: TextStyle(
                             fontFamily: kBody,
                             fontSize: 14.5,
                             height: 1.35,
@@ -313,25 +334,28 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                 ),
                 // Iki eylem de ayni capta yuvarlak dugme: biri markanin
                 // mavisi, digeri WhatsApp'in kendi yesili.
-                _ContactAction(
-                  tooltip: 'Ara',
-                  onTap: () => _call(item),
-                  background: Color.lerp(c.surface, c.accent, .12)!,
-                  child: Icon(LucideIcons.phone, size: 21, color: c.accent),
-                ),
-                const SizedBox(width: 8),
-                _ContactAction(
-                  tooltip: 'WhatsApp',
-                  onTap: () => _openWhatsApp(item),
-                  background: const Color(0xFF25D366),
-                  // Mesaj balonu: ayni capta dursalar da hangisinin arama
-                  // hangisinin WhatsApp oldugu sekilden anlasiliyor.
-                  child: const Icon(
-                    LucideIcons.messageCircle,
-                    size: 22,
-                    color: Colors.white,
+                if (telefonVar) ...[
+                  const SizedBox(width: 10),
+                  _ContactAction(
+                    tooltip: 'Ara',
+                    onTap: () => _call(item),
+                    background: Color.lerp(c.surface, c.accent, .12)!,
+                    child: Icon(LucideIcons.phone, size: 21, color: c.accent),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  _ContactAction(
+                    tooltip: 'WhatsApp',
+                    onTap: () => _openWhatsApp(item),
+                    background: const Color(0xFF25D366),
+                    // Mesaj balonu: ayni capta dursalar da hangisinin arama
+                    // hangisinin WhatsApp oldugu sekilden anlasiliyor.
+                    child: const Icon(
+                      LucideIcons.messageCircle,
+                      size: 22,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ],
             ),
           );

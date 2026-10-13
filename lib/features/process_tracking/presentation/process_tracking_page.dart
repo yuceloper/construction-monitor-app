@@ -238,9 +238,9 @@ class _SectionCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: c.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Sizes.rCard),
         border: Border.all(color: c.border),
-        boxShadow: kLiftShadow,
+        boxShadow: kartGolgesi(context),
       ),
       child: Column(
         children: [
