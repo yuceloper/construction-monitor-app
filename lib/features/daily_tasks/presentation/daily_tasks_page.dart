@@ -8,6 +8,7 @@ import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/secim_paneli.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -85,6 +86,59 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     await _loadTasks();
   }
 
+  /// Filtre paneli. Olcutler sunucu tarafinda uygulanacak; su an
+  /// panel yalnizca secimi gosteriyor.
+  Future<void> _filtrePaneliniAc() async {
+    final c = context.colors;
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) => SecimPaneliKabugu(
+        baslik: 'Filtrele',
+        govde: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final olcut in const [
+              ('Kritiklik', LucideIcons.triangleAlert),
+              ('Tarihe Göre Sırala', LucideIcons.calendarDays),
+              ('Kişi', LucideIcons.user),
+            ]) ...[
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
+                decoration: BoxDecoration(
+                  color: c.surface2,
+                  borderRadius: BorderRadius.circular(Sizes.rField),
+                  border: Border.all(color: c.border2),
+                ),
+                child: Row(
+                  children: [
+                    Icon(olcut.$2, size: 18, color: c.sub),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        olcut.$1,
+                        style: TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: c.ink,
+                        ),
+                      ),
+                    ),
+                    Icon(LucideIcons.chevronRight, size: 19, color: c.muted),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _openCreate() async {
     final created = await context.push<bool>('/daily-tasks/create');
     if (!mounted || created != true) return;
@@ -149,6 +203,18 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                 padding: const EdgeInsets.fromLTRB(20, 2, 18, 8),
                 child: Row(
                   children: [
+                    // Filtre, is sayisinin solunda duruyor.
+                    Pressable(
+                      onTap: _filtrePaneliniAc,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 6, 12, 6),
+                        child: Icon(
+                          LucideIcons.slidersHorizontal,
+                          size: 18,
+                          color: c.sub,
+                        ),
+                      ),
+                    ),
                     Text(
                       _showAll
                           ? '${_tasks.length} İş'
