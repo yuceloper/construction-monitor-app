@@ -182,25 +182,11 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
               onParentTap: () => context.pop(),
             ),
             if (_isMonthlyReport && _monthlyDocuments.isNotEmpty)
+              // Ustundeki "Ay seciniz" etiketi kaldirildi; alanin
+              // icinde zaten secili ay yaziyor.
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ay seçiniz',
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: .2,
-                        color: c.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 9),
-                    SeciciAlan(metin: _seciliAyAdi, onTap: _ayPaneliniAc),
-                  ],
-                ),
+                child: SeciciAlan(metin: _seciliAyAdi, onTap: _ayPaneliniAc),
               ),
             // Belge, secim alaninin hemen altina kenardan kenara biniyordu.
             // Artik kendi panelinde duruyor: ustte ince ayrac, icerde cukur
@@ -330,7 +316,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
                             ),
                             const SizedBox(width: 7),
                             Text(
-                              'Tam ekran',
+                              'Tam Ekran',
                               style: TextStyle(
                                 fontFamily: kBody,
                                 fontSize: 13,

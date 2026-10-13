@@ -187,9 +187,11 @@ class _SafetyMenuCard extends StatelessWidget {
     final c = context.colors;
     return Pressable(
       onTap: onTap,
+      // Ana sayfadaki paneller ile ayni: tonlu ikon karesi, 18 punto
+      // baslik, sagda sade bir ok. Ok artik gri dairenin icinde degil.
       child: Container(
-        height: 104,
-        padding: const EdgeInsets.symmetric(horizontal: 18),
+        height: 76,
+        padding: const EdgeInsets.fromLTRB(14, 0, 16, 0),
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: BorderRadius.circular(Sizes.rCard),
@@ -199,15 +201,16 @@ class _SafetyMenuCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: c.inset,
-                borderRadius: BorderRadius.circular(16),
+                color: Color.lerp(c.surface, c.accent, .14),
+                borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 27, color: c.accent),
+              child: Icon(icon, size: 21, color: c.accent),
             ),
-            const SizedBox(width: 18),
+            const SizedBox(width: 13),
             Expanded(
               child: Text(
                 title,
@@ -215,7 +218,7 @@ class _SafetyMenuCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: kDisplay,
-                  fontSize: 21,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   height: 1.2,
                   letterSpacing: -.3,
@@ -224,12 +227,7 @@ class _SafetyMenuCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 10),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(color: c.inset, shape: BoxShape.circle),
-              child: Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
-            ),
+            Icon(LucideIcons.chevronRight, size: 19, color: c.sub),
           ],
         ),
       ),
