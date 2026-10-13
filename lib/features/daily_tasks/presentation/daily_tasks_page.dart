@@ -142,8 +142,8 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                   children: [
                     Text(
                       _showAll
-                          ? '${_tasks.length} iş'
-                          : '${_tasks.length} aktif iş',
+                          ? '${_tasks.length} İş'
+                          : '${_tasks.length} Aktif İş',
                       style: TextStyle(
                         fontFamily: kBody,
                         fontSize: 13.5,

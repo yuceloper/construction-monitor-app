@@ -70,7 +70,9 @@ class SesliNotOynatici extends StatelessWidget {
                   const SizedBox(width: 13),
                   Expanded(
                     child: Text(
-                      oynuyor ? 'Sesli not oynatılıyor' : 'Sesli notu dinle',
+                      oynuyor
+                          ? 'Sesli Not Oynatılıyor'
+                          : 'Sesli Notu Dinle',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

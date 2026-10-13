@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -42,6 +43,12 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   bool _isSaving = false;
   bool _isRecording = false;
   bool _sesOynuyor = false;
+
+  /// Kayit suresi. Sesli not en fazla bir dakika; sure dolunca kayit
+  /// kendi kendine duruyor, gecen sure butonda gorunuyor.
+  static const _kayitSiniri = Duration(minutes: 1);
+  Timer? _sayac;
+  int _gecenSaniye = 0;
   String? _errorMessage;
   List<ProjectSummary> _projects = const [];
   List<SiteMemberSummary> _members = const [];
@@ -67,6 +74,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   @override
   void dispose() {
     _noteController.dispose();
+    _sayac?.cancel();
     _recorder.dispose();
     _oynatici.dispose();
     super.dispose();
@@ -127,12 +135,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     if (_isSaving) return;
     try {
       if (_isRecording) {
-        final path = await _recorder.stop();
-        if (!mounted) return;
-        setState(() {
-          _isRecording = false;
-          if (path != null) _audioPath = path;
-        });
+        await _kaydiBitir();
         return;
       }
 
@@ -145,10 +148,42 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100),
         path: path,
       );
-      if (mounted) setState(() => _isRecording = true);
+      if (!mounted) return;
+      setState(() {
+        _isRecording = true;
+        _gecenSaniye = 0;
+      });
+      _sayac?.cancel();
+      _sayac = Timer.periodic(const Duration(seconds: 1), (vurus) {
+        if (!mounted || !_isRecording) {
+          vurus.cancel();
+          return;
+        }
+        setState(() => _gecenSaniye = vurus.tick);
+        if (vurus.tick >= _kayitSiniri.inSeconds) _kaydiBitir();
+      });
     } catch (_) {
       if (mounted) _show('Ses kaydı başlatılamadı.');
     }
+  }
+
+  /// Kaydi durdurur; hem kullanici bastiginda hem sure dolunca ayni yol.
+  Future<void> _kaydiBitir() async {
+    _sayac?.cancel();
+    _sayac = null;
+    final path = await _recorder.stop();
+    if (!mounted) return;
+    setState(() {
+      _isRecording = false;
+      _gecenSaniye = 0;
+      if (path != null) _audioPath = path;
+    });
+  }
+
+  String get _kayitSuresi {
+    final dakika = _gecenSaniye ~/ 60;
+    final saniye = (_gecenSaniye % 60).toString().padLeft(2, '0');
+    return '$dakika:$saniye';
   }
 
   /// Kaydi dinletir. Ikinci dokunusta duraklatir, sonrakinde kaldigi
@@ -178,7 +213,11 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
 
   Future<void> _removeAudio() async {
     if (_isSaving) return;
-    if (_isRecording) await _recorder.stop();
+    if (_isRecording) {
+      _sayac?.cancel();
+      _sayac = null;
+      await _recorder.stop();
+    }
     try {
       await _oynatici.stop();
     } catch (_) {}
@@ -440,8 +479,8 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
               _OutlineAction(
                 icon: LucideIcons.camera,
                 label: _photos.isEmpty
-                    ? 'Fotoğraf ekle'
-                    : '${_photos.length} fotoğraf seçildi',
+                    ? 'Fotoğraf Ekle'
+                    : '${_photos.length} Fotoğraf Seçildi',
                 onTap: _isSaving ? null : _pickPhotos,
               ),
               if (_photos.isNotEmpty) ...[
@@ -504,7 +543,9 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                         ),
                         const SizedBox(width: 9),
                         Text(
-                          _isRecording ? 'Kaydı Durdur' : 'Sesli not kaydet',
+                          _isRecording
+                              ? 'Kaydı Durdur  $_kayitSuresi'
+                              : 'Sesli Not Kaydet',
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 15.5,
