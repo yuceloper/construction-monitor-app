@@ -8,6 +8,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/genisleyen_metin.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../../core/widgets/telefon_bicim.dart';
 import '../../../core/widgets/state_views.dart';
 import '../models/stakeholder_summary.dart';
 import '../services/stakeholder_service.dart';
@@ -91,10 +92,16 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     final nativeUri = Uri.parse('whatsapp://send?phone=$phone');
     final webUri = Uri.https('wa.me', '/$phone');
     if (await canLaunchUrl(nativeUri)) {
-      final opened = await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      final opened = await launchUrl(
+        nativeUri,
+        mode: LaunchMode.externalApplication,
+      );
       if (opened) return;
     }
-    final opened = await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    final opened = await launchUrl(
+      webUri,
+      mode: LaunchMode.externalApplication,
+    );
     if (!opened && mounted) {
       _show('WhatsApp açılamadı.');
     }
@@ -112,7 +119,8 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
   }
 
   void _show(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget build(BuildContext context) {
@@ -134,36 +142,54 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
               title: 'Paydaşlar',
               onBack: () => context.go('/dashboard'),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() => _query = value),
-                style: TextStyle(fontFamily: kBody, fontSize: 16, color: c.ink),
-                cursorColor: c.accent,
-                decoration: InputDecoration(
-                  hintText: 'Paydaş ara',
-                  hintStyle: TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
-                  prefixIcon: Icon(LucideIcons.search, size: 20, color: c.muted),
-                  suffixIcon: _query.isEmpty
-                      ? null
-                      : IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _query = '');
-                          },
-                          icon: Icon(LucideIcons.x, size: 19, color: c.sub),
-                        ),
-                  filled: true,
-                  fillColor: c.surface,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                  border: border(c.border2),
-                  enabledBorder: border(c.border2),
-                  focusedBorder: border(c.accent, 1.8),
+            // Tarayicida liste zaten tek ekrana siginiyor; arama
+            // alani orada gosterilmiyor.
+            if (MediaQuery.sizeOf(context).width < 700)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _query = value),
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 16,
+                    color: c.ink,
+                  ),
+                  cursorColor: c.accent,
+                  decoration: InputDecoration(
+                    hintText: 'Paydaş ara',
+                    hintStyle: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 16,
+                      color: c.faint,
+                    ),
+                    prefixIcon: Icon(
+                      LucideIcons.search,
+                      size: 20,
+                      color: c.muted,
+                    ),
+                    suffixIcon: _query.isEmpty
+                        ? null
+                        : IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                            icon: Icon(LucideIcons.x, size: 19, color: c.sub),
+                          ),
+                    filled: true,
+                    fillColor: c.surface,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 16,
+                    ),
+                    border: border(c.border2),
+                    enabledBorder: border(c.border2),
+                    focusedBorder: border(c.accent, 1.8),
+                  ),
                 ),
               ),
-            ),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -193,7 +219,12 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  height: 1.45,
+                  color: c.ink,
+                ),
               ),
               const SizedBox(height: 16),
               SmallButton(
@@ -317,7 +348,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                             Icon(LucideIcons.phone, size: 17, color: c.muted),
                             const SizedBox(width: 8),
                             Text(
-                              item.phoneNumber,
+                              telefonBicimle(item.phoneNumber),
                               style: TextStyle(
                                 fontFamily: kBody,
                                 fontSize: 14.5,
@@ -364,7 +395,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
     );
   }
 }
-
 
 /// Paydas kartinin sag ucundaki eylem dugmesi. Gorsel cap 42, dokunma
 /// alani 48: eldivenli parmakla da rahat basiliyor.
