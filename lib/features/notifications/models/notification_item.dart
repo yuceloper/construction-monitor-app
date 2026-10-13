@@ -8,6 +8,10 @@ class NotificationItem {
   final bool isRead;
   final int? projectId;
   final String? projectName;
+
+  /// Bildirimi olusturan kisi. Sunucu henuz gondermiyor; geldiginde
+  /// kartin sag altinda yaziyor.
+  final String? userName;
   final DateTime createdAt;
 
   const NotificationItem({
@@ -21,6 +25,7 @@ class NotificationItem {
     required this.projectId,
     required this.projectName,
     required this.createdAt,
+    this.userName,
   });
 
   bool get isWorkItem => referenceType == 'WORK_ITEM' || type.startsWith('WORK_ITEM_');
@@ -37,6 +42,7 @@ class NotificationItem {
         projectId: projectId,
         projectName: projectName,
         createdAt: createdAt,
+        userName: userName,
       );
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
@@ -50,6 +56,13 @@ class NotificationItem {
       isRead: json['isRead'] as bool? ?? false,
       projectId: (json['projectId'] as num?)?.toInt(),
       projectName: json['projectName'] as String?,
+      // Sunucu kisiyi ayri bir alan olarak gondermiyor; gonderdigi gun
+      // calissin diye bilinen adlar burada okunuyor.
+      userName: (json['userName'] ??
+              json['createdByName'] ??
+              json['actorName'] ??
+              json['personName'])
+          as String?,
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
     );
   }

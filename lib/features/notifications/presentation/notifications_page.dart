@@ -264,7 +264,8 @@ class _NotificationCard extends StatelessWidget {
                           ),
                         ),
                       ],
-                      if (isDaily && (content.block.isNotEmpty || content.person.isNotEmpty)) ...[
+                      if (content.block.isNotEmpty ||
+                          content.person.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Row(
                           children: [
@@ -348,8 +349,8 @@ class _NotificationContent {
       return _NotificationContent(
         title: item.title,
         detail: item.message,
-        block: '',
-        person: '',
+        block: item.projectName ?? '',
+        person: item.userName?.trim() ?? _metindenKisi(item.message),
       );
     }
 
@@ -382,7 +383,22 @@ class _NotificationContent {
       title: item.title,
       detail: detail,
       block: block,
-      person: person,
+      person: item.userName?.trim().isNotEmpty == true
+          ? item.userName!.trim()
+          : person,
     );
+  }
+
+  /// "... isi X tarafindan ... guncellendi" bicimindeki mesajlarda
+  /// kisiyi metinden cikarir. Sunucu ayri bir alan gonderene kadar
+  /// surec bildirimlerinde kisi ancak boyle gorunebiliyor.
+  static String _metindenKisi(String mesaj) {
+    const ayrac = ' tarafından';
+    final yer = mesaj.indexOf(ayrac);
+    if (yer <= 0) return '';
+    final onu = mesaj.substring(0, yer).trim();
+    final isi = onu.lastIndexOf(' işi ');
+    if (isi < 0) return '';
+    return onu.substring(isi + 5).trim();
   }
 }
