@@ -660,7 +660,11 @@ class _HistoryEntry extends StatelessWidget {
                       const Spacer(),
                       Icon(LucideIcons.user, size: 15, color: c.muted),
                       const SizedBox(width: 6),
-                      Flexible(
+                      // Flexible, Spacer ile bos alani paylasiyor ve ad
+                      // satirin ortasinda kaliyordu; genislik sinirli
+                      // bir kutu sagda tutuyor.
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 170),
                         child: Text(
                           // Ad her yerde ayni kuralla kisaliyor; burada
                           // "Muhammed Abd..." diye ortasindan kesiliyordu.
@@ -770,7 +774,8 @@ class _WarningCardState extends State<_WarningCard> {
                         // Kisi gosterimi gunluk islerdeki ile ayni.
                         Icon(LucideIcons.user, size: 15, color: c.muted),
                         const SizedBox(width: 6),
-                        Flexible(
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 170),
                           child: Text(
                             kisaKisiAdi(
                               context,
