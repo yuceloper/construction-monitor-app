@@ -35,6 +35,12 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   /// Iki sekmede de hic is yok. Sekme serisi bu durumda gizleniyor.
   bool _hicIsYok = false;
 
+  /// Ekranda gosterilecek is yoksa ustteki sekmeler de gorunmuyor.
+  /// Aktif liste bosken tamamlanmislar varsa, bos durumdaki dugme
+  /// onlara goturuyor; boylece sekme gizlense de veri kaybolmuyor.
+  bool get _listeBos => _tasks.isEmpty && _errorMessage == null && !_isLoading;
+  bool _tamamlanmisVar = false;
+
   Future<void> _loadTasks() async {
     setState(() {
       _isLoading = true;
@@ -47,14 +53,17 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       // Aktif liste bossa, tamamlanmislar dahil de bos mu diye bir kez
       // bakiliyor; sadece bu durumda ek istek atiliyor.
       var hicYok = tasks.isEmpty;
+      var tamamlanmisVar = false;
       if (hicYok && !_showAll) {
         final tumu = await _service.getTasks(includeCompleted: true);
         hicYok = tumu.isEmpty;
+        tamamlanmisVar = tumu.isNotEmpty;
       }
       if (!mounted) return;
       setState(() {
         _tasks = tasks;
         _hicIsYok = hicYok;
+        _tamamlanmisVar = tamamlanmisVar;
       });
     } on DailyTaskException catch (error) {
       if (!mounted) return;
@@ -102,7 +111,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
               title: 'Günlük İşler',
               onBack: () => context.go('/dashboard'),
             ),
-            if (!_hicIsYok)
+            if (!_listeBos)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
                 child: Container(
@@ -135,7 +144,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
             // Ekle tek basina bir kutu degil; solda kac is oldugunu
             // soyleyen satirin sag ucu. Bosta asili durmuyor, yer
             // kaplamasi en az ve ustelik bilgi de tasiyor.
-            if (!_hicIsYok && _errorMessage == null && !_isLoading)
+            if (!_listeBos)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 2, 18, 8),
                 child: Row(
@@ -247,9 +256,21 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                   title: _showAll
                       ? 'Henüz günlük iş bulunmuyor.'
                       : 'Aktif günlük iş bulunmuyor.',
-                  actionLabel: _hicIsYok ? 'Ekle' : null,
-                  actionIcon: _hicIsYok ? LucideIcons.plus : null,
-                  onAction: _hicIsYok ? _openCreate : null,
+                  // Hic is yoksa dogrudan ekleme; aktif liste bos ama
+                  // tamamlanmis is varsa onlara gecis.
+                  actionLabel: _hicIsYok
+                      ? 'Ekle'
+                      : (_tamamlanmisVar && !_showAll ? 'Tümünü Göster' : null),
+                  actionIcon: _hicIsYok
+                      ? LucideIcons.plus
+                      : (_tamamlanmisVar && !_showAll
+                            ? LucideIcons.listChecks
+                            : null),
+                  onAction: _hicIsYok
+                      ? _openCreate
+                      : (_tamamlanmisVar && !_showAll
+                            ? () => _selectTab(true)
+                            : null),
                 ),
               ),
             ],
