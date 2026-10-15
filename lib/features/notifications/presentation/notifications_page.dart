@@ -75,12 +75,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
     if (!mounted || item.referenceId == null) return;
     if (item.isDailyTask) {
       context.push('/daily-tasks/${item.referenceId}');
-    } else if (item.type == 'WORK_ITEM_UPDATED') {
-      context.push(
-        '/process/Bildirimler/work/${item.referenceId}'
-        '?title=${Uri.encodeQueryComponent(item.title)}',
-      );
+      return;
     }
+    // Is kalemine bagli butun bildirimler ayni ise gidiyor: guncelleme,
+    // uyari ve hatirlatma. Daha once yalnizca guncelleme bildirimi
+    // aciliyor, digerlerine dokununca hicbir sey olmuyordu.
+    context.push(
+      '/process/Bildirimler/work/${item.referenceId}'
+      '?title=${Uri.encodeQueryComponent(item.title)}',
+    );
   }
 
   Widget build(BuildContext context) {
