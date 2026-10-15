@@ -6,6 +6,9 @@ class NotificationItem {
   final int? referenceId;
   final String? referenceType;
   final bool isRead;
+
+  /// Bildirimin ait oldugu santiye. Liste buna gore suzuluyor.
+  final int? siteId;
   final int? projectId;
   final String? projectName;
 
@@ -22,28 +25,34 @@ class NotificationItem {
     required this.referenceId,
     required this.referenceType,
     required this.isRead,
+    this.siteId,
     required this.projectId,
     required this.projectName,
     required this.createdAt,
     this.userName,
   });
 
-  bool get isWorkItem => referenceType == 'WORK_ITEM' || type.startsWith('WORK_ITEM_');
-  bool get isDailyTask => referenceType == 'DAILY_TASK' || type.startsWith('DAILY_TASK_') || type.startsWith('TASK_');
+  bool get isWorkItem =>
+      referenceType == 'WORK_ITEM' || type.startsWith('WORK_ITEM_');
+  bool get isDailyTask =>
+      referenceType == 'DAILY_TASK' ||
+      type.startsWith('DAILY_TASK_') ||
+      type.startsWith('TASK_');
 
   NotificationItem copyWith({bool? isRead}) => NotificationItem(
-        id: id,
-        title: title,
-        message: message,
-        type: type,
-        referenceId: referenceId,
-        referenceType: referenceType,
-        isRead: isRead ?? this.isRead,
-        projectId: projectId,
-        projectName: projectName,
-        createdAt: createdAt,
-        userName: userName,
-      );
+    id: id,
+    title: title,
+    message: message,
+    type: type,
+    referenceId: referenceId,
+    referenceType: referenceType,
+    isRead: isRead ?? this.isRead,
+    siteId: siteId,
+    projectId: projectId,
+    projectName: projectName,
+    createdAt: createdAt,
+    userName: userName,
+  );
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
@@ -54,16 +63,20 @@ class NotificationItem {
       referenceId: (json['referenceId'] as num?)?.toInt(),
       referenceType: json['referenceType'] as String?,
       isRead: json['isRead'] as bool? ?? false,
+      siteId: (json['siteId'] as num?)?.toInt(),
       projectId: (json['projectId'] as num?)?.toInt(),
       projectName: json['projectName'] as String?,
       // Sunucu kisiyi ayri bir alan olarak gondermiyor; gonderdigi gun
       // calissin diye bilinen adlar burada okunuyor.
-      userName: (json['userName'] ??
-              json['createdByName'] ??
-              json['actorName'] ??
-              json['personName'])
-          as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      userName:
+          (json['userName'] ??
+                  json['createdByName'] ??
+                  json['actorName'] ??
+                  json['personName'])
+              as String?,
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 }

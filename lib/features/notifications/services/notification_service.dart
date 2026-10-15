@@ -33,9 +33,8 @@ class NotificationService {
   Future<List<NotificationItem>> getNotifications() async {
     final token = _token();
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/notifications').replace(
-        queryParameters: {'page': '0', 'size': '100'},
-      );
+      final uri = Uri.parse('${ApiConfig.baseUrl}/notifications')
+          .replace(queryParameters: {'page': '0', 'size': '100'});
       final response = await http.get(uri, headers: _headers(token));
       final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -46,6 +45,10 @@ class NotificationService {
         final data = decoded['data'];
         final content = data is Map<String, dynamic> ? data['content'] : null;
         if (content is! List) return const [];
+        // Sunucu butun santiyelerin bildirimlerini donduruyor; ekranda
+        // yalnizca secili santiyeninkiler duruyor. Santiyesi belirsiz
+        // (siteId gelmeyen) bildirimler gizlenmiyor.
+        final seciliSantiye = SessionManager.instance.selectedSiteId;
         return content
             .whereType<Map>()
             .map(
@@ -53,6 +56,12 @@ class NotificationService {
                   NotificationItem.fromJson(Map<String, dynamic>.from(item)),
             )
             .where((item) => item.id > 0)
+            .where(
+              (item) =>
+                  seciliSantiye == null ||
+                  item.siteId == null ||
+                  item.siteId == seciliSantiye,
+            )
             .toList();
       }
       _throwForResponse(response.statusCode, body, 'Bildirimler alınamadı.');
@@ -67,28 +76,17 @@ class NotificationService {
     }
   }
 
+  /// Okunmamis bildirim sayisi.
+  ///
+  /// Sunucudaki sayac butun santiyeleri topluyor; liste ise secili
+  /// santiyeyi gosteriyordu, rozet ile liste tutmuyordu. Sayi artik
+  /// ayni listeden hesaplaniyor.
   Future<int> getUnreadCount() async {
-    final token = _token();
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/notifications/unread-count'),
-        headers: _headers(token),
-      );
-      final body = utf8.decode(response.bodyBytes);
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(body);
-        if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
-          throw const NotificationException('Bildirim sayısı alınamadı.');
-        }
-        final data = decoded['data'];
-        final rawCount = data is Map<String, dynamic> ? data['count'] : null;
-        final count = rawCount is num
-            ? rawCount.toInt()
-            : int.tryParse('$rawCount') ?? 0;
-        NotificationUnreadCount.set(count);
-        return count;
-      }
-      _throwForResponse(response.statusCode, body, 'Bildirim sayısı alınamadı.');
+      final bildirimler = await getNotifications();
+      final sayi = bildirimler.where((item) => !item.isRead).length;
+      NotificationUnreadCount.set(sayi);
+      return sayi;
     } on http.ClientException {
       throw const NotificationException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',

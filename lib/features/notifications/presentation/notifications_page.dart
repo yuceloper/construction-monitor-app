@@ -39,9 +39,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     try {
       final all = await _service.getNotifications();
       final cutoff = DateTime.now().subtract(const Duration(days: 15));
+      // Tip suzgeci kaldirildi: sunucu WORK_ITEM_REMINDER gibi yeni
+      // tipler de gonderiyor ve bunlar ekranda hic gorunmuyordu.
+      // Hangi bildirimin gonderilecegine sunucu karar veriyor.
       final items = all
           .where((item) => !item.createdAt.toLocal().isBefore(cutoff))
-          .where((item) => item.type == 'WORK_ITEM_UPDATED' || item.isDailyTask)
           .toList();
       if (!mounted) return;
       setState(() => _items = items);
@@ -59,7 +61,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
         if (mounted) {
           setState(() {
             _items = _items
-                .map((current) => current.id == item.id ? current.copyWith(isRead: true) : current)
+                .map(
+                  (current) => current.id == item.id
+                      ? current.copyWith(isRead: true)
+                      : current,
+                )
                 .toList();
           });
         }
@@ -92,7 +98,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
               onBack: () => context.go('/dashboard'),
               trailing: unreadCount > 0
                   ? Container(
-                      constraints: const BoxConstraints(minWidth: 29, minHeight: 29),
+                      constraints: const BoxConstraints(
+                        minWidth: 29,
+                        minHeight: 29,
+                      ),
                       padding: const EdgeInsets.symmetric(horizontal: 9),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
@@ -142,7 +151,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  height: 1.45,
+                  color: c.ink,
+                ),
               ),
               const SizedBox(height: 16),
               SmallButton(
@@ -168,9 +182,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           if (_items.isEmpty) {
             return const Padding(
               padding: EdgeInsets.only(top: 40),
-              child: EmptyView(
-                title: 'Son 15 günde bildirim bulunmuyor.',
-              ),
+              child: EmptyView(title: 'Bildirim bulunmamaktadır.'),
             );
           }
           final item = _items[index];
@@ -230,7 +242,9 @@ class _NotificationCard extends StatelessWidget {
                                 fontFamily: kDisplay,
                                 fontSize: 16,
                                 height: 1.2,
-                                fontWeight: isDaily ? FontWeight.w600 : FontWeight.w700,
+                                fontWeight: isDaily
+                                    ? FontWeight.w600
+                                    : FontWeight.w700,
                                 color: c.ink,
                               ),
                             ),
@@ -330,7 +344,6 @@ class _NotificationCard extends StatelessWidget {
   }
 }
 
-
 class _NotificationContent {
   final String title;
   final String detail;
@@ -368,7 +381,8 @@ class _NotificationContent {
       if (line.toLowerCase().startsWith('blok:')) {
         final value = line.substring(line.indexOf(':') + 1).trim();
         block = value.isEmpty ? block : 'Evler - $value';
-      } else if (line.toLowerCase().startsWith('kişi:') || line.toLowerCase().startsWith('kisi:')) {
+      } else if (line.toLowerCase().startsWith('kişi:') ||
+          line.toLowerCase().startsWith('kisi:')) {
         person = line.substring(line.indexOf(':') + 1).trim();
       } else if (!line.toLowerCase().startsWith('tarih:') && detail.isEmpty) {
         detail = line;
