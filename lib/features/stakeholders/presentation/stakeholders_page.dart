@@ -132,66 +132,73 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
           borderSide: BorderSide(color: color, width: width),
         );
 
-    return ColoredBox(
-      color: c.bg,
-      child: SafeArea(
-        child: Column(
-          children: [
-            const AppHeader(),
-            ScreenTitleBar(
-              title: 'Paydaşlar',
-              onBack: () => context.go('/dashboard'),
-            ),
-            // Tarayicida liste zaten tek ekrana siginiyor; arama
-            // alani orada gosterilmiyor.
-            if (MediaQuery.sizeOf(context).width < 700)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) => setState(() => _query = value),
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 16,
-                    color: c.ink,
-                  ),
-                  cursorColor: c.accent,
-                  decoration: InputDecoration(
-                    hintText: 'Paydaş ara',
-                    hintStyle: TextStyle(
+    // Arama alanina dokunduktan sonra bos bir yere basinca klavye
+    // kapanmiyor, arama acik kaliyordu.
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: ColoredBox(
+        color: c.bg,
+        child: SafeArea(
+          child: Column(
+            children: [
+              const AppHeader(),
+              ScreenTitleBar(
+                title: 'Paydaşlar',
+                onBack: () => context.go('/dashboard'),
+              ),
+              // Tanimli paydas yoksa arama alani ekranda durmuyor.
+              // Tarayicida liste zaten tek ekrana siginiyor; arama alani
+              // orada hic gosterilmiyor.
+              if (_items.isNotEmpty && MediaQuery.sizeOf(context).width < 700)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) => setState(() => _query = value),
+                    style: TextStyle(
                       fontFamily: kBody,
                       fontSize: 16,
-                      color: c.faint,
+                      color: c.ink,
                     ),
-                    prefixIcon: Icon(
-                      LucideIcons.search,
-                      size: 20,
-                      color: c.muted,
+                    cursorColor: c.accent,
+                    decoration: InputDecoration(
+                      hintText: 'Paydaş ara',
+                      hintStyle: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 16,
+                        color: c.faint,
+                      ),
+                      prefixIcon: Icon(
+                        LucideIcons.search,
+                        size: 20,
+                        color: c.muted,
+                      ),
+                      suffixIcon: _query.isEmpty
+                          ? null
+                          : IconButton(
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _query = '');
+                              },
+                              icon: Icon(LucideIcons.x, size: 19, color: c.sub),
+                            ),
+                      filled: true,
+                      fillColor: c.surface,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 16,
+                      ),
+                      border: border(c.border2),
+                      enabledBorder: border(c.border2),
+                      focusedBorder: border(c.accent, 1.8),
                     ),
-                    suffixIcon: _query.isEmpty
-                        ? null
-                        : IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                            icon: Icon(LucideIcons.x, size: 19, color: c.sub),
-                          ),
-                    filled: true,
-                    fillColor: c.surface,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 16,
-                    ),
-                    border: border(c.border2),
-                    enabledBorder: border(c.border2),
-                    focusedBorder: border(c.accent, 1.8),
                   ),
                 ),
-              ),
-            Expanded(child: _buildContent()),
-          ],
+              Expanded(child: _buildContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -245,7 +252,7 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
         onRefresh: _load,
         child: CenteredScrollMessage(
           message: _query.isEmpty
-              ? 'Henüz paydaş bulunmuyor.'
+              ? 'Tanımlı paydaş bulunmamaktadır.'
               : 'Aramaya uygun paydaş bulunamadı.',
         ),
       );

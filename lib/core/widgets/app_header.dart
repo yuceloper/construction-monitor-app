@@ -65,8 +65,43 @@ class UserChip extends StatelessWidget {
   static String _adiSigdir(BuildContext context, String adSoyad) =>
       kisaKisiAdi(context, adSoyad, enBoy: _enBoyOlc(context) - _cerceve);
 
+  /// Cikis onayi. Oturum kapanip giris ekranina donuluyor.
+  static Future<void> cikisYap(BuildContext context) async {
+    final c = context.colors;
+    final onay = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Çıkış Yap'),
+        content: Text(
+          'Oturumunuz kapatılacak. Devam edilsin mi?',
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 15.5,
+            height: 1.4,
+            fontWeight: FontWeight.w600,
+            color: c.ink,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Çıkış Yap'),
+          ),
+        ],
+      ),
+    );
+
+    if (onay != true || !context.mounted) return;
+    SessionManager.instance.clear();
+    if (context.mounted) context.go('/login');
+  }
+
   Future<void> _openSiteSwitcher(BuildContext context) async {
-    final selected = await showModalBottomSheet<SiteSummary>(
+    final sonuc = await showModalBottomSheet<Object>(
       context: context,
       // Kok navigator: aksi halde panel alt menunun ustune cikamiyor,
       // menu panelin yaninda parlak kaliyordu.
@@ -76,7 +111,13 @@ class UserChip extends StatelessWidget {
       builder: (_) => const _SiteSwitchSheet(),
     );
 
-    if (selected == null || !context.mounted) return;
+    if (!context.mounted) return;
+    if (sonuc == _cikisIstegi) {
+      await cikisYap(context);
+      return;
+    }
+    final selected = sonuc is SiteSummary ? sonuc : null;
+    if (selected == null) return;
     if (selected.id == SessionManager.instance.selectedSiteId) return;
 
     SessionManager.instance.setSelectedSite(selected);
@@ -201,6 +242,9 @@ class UserChip extends StatelessWidget {
 }
 
 /// Santiye degistirme paneli: mevcut santiyeler listelenir, secili olanda tik.
+/// Santiye panelinden "cikis" secildiginin isareti.
+const String _cikisIstegi = 'cikis';
+
 class _SiteSwitchSheet extends StatefulWidget {
   const _SiteSwitchSheet();
 
@@ -390,6 +434,33 @@ class _SiteSwitchSheetState extends State<_SiteSwitchSheet> {
                 },
               ),
             ),
+          // Cikis santiyelerden ayri duruyor: once ince bir ayrac,
+          // sonra kartsiz, ikonu ve yazisi kirmizi bir satir.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 14, 2, 4),
+            child: Divider(height: 1, color: c.line),
+          ),
+          Pressable(
+            onTap: () => Navigator.of(context).pop(_cikisIstegi),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
+              child: Row(
+                children: [
+                  Icon(LucideIcons.logOut, size: 19, color: c.bad),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Çıkış Yap',
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: c.bad,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -477,8 +548,6 @@ const double kTitleSize = 21;
 
 /// Kuculmenin tabani: bunun altina inmiyor, okunmaz hale gelmesin diye.
 /// Bu olcude de sigmiyorsa yazi uc noktayla kesiliyor.
-const double kTitleMin = 17;
-
 /// Butun basliklarin ortak yazi bicimi. Tek baslikta da breadcrumb'in
 /// icinde de ayni; boylece sayfa degisince baslik buyuyup kucumuyor.
 TextStyle _titleStyle(AppColors c) => TextStyle(
@@ -546,49 +615,32 @@ class BreadcrumbBar extends StatelessWidget {
     final stil = _titleStyle(c);
 
     if (parentLabel == null || parentLabel.isEmpty) {
-      return ScreenTitleBar(
-        title: title,
-        onBack: onBack,
-        trailing: trailing,
-      );
+      return ScreenTitleBar(title: title, onBack: onBack, trailing: trailing);
     }
 
-    // Dar ekranda yazi kirpilmak yerine kuculuyor, ama bunun bir tabani
-    // var: okunamayacak kadar ufalmasin diye en fazla kTitleMin'e kadar
-    // iniyor. O tabanda da sigmiyorsa uc noktayla kesiliyor.
+    // Uzun baslikta yazi kuculuyordu; ayni ekranda kisa baslik 21,
+    // uzun baslik 17 punto cikiyor ve menu texti kuculmus gorunuyordu.
+    // Punto artik her ekranda ayni; sigmayan baslik uc noktayla
+    // kesiliyor.
     return _TitleBarShell(
       onBack: onBack,
       trailing: trailing,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final olcek = MediaQuery.textScalerOf(context);
-          double genislik(String metin, TextStyle bicim) {
-            final painter = TextPainter(
-              text: TextSpan(text: metin, style: bicim),
-              textScaler: olcek,
-              textDirection: TextDirection.ltr,
-            )..layout();
-            return painter.width;
-          }
-
-          final ayracBicim = stil.copyWith(fontWeight: FontWeight.w400);
-          final gereken = genislik(parentLabel, stil) +
-              18 + // ayracin iki yanindaki bosluk
-              genislik('\u2013', ayracBicim) +
-              genislik(title, stil);
-
-          var olcu = kTitleSize;
-          if (gereken > constraints.maxWidth && gereken > 0) {
-            olcu = (kTitleSize * constraints.maxWidth / gereken)
-                .clamp(kTitleMin, kTitleSize);
-          }
-          final kucuk = stil.copyWith(fontSize: olcu);
+      child: Builder(
+        builder: (context) {
+          final kucuk = stil;
 
           return Row(
             children: [
-              Pressable(
-                onTap: onParentTap,
-                child: Text(parentLabel, maxLines: 1, style: kucuk),
+              Flexible(
+                child: Pressable(
+                  onTap: onParentTap,
+                  child: Text(
+                    parentLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: kucuk,
+                  ),
+                ),
               ),
               // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
               // Egik cizgi zeminden 20/255 ayriliyor, ekranda secilmiyordu;
@@ -604,6 +656,7 @@ class BreadcrumbBar extends StatelessWidget {
                 ),
               ),
               Flexible(
+                flex: 2,
                 child: Text(
                   title,
                   maxLines: 1,
@@ -625,10 +678,6 @@ class _BackChevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      LucideIcons.chevronLeft,
-      size: 24,
-      color: context.colors.ink,
-    );
+    return Icon(LucideIcons.chevronLeft, size: 24, color: context.colors.ink);
   }
 }
