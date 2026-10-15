@@ -102,6 +102,17 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
     }
   }
 
+  /// Blokta hic alt is bulunmuyor mu?
+  ///
+  /// Asama tanimli olup altinda is olmamasi da kullanici icin "is
+  /// eklenmemis" demek: boyle bir blokta yuzde ve Guncelle anlam
+  /// tasimiyor, ekranda yalnizca bilgilendirme mesaji kaliyor.
+  bool get _isYok =>
+      _stages.isEmpty ||
+      _stages.every(
+        (asama) => (_workItemsByStage[asama.id] ?? const []).isEmpty,
+      );
+
   /// Blok detayindaki bir is kaleminden o isin detayina gidiyor.
   Future<void> _openWorkDetail(WorkItemSummary item) async {
     await context.push(
@@ -137,7 +148,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
             ),
             // Bloga tanimli is yokken yuzde ve Guncelle gorunmuyor;
             // ekranda yalnizca bilgilendirme mesaji kaliyor.
-            if (!(_stages.isEmpty && !_isLoading && _errorMessage == null))
+            if (!(_isYok && !_isLoading && _errorMessage == null))
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                 // The summary sits on the dark anchor card so it reads as the
@@ -263,7 +274,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       );
     }
 
-    if (_stages.isEmpty) {
+    if (_isYok) {
       return RefreshIndicator(
         color: c.ink,
         onRefresh: _loadData,
