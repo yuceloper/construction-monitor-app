@@ -93,7 +93,10 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       setState(() => _errorMessage = error.message);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _errorMessage = 'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
+      setState(
+        () => _errorMessage =
+            'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -132,80 +135,83 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
               title: widget.blockName,
               onBack: () => context.pop(true),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-              // The summary sits on the dark anchor card so it reads as the
-              // header of the screen rather than as one more stage row.
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [c.anchorTop, c.anchorMid, c.anchorBottom],
+            // Bloga tanimli is yokken yuzde ve Guncelle gorunmuyor;
+            // ekranda yalnizca bilgilendirme mesaji kaliyor.
+            if (!(_stages.isEmpty && !_isLoading && _errorMessage == null))
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                // The summary sits on the dark anchor card so it reads as the
+                // header of the screen rather than as one more stage row.
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [c.anchorTop, c.anchorMid, c.anchorBottom],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: c.anchorMid.withValues(alpha: .30),
+                        blurRadius: 24,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: c.anchorMid.withValues(alpha: .30),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Genel İlerleme',
-                                style: TextStyle(
-                                  fontFamily: kBody,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: .3,
-                                  color: Colors.white.withValues(alpha: .62),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Genel İlerleme',
+                                  style: TextStyle(
+                                    fontFamily: kBody,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: .3,
+                                    color: Colors.white.withValues(alpha: .62),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '%$roundedProgress',
-                                style: const TextStyle(
-                                  fontFamily: kDisplay,
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.1,
-                                  letterSpacing: -1.2,
-                                  color: Colors.white,
+                                const SizedBox(height: 2),
+                                Text(
+                                  '%$roundedProgress',
+                                  style: const TextStyle(
+                                    fontFamily: kDisplay,
+                                    fontSize: 40,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.1,
+                                    letterSpacing: -1.2,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        SmallButton(
-                          label: 'Güncelle',
-                          onTap: _openUpdate,
-                          onDark: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    ProgressRail(
-                      percent: roundedProgress,
-                      height: 10,
-                      onDark: true,
-                      color: c.anchorAccent,
-                    ),
-                  ],
+                          SmallButton(
+                            label: 'Güncelle',
+                            onTap: _openUpdate,
+                            onDark: true,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      ProgressRail(
+                        percent: roundedProgress,
+                        height: 10,
+                        onDark: true,
+                        color: c.anchorAccent,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
             Expanded(child: _buildContent()),
           ],
         ),
@@ -238,7 +244,12 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  height: 1.45,
+                  color: c.ink,
+                ),
               ),
               const SizedBox(height: 18),
               SmallButton(
@@ -257,7 +268,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
         color: c.ink,
         onRefresh: _loadData,
         child: const CenteredScrollMessage(
-          message: 'Bu proje için süreç aşaması bulunmuyor.',
+          message: 'Bu blok için henüz iş eklenmemiştir.',
         ),
       );
     }
@@ -272,13 +283,19 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
         separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (context, index) {
           final progressStage = _stages[index];
-          final items = _workItemsByStage[progressStage.id] ?? const <WorkItemSummary>[];
-          final stage = _ProcessStage(title: progressStage.name, status: _statusForItems(items), items: items);
+          final items =
+              _workItemsByStage[progressStage.id] ?? const <WorkItemSummary>[];
+          final stage = _ProcessStage(
+            title: progressStage.name,
+            status: _statusForItems(items),
+            items: items,
+          );
           final expanded = _expandedIndex == index;
           return _StageCard(
             stage: stage,
             expanded: expanded,
-            onTap: () => setState(() => _expandedIndex = expanded ? null : index),
+            onTap: () =>
+                setState(() => _expandedIndex = expanded ? null : index),
             onItemTap: _openWorkDetail,
           );
         },
@@ -288,8 +305,10 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
 
   _StageStatus _statusForItems(List<WorkItemSummary> items) {
     if (items.isEmpty) return _StageStatus.waiting;
-    if (items.every((item) => item.status == 'COMPLETED')) return _StageStatus.completed;
-    if (items.every((item) => item.status == 'WAITING')) return _StageStatus.waiting;
+    if (items.every((item) => item.status == 'COMPLETED'))
+      return _StageStatus.completed;
+    if (items.every((item) => item.status == 'WAITING'))
+      return _StageStatus.waiting;
     return _StageStatus.active;
   }
 }
@@ -380,7 +399,11 @@ class _StageCard extends StatelessWidget {
                           const SizedBox(height: 3),
                           Text(
                             '$done / ${stage.items.length}',
-                            style: TextStyle(fontFamily: kBody, fontSize: 14, color: c.muted),
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 14,
+                              color: c.muted,
+                            ),
                           ),
                         ],
                       ],
@@ -390,7 +413,11 @@ class _StageCard extends StatelessWidget {
                     turns: expanded ? .5 : 0,
                     duration: const Duration(milliseconds: 220),
                     curve: Curves.easeOut,
-                    child: Icon(LucideIcons.chevronDown, size: 26, color: c.sub),
+                    child: Icon(
+                      LucideIcons.chevronDown,
+                      size: 26,
+                      color: c.sub,
+                    ),
                   ),
                 ],
               ),
@@ -411,7 +438,11 @@ class _StageCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             child: Text(
                               'Bu aşama için alt iş bulunmuyor.',
-                              style: TextStyle(fontFamily: kBody, fontSize: 15, color: c.muted),
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 15,
+                                color: c.muted,
+                              ),
                             ),
                           )
                         : Column(
@@ -420,60 +451,64 @@ class _StageCard extends StatelessWidget {
                               return Pressable(
                                 onTap: () => onItemTap(item),
                                 child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 9),
-                                child: Row(
-                                  children: [
-                                    // Tamamlanan is kaleminde tik, tamamlanmayanda
-                                    // ayni eksene oturan sade bir madde noktasi.
-                                    SizedBox(
-                                      width: 26,
-                                      child: Center(
-                                        child: item.isCompleted
-                                            ? Icon(
-                                                LucideIcons.check,
-                                                color: c.ok,
-                                                size: 22,
-                                              )
-                                            : Container(
-                                                width: 7,
-                                                height: 7,
-                                                decoration: BoxDecoration(
-                                                  color: c.muted,
-                                                  shape: BoxShape.circle,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 9,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // Tamamlanan is kaleminde tik, tamamlanmayanda
+                                      // ayni eksene oturan sade bir madde noktasi.
+                                      SizedBox(
+                                        width: 26,
+                                        child: Center(
+                                          child: item.isCompleted
+                                              ? Icon(
+                                                  LucideIcons.check,
+                                                  color: c.ok,
+                                                  size: 22,
+                                                )
+                                              : Container(
+                                                  width: 7,
+                                                  height: 7,
+                                                  decoration: BoxDecoration(
+                                                    color: c.muted,
+                                                    shape: BoxShape.circle,
+                                                  ),
                                                 ),
-                                              ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        item.title,
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontFamily: kBody,
-                                          fontSize: 16,
-                                          height: 1.35,
-                                          color: item.isCompleted ? c.sub : c.ink,
                                         ),
                                       ),
-                                    ),
-                                    if (item.hasWarning) ...[
                                       const SizedBox(width: 8),
-                                      StatusBadge(
-                                        icon: LucideIcons.triangleAlert,
-                                        color: c.bad,
+                                      Expanded(
+                                        child: Text(
+                                          item.title,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontFamily: kBody,
+                                            fontSize: 16,
+                                            height: 1.35,
+                                            color: item.isCompleted
+                                                ? c.sub
+                                                : c.ink,
+                                          ),
+                                        ),
                                       ),
+                                      if (item.hasWarning) ...[
+                                        const SizedBox(width: 8),
+                                        StatusBadge(
+                                          icon: LucideIcons.triangleAlert,
+                                          color: c.bad,
+                                        ),
+                                      ],
+                                      if (item.hasDependency) ...[
+                                        const SizedBox(width: 6),
+                                        StatusBadge(
+                                          icon: LucideIcons.link,
+                                          color: c.warn,
+                                        ),
+                                      ],
                                     ],
-                                    if (item.hasDependency) ...[
-                                      const SizedBox(width: 6),
-                                      StatusBadge(
-                                        icon: LucideIcons.link,
-                                        color: c.warn,
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -493,7 +528,11 @@ class _ProcessStage {
   final _StageStatus status;
   final List<WorkItemSummary> items;
 
-  const _ProcessStage({required this.title, required this.status, required this.items});
+  const _ProcessStage({
+    required this.title,
+    required this.status,
+    required this.items,
+  });
 }
 
 /// Iş kalemi göstergesi: bagimli is (sari) ve uyari (kirmizi) icin ayni
