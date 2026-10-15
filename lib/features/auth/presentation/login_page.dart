@@ -99,7 +99,12 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: SafeArea(
+      // Kutulardan birinin disina dokununca klavye kapaniyor; eskiden
+      // yalnizca klavyedeki tik kapatiyordu.
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
@@ -239,6 +244,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
+        ),
         ),
       ),
     );

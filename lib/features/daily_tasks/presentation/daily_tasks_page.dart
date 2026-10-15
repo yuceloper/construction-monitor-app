@@ -586,10 +586,12 @@ class _DailyTasksPageState extends State<DailyTasksPage>
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
         itemCount: _gosterilen.length,
         separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
+        // Durum her iki sekmede de gorunuyor: aktif listede de isin
+        // baslanacak mi devam mi oldugu karttan okunabiliyor.
         itemBuilder: (_, index) => _TaskCard(
           task: _gosterilen[index],
           onTap: () => _openTask(_gosterilen[index]),
-          showStatus: _showAll,
+          showStatus: true,
         ),
       ),
     );
@@ -640,8 +642,8 @@ class _TaskCard extends StatelessWidget {
   final DailyTaskSummary task;
   final VoidCallback onTap;
 
-  /// Tum Isler sekmesinde tamamlanmis isler de listelendigi icin
-  /// karttan hangi durumda oldugu okunabiliyor.
+  /// Isin durumu karttan okunabiliyor: Baslanacak, Devam Ediyor,
+  /// Tamamlandi.
   final bool showStatus;
 
   const _TaskCard({

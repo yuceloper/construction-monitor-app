@@ -264,12 +264,15 @@ class _NotificationCard extends StatelessWidget {
                       ),
                       if (content.detail.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        // Bildirim metni de uzun olabiliyor; kesilince
-                        // devaminin oldugu anlasilmiyordu.
-                        GenisleyenMetin(
-                          metin: content.detail,
-                          satir: 2,
-                          bicim: TextStyle(
+                        // Metin acilir kapanir degil: acma dokunusu
+                        // kartin kendi dokunusunu yutuyordu ve satira
+                        // basinca detay acilmiyordu. Tam metin zaten
+                        // kartin goturdugu ekranda duruyor.
+                        Text(
+                          content.detail,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 13.5,
                             height: 1.35,
