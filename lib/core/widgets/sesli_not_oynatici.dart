@@ -17,12 +17,16 @@ class SesliNotOynatici extends StatelessWidget {
     required this.yukleniyor,
     required this.onCal,
     this.onSil,
+    this.sure,
   });
 
   final bool oynuyor;
   final bool yukleniyor;
   final VoidCallback onCal;
   final VoidCallback? onSil;
+
+  /// Calma suresi, "0:12" gibi. Oynatilirken yazinin yaninda duruyor.
+  final String? sure;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +87,19 @@ class SesliNotOynatici extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Kayitta oldugu gibi dinlerken de gecen sure yaziyor.
+                  if (sure != null && sure!.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    Text(
+                      sure!,
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: c.sub,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -43,6 +43,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   bool _isSaving = false;
   bool _isRecording = false;
   bool _sesOynuyor = false;
+  Duration _calmaKonumu = Duration.zero;
 
   /// Kayit suresi. Sesli not en fazla bir dakika; sure dolunca kayit
   /// kendi kendine duruyor, gecen sure butonda gorunuyor.
@@ -67,7 +68,14 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     super.initState();
     _loadFormData();
     _oynatici.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _sesOynuyor = false);
+      if (!mounted) return;
+      setState(() {
+        _sesOynuyor = false;
+        _calmaKonumu = Duration.zero;
+      });
+    });
+    _oynatici.onPositionChanged.listen((konum) {
+      if (mounted && _sesOynuyor) setState(() => _calmaKonumu = konum);
     });
   }
 
@@ -87,7 +95,8 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     });
     try {
       final siteId = SessionManager.instance.selectedSiteId;
-      if (siteId == null || siteId <= 0) throw const DailyTaskException('Şantiye seçimi bulunamadı.');
+      if (siteId == null || siteId <= 0)
+        throw const DailyTaskException('Şantiye seçimi bulunamadı.');
       final results = await Future.wait([
         _projectService.getProjects(),
         _siteService.getMembers(siteId),
@@ -110,14 +119,28 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   Future<void> _pickPhotos() async {
     if (_isSaving) return;
     try {
-      final picked = await _imagePicker.pickMultiImage(imageQuality: 85, maxWidth: 2400);
+      // Secim sirasinda sinir: once 11 secilip sonra 10'a dusurulmesi
+      // yerine galeri zaten fazlasina izin vermiyor.
+      final kalan = 10 - _photos.length;
+      if (kalan <= 0) {
+        _show('En fazla 10 fotoğraf ekleyebilirsiniz.');
+        return;
+      }
+      final picked = await _imagePicker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 2400,
+        limit: kalan,
+      );
       if (!mounted || picked.isEmpty) return;
       final unique = <String, XFile>{};
       for (final photo in [..._photos, ...picked]) {
         unique[photo.path] = photo;
       }
       setState(() => _photos = unique.values.take(10).toList());
-      if (unique.length > 10) _show('En fazla 10 fotoğraf ekleyebilirsiniz. İlk 10 fotoğraf seçildi.');
+      if (unique.length > 10)
+        _show(
+          'En fazla 10 fotoğraf ekleyebilirsiniz. İlk 10 fotoğraf seçildi.',
+        );
     } catch (_) {
       if (mounted) _show('Fotoğraflar seçilemedi.');
     }
@@ -143,9 +166,14 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         _show('Sesli not için mikrofon izni gerekli.');
         return;
       }
-      final path = '${Directory.systemTemp.path}/daily-task-${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path =
+          '${Directory.systemTemp.path}/daily-task-${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(
-        const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100),
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
         path: path,
       );
       if (!mounted) return;
@@ -167,6 +195,19 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     }
   }
 
+  /// Ekranin bos bir yerine dokunulunca kayit ya da dinleme duruyor.
+  Future<void> _ekranaDokunuldu() async {
+    FocusScope.of(context).unfocus();
+    if (_isRecording) {
+      await _kaydiBitir();
+      return;
+    }
+    if (_sesOynuyor) {
+      await _oynatici.pause();
+      if (mounted) setState(() => _sesOynuyor = false);
+    }
+  }
+
   /// Kaydi durdurur; hem kullanici bastiginda hem sure dolunca ayni yol.
   Future<void> _kaydiBitir() async {
     _sayac?.cancel();
@@ -178,6 +219,13 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       _gecenSaniye = 0;
       if (path != null) _audioPath = path;
     });
+  }
+
+  /// Oynatilirken gecen sure, "0:12" bicinde.
+  String get _calmaSuresi {
+    final dakika = _calmaKonumu.inMinutes;
+    final saniye = (_calmaKonumu.inSeconds % 60).toString().padLeft(2, '0');
+    return '$dakika:$saniye';
   }
 
   String get _kayitSuresi {
@@ -269,7 +317,8 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         note: note,
       );
       if (_photos.isNotEmpty) await _taskService.uploadPhotos(task.id, _photos);
-      if (_audioPath != null) await _taskService.uploadAudioNote(task.id, _audioPath!);
+      if (_audioPath != null)
+        await _taskService.uploadAudioNote(task.id, _audioPath!);
 
       if (!mounted) return;
       _show('Günlük iş kaydedildi.');
@@ -282,7 +331,8 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   }
 
   void _show(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Secili kritiklik seviyesinin ekranda gorunen adi.
@@ -358,10 +408,8 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => _ProjectPickerSheet(
-        projects: _projects,
-        selectedId: _projectId,
-      ),
+      builder: (_) =>
+          _ProjectPickerSheet(projects: _projects, selectedId: _projectId),
     );
     if (selected == null || !mounted) return;
     setState(() => _projectId = selected);
@@ -371,20 +419,26 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   Widget build(BuildContext context) {
     final c = context.colors;
 
-    return ColoredBox(
-      color: c.bg,
-      child: SafeArea(
-        child: Column(
-          children: [
-            const AppHeader(),
-            BreadcrumbBar(
-              parent: 'Günlük İşler',
-              title: 'Ekle',
-              onBack: () => context.pop(false),
-              onParentTap: () => context.pop(false),
-            ),
-            Expanded(child: _buildContent()),
-          ],
+    // Ekranin bos bir yerine dokunulunca kayit/dinleme duruyor ve
+    // klavye kapaniyor.
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: _ekranaDokunuldu,
+      child: ColoredBox(
+        color: c.bg,
+        child: SafeArea(
+          child: Column(
+            children: [
+              const AppHeader(),
+              BreadcrumbBar(
+                parent: 'Günlük İşler',
+                title: 'Ekle',
+                onBack: () => context.pop(false),
+                onParentTap: () => context.pop(false),
+              ),
+              Expanded(child: _buildContent()),
+            ],
+          ),
         ),
       ),
     );
@@ -431,7 +485,12 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.45, color: c.ink),
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  height: 1.45,
+                  color: c.ink,
+                ),
               ),
               const SizedBox(height: 16),
               SmallButton(
@@ -491,10 +550,14 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                   children: _photos
                       .asMap()
                       .entries
-                      .map((entry) => _FileChip(
-                            name: entry.value.name,
-                            onRemove: _isSaving ? null : () => _removePhoto(entry.key),
-                          ))
+                      .map(
+                        (entry) => _FileChip(
+                          name: entry.value.name,
+                          onRemove: _isSaving
+                              ? null
+                              : () => _removePhoto(entry.key),
+                        ),
+                      )
                       .toList(),
                 ),
               ],
@@ -513,6 +576,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                 SesliNotOynatici(
                   oynuyor: _sesOynuyor,
                   yukleniyor: false,
+                  sure: _sesOynuyor ? _calmaSuresi : null,
                   onCal: _sesiCal,
                   onSil: _removeAudio,
                 )
@@ -576,22 +640,31 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         const SizedBox(height: 9),
         ScrollableField(
           builder: (scrollController) => TextField(
-          controller: _noteController,
-          scrollController: scrollController,
-          enabled: !_isSaving,
-          minLines: 5,
-          maxLines: 7,
-          maxLength: 500,
-          inputFormatters: [LengthLimitingTextInputFormatter(500)],
-          style: TextStyle(fontFamily: kBody, fontSize: 16, height: 1.4, color: c.ink),
-          cursorColor: c.accent,
-          decoration: _fieldDecoration(c).copyWith(
-            hintText: 'Lütfen detay giriniz.',
-            hintStyle: hint,
-            counterStyle: TextStyle(fontFamily: kBody, fontSize: 12, color: c.muted),
-            // Sagda kaydirma cubuguna yer birakiliyor.
-            contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
-          ),
+            controller: _noteController,
+            scrollController: scrollController,
+            enabled: !_isSaving,
+            minLines: 5,
+            maxLines: 7,
+            maxLength: 500,
+            inputFormatters: [LengthLimitingTextInputFormatter(500)],
+            style: TextStyle(
+              fontFamily: kBody,
+              fontSize: 16,
+              height: 1.4,
+              color: c.ink,
+            ),
+            cursorColor: c.accent,
+            decoration: _fieldDecoration(c).copyWith(
+              hintText: 'Lütfen detay giriniz.',
+              hintStyle: hint,
+              counterStyle: TextStyle(
+                fontFamily: kBody,
+                fontSize: 12,
+                color: c.muted,
+              ),
+              // Sagda kaydirma cubuguna yer birakiliyor.
+              contentPadding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
+            ),
           ),
         ),
         // Uyari butonun hemen ustunde: kullanici KAYDET'e basinca
@@ -725,10 +798,12 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
               cursorColor: c.accent,
               decoration: InputDecoration(
                 hintText: 'Blok ara',
-                hintStyle:
-                    TextStyle(fontFamily: kBody, fontSize: 16, color: c.faint),
-                prefixIcon:
-                    Icon(LucideIcons.search, size: 20, color: c.muted),
+                hintStyle: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 16,
+                  color: c.faint,
+                ),
+                prefixIcon: Icon(LucideIcons.search, size: 20, color: c.muted),
                 suffixIcon: _query.isEmpty
                     ? null
                     : IconButton(
@@ -784,8 +859,7 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
                               child: SecimSatiri(
                                 ad: p.name,
                                 secili: p.id == widget.selectedId,
-                                onTap: () =>
-                                    Navigator.of(context).pop(p.id),
+                                onTap: () => Navigator.of(context).pop(p.id),
                               ),
                             ),
                         ],
@@ -798,8 +872,7 @@ class _ProjectPickerSheetState extends State<_ProjectPickerSheet> {
                               child: SecimSatiri(
                                 ad: p.name,
                                 secili: p.id == widget.selectedId,
-                                onTap: () =>
-                                    Navigator.of(context).pop(p.id),
+                                onTap: () => Navigator.of(context).pop(p.id),
                               ),
                             ),
                         ],
@@ -868,7 +941,11 @@ class _FormRow extends StatelessWidget {
 }
 
 class _OutlineAction extends StatelessWidget {
-  const _OutlineAction({required this.icon, required this.label, required this.onTap});
+  const _OutlineAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String label;
@@ -912,10 +989,7 @@ class _OutlineAction extends StatelessWidget {
 }
 
 class _FileChip extends StatelessWidget {
-  const _FileChip({
-    required this.name,
-    required this.onRemove,
-  });
+  const _FileChip({required this.name, required this.onRemove});
 
   final String name;
   final VoidCallback? onRemove;
