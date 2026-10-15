@@ -239,11 +239,14 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
       final dosya = File('${klasor.path}/${_dosyaAdi(widget.title)}');
       await dosya.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
+      // Mail ile paylasildiginda konu satirinda once uygulamanin adi
+      // duruyor: gelen kutusunda belgenin nereden geldigi anlasiliyor.
+      final konu = 'SAHADA - ${widget.title}';
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(dosya.path, mimeType: 'application/pdf')],
-          subject: widget.title,
-          text: widget.title,
+          subject: konu,
+          text: konu,
         ),
       );
     } catch (_) {
@@ -315,7 +318,10 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
               // pdfrx'in kendi margin'i sayfayla birlikte olceklendigi icin
               // gorunmuyordu; cerceve disaridan kuruluyor. Belge boylece
               // cukur zeminin uzerinde kendi kagidinda duruyor.
-              child: Stack(
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Stack(
                 children: [
                   Positioned.fill(
                     child: Container(
@@ -345,70 +351,71 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
                   Positioned(
                     right: 10,
                     top: 10,
-                    child: Row(
-                      children: [
-                        Pressable(
-                          onTap: () => _paylas(bytes),
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
-                            decoration: BoxDecoration(
-                              color: c.ink.withValues(alpha: .88),
-                              borderRadius: BorderRadius.circular(11),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  LucideIcons.share2,
-                                  size: 15,
-                                  color: c.surface,
-                                ),
-                                const SizedBox(width: 7),
-                                Text(
-                                  'Paylaş',
-                                  style: TextStyle(
-                                    fontFamily: kBody,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: c.surface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                    child: Pressable(
+                      onTap: () => _tamEkranAc(bytes),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
+                        decoration: BoxDecoration(
+                          color: c.ink.withValues(alpha: .88),
+                          borderRadius: BorderRadius.circular(11),
                         ),
-                        const SizedBox(width: 8),
-                        Pressable(
-                          onTap: () => _tamEkranAc(bytes),
-                          child: Container(
-                            padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
-                            decoration: BoxDecoration(
-                              color: c.ink.withValues(alpha: .88),
-                              borderRadius: BorderRadius.circular(11),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              LucideIcons.expand,
+                              size: 15,
+                              color: c.surface,
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  LucideIcons.expand,
-                                  size: 15,
-                                  color: c.surface,
-                                ),
-                                const SizedBox(width: 7),
-                                Text(
-                                  'Tam Ekran',
-                                  style: TextStyle(
-                                    fontFamily: kBody,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: c.surface,
-                                  ),
-                                ),
-                              ],
+                            const SizedBox(width: 7),
+                            Text(
+                              'Tam Ekran',
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: c.surface,
+                              ),
                             ),
-                          ),
+                          ],
                         ),
+                      ),
+                    ),
+                  ),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Paylas sayfanin birincil eylemi: altta, tam genislikte
+                  // ve diger ekranlardaki KAYDET ile ayni agirlikta. Tam
+                  // Ekran belgenin uzerinde kaliyor, ikisi karismiyor.
+                  Pressable(
+                    onTap: () => _paylas(bytes),
+                    child: Container(
+                      height: Sizes.tapTarget,
+                      width: double.infinity,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: c.ink,
+                        borderRadius: BorderRadius.circular(Sizes.rBtn),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(LucideIcons.share2, size: 19, color: c.bg),
+                          const SizedBox(width: 10),
+                          Text(
+                            'PAYLAŞ',
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: .6,
+                              color: c.bg,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

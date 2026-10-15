@@ -32,6 +32,12 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   bool _isSaving = false;
   bool _isAudioLoading = false;
   bool _isAudioPlaying = false;
+
+  /// Sesli notun calma konumu ve toplam suresi. Bir kez oynatildiktan
+  /// sonra duraklatilsa da ekranda kaliyor; sure yalnizca calarken
+  /// gorunup kaybolmuyor.
+  Duration _calmaKonumu = Duration.zero;
+  Duration? _toplamSure;
   String? _audioPath;
   String? _errorMessage;
   DailyTaskSummary? _task;
@@ -41,7 +47,17 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   void initState() {
     super.initState();
     _audioPlayer.onPlayerComplete.listen((_) {
-      if (mounted) setState(() => _isAudioPlaying = false);
+      if (!mounted) return;
+      setState(() {
+        _isAudioPlaying = false;
+        _calmaKonumu = Duration.zero;
+      });
+    });
+    _audioPlayer.onPositionChanged.listen((konum) {
+      if (mounted) setState(() => _calmaKonumu = konum);
+    });
+    _audioPlayer.onDurationChanged.listen((sure) {
+      if (mounted) setState(() => _toplamSure = sure);
     });
     _load();
   }
@@ -97,6 +113,23 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
         return FadeTransition(opacity: egri, child: cocuk);
       },
     );
+  }
+
+  /// Oynaticinin yanindaki sure, "0:05 / 0:12" bicinde. Toplam sure
+  /// dosya acilmadan bilinmiyor; o ana kadar yalnizca gecen sure
+  /// yaziliyor.
+  String? get _sesSuresi {
+    if (_toplamSure == null && !_isAudioPlaying) return null;
+    final gecen = _sureMetni(_calmaKonumu);
+    final toplam = _toplamSure;
+    if (toplam == null || toplam.inSeconds == 0) return gecen;
+    return '$gecen / ${_sureMetni(toplam)}';
+  }
+
+  String _sureMetni(Duration sure) {
+    final dakika = sure.inMinutes;
+    final saniye = (sure.inSeconds % 60).toString().padLeft(2, '0');
+    return '$dakika:$saniye';
   }
 
   Future<void> _toggleAudio() async {
@@ -446,6 +479,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   SesliNotOynatici(
                     oynuyor: _isAudioPlaying,
                     yukleniyor: _isAudioLoading,
+                    sure: _sesSuresi,
                     onCal: _toggleAudio,
                   ),
                 ],

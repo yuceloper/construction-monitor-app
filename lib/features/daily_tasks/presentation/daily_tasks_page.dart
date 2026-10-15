@@ -12,6 +12,9 @@ import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
 import '../models/daily_task_summary.dart';
+import '../../auth/services/session_manager.dart';
+import '../../site_selection/models/site_member_summary.dart';
+import '../../site_selection/services/site_service.dart';
 import '../services/daily_task_service.dart';
 
 class DailyTasksPage extends StatefulWidget {
@@ -24,6 +27,12 @@ class DailyTasksPage extends StatefulWidget {
 class _DailyTasksPageState extends State<DailyTasksPage>
     with WidgetsBindingObserver {
   final _service = DailyTaskService();
+  final _siteService = SiteService();
+
+  /// Kisi filtresinin secenekleri. Listedeki islerin kisilerinden degil,
+  /// is eklerken "Ilgili Kisi" alaninda cikan santiye calisanlarindan
+  /// geliyor: henuz isi olmayan kisi de filtrede duruyor.
+  List<SiteMemberSummary> _santiyeKisileri = const [];
 
   bool _showAll = false;
   bool _isLoading = true;
@@ -35,9 +44,10 @@ class _DailyTasksPageState extends State<DailyTasksPage>
   String? _filtreOncelik;
   String? _filtreKisi;
 
-  /// 'yeni' en yeniden eskiye, 'eski' tersine. Bos birakilirsa sunucunun
-  /// dondurdugu sira korunuyor.
-  String? _siralama;
+  /// 'yeni' en yeniden eskiye, 'eski' tersine. Filtrede "Varsayilan"
+  /// diye bir secenek yok; liste her zaman bir yone gore siralaniyor ve
+  /// yeniden eskiye basliyor.
+  String _siralama = 'yeni';
 
   List<DailyTaskSummary> get _gosterilen {
     final liste = _tasks.where((task) {
@@ -50,26 +60,25 @@ class _DailyTasksPageState extends State<DailyTasksPage>
       return true;
     }).toList();
 
-    if (_siralama != null) {
-      liste.sort((a, b) {
-        final at = a.tarih;
-        final bt = b.tarih;
-        if (at == null && bt == null) return 0;
-        if (at == null) return 1;
-        if (bt == null) return -1;
-        return _siralama == 'yeni' ? bt.compareTo(at) : at.compareTo(bt);
-      });
-    }
+    liste.sort((a, b) {
+      final at = a.tarih;
+      final bt = b.tarih;
+      if (at == null && bt == null) return 0;
+      if (at == null) return 1;
+      if (bt == null) return -1;
+      return _siralama == 'yeni' ? bt.compareTo(at) : at.compareTo(bt);
+    });
     return liste;
   }
 
   bool get _filtreVar =>
-      _filtreOncelik != null || _filtreKisi != null || _siralama != null;
+      _filtreOncelik != null || _filtreKisi != null || _siralama != 'yeni';
 
   @override
   void initState() {
     super.initState();
     _loadTasks();
+    _kisileriYukle();
     // Santiye degisince ve uygulama one gelince liste tazeleniyor;
     // ekranda eski santiyenin ya da eskimis bir listenin kalmasi
     // "veri yok" gibi gorunuyordu.
@@ -90,9 +99,25 @@ class _DailyTasksPageState extends State<DailyTasksPage>
       _tasks = const [];
       _filtreOncelik = null;
       _filtreKisi = null;
-      _siralama = null;
+      _siralama = 'yeni';
+      _santiyeKisileri = const [];
     });
     _loadTasks();
+    _kisileriYukle();
+  }
+
+  /// Kisi filtresinin seceneklerini santiye calisanlarindan dolduruyor.
+  /// Liste alinamazsa filtre islerdeki isimlerle calismaya devam ediyor.
+  Future<void> _kisileriYukle() async {
+    final siteId = SessionManager.instance.selectedSiteId;
+    if (siteId == null || siteId <= 0) return;
+    try {
+      final kisiler = await _siteService.getMembers(siteId);
+      if (!mounted) return;
+      setState(() => _santiyeKisileri = kisiler);
+    } catch (_) {
+      // Sessiz gecildi: filtre yine aciliyor.
+    }
   }
 
   @override
@@ -227,10 +252,15 @@ class _DailyTasksPageState extends State<DailyTasksPage>
             );
           }
 
-          final kisiler = <String>{
-            for (final task in _tasks)
-              if (task.assignedToName.trim().isNotEmpty) task.assignedToName,
-          }.toList()..sort();
+          final kisiler =
+              <String>{
+                for (final kisi in _santiyeKisileri)
+                  if (kisi.fullName.trim().isNotEmpty) kisi.fullName,
+                for (final task in _tasks)
+                  if (task.assignedToName.trim().isNotEmpty)
+                    task.assignedToName,
+              }.toList()
+              ..sort();
 
           return SecimPaneliKabugu(
             baslik: 'Filtrele',
@@ -262,25 +292,20 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                 ),
                 satir(
                   'Tarihe Göre Sırala',
-                  _siralama == null
-                      ? null
-                      : (_siralama == 'yeni'
-                            ? 'Yeniden Eskiye'
-                            : 'Eskiden Yeniye'),
+                  _siralama == 'yeni' ? 'Yeniden Eskiye' : 'Eskiden Yeniye',
                   LucideIcons.calendarDays,
                   () async {
                     final secim = await secimPaneliAc<String>(
                       sheetContext,
                       baslik: 'Tarihe Göre Sırala',
-                      secili: _siralama ?? '',
+                      secili: _siralama,
                       secenekler: const [
-                        SecimSecenegi('', 'Varsayılan'),
                         SecimSecenegi('yeni', 'Yeniden Eskiye'),
                         SecimSecenegi('eski', 'Eskiden Yeniye'),
                       ],
                     );
-                    if (secim == null) return;
-                    setState(() => _siralama = secim.isEmpty ? null : secim);
+                    if (secim == null || secim.isEmpty) return;
+                    setState(() => _siralama = secim);
                     setSheetState(() {});
                   },
                 ),
@@ -304,7 +329,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                       setState(() {
                         _filtreOncelik = null;
                         _filtreKisi = null;
-                        _siralama = null;
+                        _siralama = 'yeni';
                       });
                       Navigator.of(sheetContext).pop();
                     },

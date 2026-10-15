@@ -148,50 +148,82 @@ class DailyTaskService {
     }
   }
 
-  Future<DailyTaskSummary> uploadPhotos(int taskId, List<XFile> photos) async {
+  /// Fotograflari yukler.
+  ///
+  /// [onIlerleme] her fotograf bittiginde kacinci oldugunu bildiriyor;
+  /// ekranda "3 / 10" gibi gosterilebiliyor.
+  Future<DailyTaskSummary> uploadPhotos(
+    int taskId,
+    List<XFile> photos, {
+    void Function(int yuklenen, int toplam)? onIlerleme,
+  }) async {
     if (photos.isEmpty) return getTask(taskId);
     final token = _token();
     try {
-      // Fotograflar tek tek gonderiliyor: hepsi tek istekte gidince
+      // Her fotograf kendi isteginde gidiyor: hepsi tek istekte gidince
       // sunucunun govde siniri (nginx 413) asiliyor ve hicbiri
-      // yuklenmiyordu.
-      var sonuc = await getTask(taskId);
-      for (final photo in photos) {
-        final bytes = await photo.readAsBytes();
-        if (bytes.length > 10 * 1024 * 1024) {
-          throw DailyTaskException('${photo.name} 10 MB sınırını aşıyor.');
-        }
-        final istek = http.MultipartRequest(
-          'POST',
-          Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/photos'),
-        )..headers.addAll(_headers(token));
-        istek.files.add(
-          http.MultipartFile.fromBytes(
-            'files',
-            bytes,
-            filename: _safeFileName(photo.name),
-            contentType: _mediaType(_contentType(photo.name)),
-          ),
-        );
-
-        final response = await http.Response.fromStream(await istek.send());
-        final body = utf8.decode(response.bodyBytes);
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          sonuc = _taskFromApi(body, 'Fotoğraflar yüklenemedi.');
-          continue;
-        }
-        _throwForResponse(
-          response.statusCode,
-          body,
-          'Fotoğraflar yüklenemedi.',
+      // yuklenmiyordu. Istekler ikiser ikiser es zamanli gonderiliyor;
+      // on fotograf sirayla gidince kaydetme cok uzun suruyor, ucer
+      // gonderilince de baglanti kopup yarisi yuklenmeden kaliyordu.
+      const esZamanli = 2;
+      var yuklenen = 0;
+      onIlerleme?.call(0, photos.length);
+      for (var i = 0; i < photos.length; i += esZamanli) {
+        final grup = photos.skip(i).take(esZamanli).toList();
+        await Future.wait(
+          grup.map((photo) async {
+            await _tekFotografGonder(taskId, token, photo);
+            yuklenen += 1;
+            onIlerleme?.call(yuklenen, photos.length);
+          }),
         );
       }
-      return sonuc;
+      return getTask(taskId);
     } on http.ClientException {
       throw const DailyTaskException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
       );
     }
+  }
+
+  /// Tek bir fotografi sunucuya gonderir.
+  ///
+  /// Baglanti koparsa bir kez daha deniyor: es zamanli gonderimde arada
+  /// bir istek dusuyor ve o fotograf yuklenmeden kaliyordu.
+  Future<void> _tekFotografGonder(
+    int taskId,
+    String token,
+    XFile photo, {
+    bool tekrar = true,
+  }) async {
+    final bytes = await photo.readAsBytes();
+    if (bytes.length > 10 * 1024 * 1024) {
+      throw DailyTaskException('${photo.name} 10 MB sınırını aşıyor.');
+    }
+    final istek = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/photos'),
+    )..headers.addAll(_headers(token));
+    istek.files.add(
+      http.MultipartFile.fromBytes(
+        'files',
+        bytes,
+        filename: _safeFileName(photo.name),
+        contentType: _mediaType(_contentType(photo.name)),
+      ),
+    );
+
+    http.Response response;
+    try {
+      response = await http.Response.fromStream(await istek.send());
+    } on http.ClientException {
+      if (!tekrar) rethrow;
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      return _tekFotografGonder(taskId, token, photo, tekrar: false);
+    }
+    final body = utf8.decode(response.bodyBytes);
+    if (response.statusCode >= 200 && response.statusCode < 300) return;
+    _throwForResponse(response.statusCode, body, 'Fotoğraflar yüklenemedi.');
   }
 
   Future<DailyTaskSummary> uploadAudioNote(int taskId, String filePath) async {

@@ -42,6 +42,16 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isRecording = false;
+
+  /// Kaydetme sirasinda ekranda duran bilgi, "Fotograflar yükleniyor
+  /// 3 / 10" gibi. Yukleme butonun icinde degil, sayfanin ustunde
+  /// gosteriliyor: on fotografta is uzun suruyor ve ekran donmus gibi
+  /// gorunuyordu.
+  String? _kaydetmeDurumu;
+
+  /// Kayit duraklatildi mi? Duraklatilmis kayit da surmekte sayiliyor;
+  /// kullanici Devam Et ya da Bitir diyene kadar dosya kapanmiyor.
+  bool _kayitDuraklatildi = false;
   bool _sesOynuyor = false;
   Duration _calmaKonumu = Duration.zero;
 
@@ -181,27 +191,49 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       if (!mounted) return;
       setState(() {
         _isRecording = true;
+        _kayitDuraklatildi = false;
         _gecenSaniye = 0;
       });
       _sayac?.cancel();
+      // Sure vurus sayisindan degil, kendi sayacimizdan ilerliyor:
+      // duraklatilan saniyeler kayda girmiyor.
       _sayac = Timer.periodic(const Duration(seconds: 1), (vurus) {
         if (!mounted || !_isRecording) {
           vurus.cancel();
           return;
         }
-        setState(() => _gecenSaniye = vurus.tick);
-        if (vurus.tick >= _kayitSiniri.inSeconds) _kaydiBitir();
+        if (_kayitDuraklatildi) return;
+        setState(() => _gecenSaniye += 1);
+        if (_gecenSaniye >= _kayitSiniri.inSeconds) _kaydiBitir();
       });
     } catch (_) {
       if (mounted) _show('Ses kaydı başlatılamadı.');
     }
   }
 
-  /// Ekranin bos bir yerine dokunulunca kayit ya da dinleme duruyor.
+  /// Kaydi duraklatir, duraklatilmissa kaldigi yerden surdurur.
+  Future<void> _duraklatVeyaDevam() async {
+    if (!_isRecording) return;
+    try {
+      if (_kayitDuraklatildi) {
+        await _recorder.resume();
+        if (mounted) setState(() => _kayitDuraklatildi = false);
+        return;
+      }
+      await _recorder.pause();
+      if (mounted) setState(() => _kayitDuraklatildi = true);
+    } catch (_) {
+      if (mounted) _show('Kayıt duraklatılamadı.');
+    }
+  }
+
+  /// Ekranin bos bir yerine dokunulunca kayit duraklatiliyor, dinleme
+  /// duruyor. Kayit bitirilmiyor: kullanici Devam Et diyip kaldigi
+  /// yerden surdurebilsin.
   Future<void> _ekranaDokunuldu() async {
     FocusScope.of(context).unfocus();
     if (_isRecording) {
-      await _kaydiBitir();
+      if (!_kayitDuraklatildi) await _duraklatVeyaDevam();
       return;
     }
     if (_sesOynuyor) {
@@ -218,6 +250,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     if (!mounted) return;
     setState(() {
       _isRecording = false;
+      _kayitDuraklatildi = false;
       _gecenSaniye = 0;
       if (path != null) _audioPath = path;
     });
@@ -310,6 +343,7 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     setState(() {
       _formHatasi = null;
       _isSaving = true;
+      _kaydetmeDurumu = 'Günlük iş kaydediliyor...';
     });
     try {
       final task = await _taskService.createTask(
@@ -321,7 +355,17 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
       String? ekUyari;
       if (_photos.isNotEmpty) {
         try {
-          await _taskService.uploadPhotos(task.id, _photos);
+          await _taskService.uploadPhotos(
+            task.id,
+            _photos,
+            onIlerleme: (yuklenen, toplam) {
+              if (!mounted) return;
+              setState(
+                () => _kaydetmeDurumu =
+                    'Fotoğraflar yükleniyor  $yuklenen / $toplam',
+              );
+            },
+          );
         } on DailyTaskException catch (hata) {
           // Is olusturuldu; burada durursak kullanici tekrar kaydedip
           // ayni isi ikinci kez yaratiyor.
@@ -329,6 +373,9 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         }
       }
       if (_audioPath != null) {
+        if (mounted) {
+          setState(() => _kaydetmeDurumu = 'Sesli not yükleniyor...');
+        }
         try {
           await _taskService.uploadAudioNote(task.id, _audioPath!);
         } on DailyTaskException catch (hata) {
@@ -346,7 +393,12 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
     } on DailyTaskException catch (error) {
       if (mounted) setState(() => _formHatasi = error.message);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _kaydetmeDurumu = null;
+        });
+      }
     }
   }
 
@@ -456,7 +508,17 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                 onBack: () => context.pop(false),
                 onParentTap: () => context.pop(false),
               ),
-              Expanded(child: _buildContent()),
+              Expanded(
+                child: Stack(
+                  children: [
+                    _buildContent(),
+                    // Kaydetme sirasinda ekranin tamami kapaniyor:
+                    // kullanici yarim kalmis forma dokunamiyor ve isin
+                    // surdugu gorunuyor.
+                    if (_isSaving) _KaydetmeKatmani(durum: _kaydetmeDurumu),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -600,41 +662,110 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
                   onCal: _sesiCal,
                   onSil: _removeAudio,
                 )
+              else if (_isRecording)
+                // Kayit surerken iki secenek duruyor: soldaki duraklatip
+                // kaldigi yerden surduruyor, sagdaki kaydi bitirip
+                // dinleme kutusuna birakiyor.
+                Row(
+                  children: [
+                    Expanded(
+                      child: Pressable(
+                        onTap: _isSaving ? null : _duraklatVeyaDevam,
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: c.surface2,
+                            borderRadius: BorderRadius.circular(Sizes.rField),
+                            border: Border.all(color: c.border2, width: 1.5),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _kayitDuraklatildi
+                                    ? LucideIcons.play
+                                    : LucideIcons.pause,
+                                size: 19,
+                                color: c.accent,
+                              ),
+                              const SizedBox(width: 9),
+                              Text(
+                                _kayitDuraklatildi
+                                    ? 'Devam Et  $_kayitSuresi'
+                                    : 'Duraklat  $_kayitSuresi',
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 15.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Pressable(
+                      onTap: _isSaving ? null : _kaydiBitir,
+                      child: Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: c.ink,
+                          borderRadius: BorderRadius.circular(Sizes.rField),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              LucideIcons.square,
+                              size: 17,
+                              color: c.surface,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Bitir',
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w700,
+                                color: c.surface,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
               else
                 // Kayit yokken bu buton "Fotograf ekle" ile ayni agirlikta
-                // duruyor; ekranin birincil eylemi KAYDET. Kayit
-                // basladiginda dolu siyaha donuyor, cunku o an devam eden
-                // bir durum var.
+                // duruyor; ekranin birincil eylemi KAYDET.
                 Pressable(
                   onTap: _isSaving ? null : _toggleRecording,
                   child: Container(
                     height: 52,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: _isRecording ? c.ink : c.surface2,
+                      color: c.surface2,
                       borderRadius: BorderRadius.circular(Sizes.rField),
-                      border: _isRecording
-                          ? null
-                          : Border.all(color: c.border2, width: 1.5),
+                      border: Border.all(color: c.border2, width: 1.5),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          _isRecording ? LucideIcons.square : LucideIcons.mic,
-                          size: 19,
-                          color: _isRecording ? c.surface : c.accent,
-                        ),
+                        Icon(LucideIcons.mic, size: 19, color: c.accent),
                         const SizedBox(width: 9),
                         Text(
-                          _isRecording
-                              ? 'Kaydı Durdur  $_kayitSuresi'
-                              : 'Sesli Not Kaydet',
+                          'Sesli Not Kaydet',
                           style: TextStyle(
                             fontFamily: kBody,
                             fontSize: 15.5,
                             fontWeight: FontWeight.w600,
-                            color: _isRecording ? c.surface : c.ink,
+                            color: c.ink,
                           ),
                         ),
                       ],
@@ -721,7 +852,6 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         const SizedBox(height: 24),
         PrimaryButton(
           label: 'KAYDET',
-          busy: _isSaving,
           onPressed: _isSaving ? null : _save,
         ),
       ],
@@ -1045,6 +1175,54 @@ class _FileChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Kaydetme sirasinda sayfanin ustunu kapatan gosterge.
+///
+/// Yukleme butonun icindeki kucuk daireyle gosteriliyordu; on fotograf
+/// yuklenirken is uzun suruyor ve ekran donmus gibi gorunuyordu.
+class _KaydetmeKatmani extends StatelessWidget {
+  const _KaydetmeKatmani({this.durum});
+
+  final String? durum;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Positioned.fill(
+      child: ColoredBox(
+        color: c.bg.withValues(alpha: .86),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 30,
+                height: 30,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.8,
+                  color: c.ink,
+                ),
+              ),
+              if (durum != null) ...[
+                const SizedBox(height: 16),
+                Text(
+                  durum!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w600,
+                    color: c.ink,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

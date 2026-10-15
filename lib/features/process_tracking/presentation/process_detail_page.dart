@@ -147,8 +147,10 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
               onBack: () => context.pop(true),
             ),
             // Bloga tanimli is yokken yuzde ve Guncelle gorunmuyor;
-            // ekranda yalnizca bilgilendirme mesaji kaliyor.
-            if (!(_isYok && !_isLoading && _errorMessage == null))
+            // ekranda yalnizca bilgilendirme mesaji kaliyor. Panel
+            // yuklenirken de gizli: aksi halde is olmayan blokta bir an
+            // gorunup kayboluyor, ekran titriyordu.
+            if (!_isLoading && _errorMessage == null && !_isYok)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                 // The summary sits on the dark anchor card so it reads as the
