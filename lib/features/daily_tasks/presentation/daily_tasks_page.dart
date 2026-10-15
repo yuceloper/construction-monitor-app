@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
+import '../../../core/widgets/genisleyen_metin.dart';
 import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
@@ -27,6 +28,42 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   String? _errorMessage;
   List<DailyTaskSummary> _tasks = const [];
 
+  /// Filtre olcutleri istemcide uygulaniyor: kritiklik, kisi ve
+  /// tarihe gore siralama.
+  String? _filtreOncelik;
+  String? _filtreKisi;
+
+  /// 'yeni' en yeniden eskiye, 'eski' tersine. Bos birakilirsa sunucunun
+  /// dondurdugu sira korunuyor.
+  String? _siralama;
+
+  List<DailyTaskSummary> get _gosterilen {
+    final liste = _tasks.where((task) {
+      if (_filtreOncelik != null && task.priority != _filtreOncelik) {
+        return false;
+      }
+      if (_filtreKisi != null && task.assignedToName != _filtreKisi) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (_siralama != null) {
+      liste.sort((a, b) {
+        final at = a.tarih;
+        final bt = b.tarih;
+        if (at == null && bt == null) return 0;
+        if (at == null) return 1;
+        if (bt == null) return -1;
+        return _siralama == 'yeni' ? bt.compareTo(at) : at.compareTo(bt);
+      });
+    }
+    return liste;
+  }
+
+  bool get _filtreVar =>
+      _filtreOncelik != null || _filtreKisi != null || _siralama != null;
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +76,9 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   /// Ekranda gosterilecek is yoksa ustteki sekmeler de gorunmuyor.
   /// Aktif liste bosken tamamlanmislar varsa, bos durumdaki dugme
   /// onlara goturuyor; boylece sekme gizlense de veri kaybolmuyor.
-  bool get _listeBos => _tasks.isEmpty && _errorMessage == null && !_isLoading;
+  /// Yuklenirken de gizli: bos ekran yuklenirken sekmeler bir an
+  /// gorunup kayboluyordu.
+  bool get _listeBos => _tasks.isEmpty && _errorMessage == null;
   bool _tamamlanmisVar = false;
 
   Future<void> _loadTasks() async {
@@ -86,57 +125,190 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
     await _loadTasks();
   }
 
-  /// Filtre paneli. Olcutler sunucu tarafinda uygulanacak; su an
-  /// panel yalnizca secimi gosteriyor.
+  /// Filtre paneli. Olcutler istemcide uygulaniyor.
   Future<void> _filtrePaneliniAc() async {
-    final c = context.colors;
     await showModalBottomSheet<void>(
       context: context,
       useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) => SecimPaneliKabugu(
-        baslik: 'Filtrele',
-        govde: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final olcut in const [
-              ('Kritiklik', LucideIcons.triangleAlert),
-              ('Tarihe Göre Sırala', LucideIcons.calendarDays),
-              ('Kişi', LucideIcons.user),
-            ]) ...[
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
-                decoration: BoxDecoration(
-                  color: c.surface2,
-                  borderRadius: BorderRadius.circular(Sizes.rField),
-                  border: Border.all(color: c.border2),
-                ),
-                child: Row(
-                  children: [
-                    Icon(olcut.$2, size: 18, color: c.sub),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        olcut.$1,
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: c.ink,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final c = sheetContext.colors;
+
+          Widget satir(
+            String baslik,
+            String? deger,
+            IconData ikon,
+            VoidCallback onTap,
+          ) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Pressable(
+                onTap: onTap,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
+                  decoration: BoxDecoration(
+                    color: c.surface2,
+                    borderRadius: BorderRadius.circular(Sizes.rField),
+                    border: Border.all(
+                      color: deger == null ? c.border2 : c.accent,
+                      width: deger == null ? 1 : 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(ikon, size: 18, color: c.sub),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          baslik,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: c.ink,
+                          ),
                         ),
                       ),
-                    ),
-                    Icon(LucideIcons.chevronRight, size: 19, color: c.muted),
-                  ],
+                      if (deger != null) ...[
+                        Text(
+                          deger,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
+                            color: c.accent,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Icon(LucideIcons.chevronRight, size: 19, color: c.muted),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 8),
-            ],
-          ],
-        ),
+            );
+          }
+
+          final kisiler = <String>{
+            for (final task in _tasks)
+              if (task.assignedToName.trim().isNotEmpty) task.assignedToName,
+          }.toList()..sort();
+
+          return SecimPaneliKabugu(
+            baslik: 'Filtrele',
+            govde: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                satir(
+                  'Kritiklik',
+                  _filtreOncelik == null ? null : _oncelikAdi(_filtreOncelik!),
+                  LucideIcons.triangleAlert,
+                  () async {
+                    final secim = await secimPaneliAc<String>(
+                      sheetContext,
+                      baslik: 'Kritiklik',
+                      secili: _filtreOncelik ?? '',
+                      secenekler: const [
+                        SecimSecenegi('', 'Tümü'),
+                        SecimSecenegi('HIGH', 'Yüksek'),
+                        SecimSecenegi('MEDIUM', 'Orta'),
+                        SecimSecenegi('LOW', 'Düşük'),
+                      ],
+                    );
+                    if (secim == null) return;
+                    setState(
+                      () => _filtreOncelik = secim.isEmpty ? null : secim,
+                    );
+                    setSheetState(() {});
+                  },
+                ),
+                satir(
+                  'Tarihe Göre Sırala',
+                  _siralama == null
+                      ? null
+                      : (_siralama == 'yeni'
+                            ? 'Yeniden Eskiye'
+                            : 'Eskiden Yeniye'),
+                  LucideIcons.calendarDays,
+                  () async {
+                    final secim = await secimPaneliAc<String>(
+                      sheetContext,
+                      baslik: 'Tarihe Göre Sırala',
+                      secili: _siralama ?? '',
+                      secenekler: const [
+                        SecimSecenegi('', 'Varsayılan'),
+                        SecimSecenegi('yeni', 'Yeniden Eskiye'),
+                        SecimSecenegi('eski', 'Eskiden Yeniye'),
+                      ],
+                    );
+                    if (secim == null) return;
+                    setState(() => _siralama = secim.isEmpty ? null : secim);
+                    setSheetState(() {});
+                  },
+                ),
+                satir('Kişi', _filtreKisi, LucideIcons.user, () async {
+                  final secim = await secimPaneliAc<String>(
+                    sheetContext,
+                    baslik: 'Kişi',
+                    secili: _filtreKisi ?? '',
+                    secenekler: [
+                      const SecimSecenegi('', 'Tümü'),
+                      for (final kisi in kisiler) SecimSecenegi(kisi, kisi),
+                    ],
+                  );
+                  if (secim == null) return;
+                  setState(() => _filtreKisi = secim.isEmpty ? null : secim);
+                  setSheetState(() {});
+                }),
+                if (_filtreVar)
+                  Pressable(
+                    onTap: () {
+                      setState(() {
+                        _filtreOncelik = null;
+                        _filtreKisi = null;
+                        _siralama = null;
+                      });
+                      Navigator.of(sheetContext).pop();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.x, size: 17, color: c.sub),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Filtreyi Temizle',
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: c.sub,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
+  }
+
+  /// Kritiklik kodunun ekranda gorunen adi.
+  static String _oncelikAdi(String kod) {
+    switch (kod) {
+      case 'HIGH':
+        return 'Yüksek';
+      case 'LOW':
+        return 'Düşük';
+      default:
+        return 'Orta';
+    }
   }
 
   Future<void> _openCreate() async {
@@ -211,14 +383,14 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
                         child: Icon(
                           LucideIcons.slidersHorizontal,
                           size: 18,
-                          color: c.sub,
+                          color: _filtreVar ? c.accent : c.sub,
                         ),
                       ),
                     ),
                     Text(
                       _showAll
-                          ? '${_tasks.length} İş'
-                          : '${_tasks.length} Aktif İş',
+                          ? '${_gosterilen.length} İş'
+                          : '${_gosterilen.length} Aktif İş',
                       style: TextStyle(
                         fontFamily: kBody,
                         fontSize: 13.5,
@@ -304,7 +476,7 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       );
     }
 
-    if (_tasks.isEmpty) {
+    if (_gosterilen.isEmpty) {
       // Hic is yokken sekme serisi ve ustteki "Ekle" satiri gizleniyor.
       // Ekleme yolu da onlarla birlikte kaybolmasin diye bos durumun
       // kendisi "Ekle" sunuyor: yoksa yeni bir santiyede ilk is hic
@@ -351,11 +523,11 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
-        itemCount: _tasks.length,
+        itemCount: _gosterilen.length,
         separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) => _TaskCard(
-          task: _tasks[index],
-          onTap: () => _openTask(_tasks[index]),
+          task: _gosterilen[index],
+          onTap: () => _openTask(_gosterilen[index]),
           showStatus: _showAll,
         ),
       ),
@@ -508,9 +680,12 @@ class _TaskCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 7),
-                  Text(
-                    task.notes.isNotEmpty ? task.notes : task.title,
-                    style: TextStyle(
+                  // Uzun metin kartta tasmiyor; iki satirdan sonra
+                  // "Daha Fazla Göster" ile aciliyor.
+                  GenisleyenMetin(
+                    metin: task.notes.isNotEmpty ? task.notes : task.title,
+                    satir: 2,
+                    bicim: TextStyle(
                       fontFamily: kDisplay,
                       fontSize: 17,
                       fontWeight: FontWeight.w600,

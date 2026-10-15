@@ -76,7 +76,7 @@ class _GenisleyenMetinState extends State<GenisleyenMetin> {
           if (_tasiyor) ...[
             const SizedBox(height: 4),
             Text(
-              _acik ? 'Daha Az Göster' : 'Devamını Oku',
+              _acik ? 'Daha Az Göster' : 'Daha Fazla Göster',
               style: TextStyle(
                 fontFamily: kBody,
                 fontSize: 13.5,

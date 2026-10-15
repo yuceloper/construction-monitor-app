@@ -12,6 +12,10 @@ class DailyTaskSummary {
   final List<int> photoIds;
   final int? audioNoteId;
 
+  /// Isin tarihi. Sunucu once taskDate, yoksa dueDate ya da createdAt
+  /// gonderiyor; siralama bunun uzerinden yapiliyor.
+  final DateTime? tarih;
+
   const DailyTaskSummary({
     required this.id,
     required this.projectId,
@@ -25,6 +29,7 @@ class DailyTaskSummary {
     required this.assignedToName,
     required this.photoIds,
     required this.audioNoteId,
+    this.tarih,
   });
 
   factory DailyTaskSummary.fromJson(Map<String, dynamic> json) {
@@ -41,10 +46,23 @@ class DailyTaskSummary {
       assignedToId: (json['assignedToId'] as num?)?.toInt(),
       assignedToName: json['assignedToName']?.toString() ?? 'Atanmamış',
       photoIds: rawPhotoIds is List
-          ? rawPhotoIds.whereType<num>().map((id) => id.toInt()).where((id) => id > 0).toList()
+          ? rawPhotoIds
+                .whereType<num>()
+                .map((id) => id.toInt())
+                .where((id) => id > 0)
+                .toList()
           : const [],
       audioNoteId: (json['audioNoteId'] as num?)?.toInt(),
+      tarih:
+          _tarihOku(json['taskDate']) ??
+          _tarihOku(json['dueDate']) ??
+          _tarihOku(json['createdAt']),
     );
+  }
+
+  static DateTime? _tarihOku(Object? deger) {
+    if (deger == null) return null;
+    return DateTime.tryParse(deger.toString());
   }
 
   bool get isCompleted => status == 'COMPLETED';
