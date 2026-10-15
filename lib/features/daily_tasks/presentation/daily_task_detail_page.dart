@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
+import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
 import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/sesli_not_oynatici.dart';
@@ -73,6 +74,29 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Fotografi tam ekran acar; parmakla yakinlastirilabiliyor ve
+  /// birden fazla fotograf varsa yana kaydirilabiliyor.
+  Future<void> _fotografiAc(List<int> fotograflar, int baslangic) async {
+    await showGeneralDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      barrierDismissible: false,
+      barrierLabel: 'Fotoğraf',
+      barrierColor: Colors.transparent,
+      transitionDuration: const Duration(milliseconds: 200),
+      pageBuilder: (sayfaContext, animasyon, ikinci) => _FotografOnizleme(
+        fotograflar: fotograflar,
+        baslangic: baslangic,
+        adres: _service.photoUrl,
+        basliklar: _service.photoHeaders(),
+      ),
+      transitionBuilder: (context, animasyon, ikinci, cocuk) {
+        final egri = CurvedAnimation(parent: animasyon, curve: Curves.easeOut);
+        return FadeTransition(opacity: egri, child: cocuk);
+      },
+    );
   }
 
   Future<void> _toggleAudio() async {
@@ -338,44 +362,51 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
                       itemBuilder: (_, index) {
                         final id = task.photoIds[index];
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: SizedBox(
-                            width: 145,
-                            child: Image.network(
-                              _service.photoUrl(id),
-                              headers: _service.photoHeaders(),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, hata, __) {
-                                // Sunucudaki bazi fotograflar bozuk geliyor
-                                // (yarida kesilmis PNG). Bos gri kutu yerine
-                                // ne oldugu yaziyor; kullanici yuklenmesini
-                                // beklemesin.
-                                debugPrint('Fotograf yuklenemedi ($id): $hata');
-                                return Container(
-                                  color: c.inset,
-                                  alignment: Alignment.center,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        LucideIcons.imageOff,
-                                        size: 22,
-                                        color: c.faint,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Görsel açılamadı',
-                                        style: TextStyle(
-                                          fontFamily: kBody,
-                                          fontSize: 12.5,
-                                          color: c.muted,
+                        return Pressable(
+                          // Kucuk resme dokununca fotograf tam ekran
+                          // aciliyor; daha once dokunulamiyordu.
+                          onTap: () => _fotografiAc(task.photoIds, index),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: SizedBox(
+                              width: 145,
+                              child: Image.network(
+                                _service.photoUrl(id),
+                                headers: _service.photoHeaders(),
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, hata, __) {
+                                  // Sunucudaki bazi fotograflar bozuk geliyor
+                                  // (yarida kesilmis PNG). Bos gri kutu yerine
+                                  // ne oldugu yaziyor; kullanici yuklenmesini
+                                  // beklemesin.
+                                  debugPrint(
+                                    'Fotograf yuklenemedi ($id): $hata',
+                                  );
+                                  return Container(
+                                    color: c.inset,
+                                    alignment: Alignment.center,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          LucideIcons.imageOff,
+                                          size: 22,
+                                          color: c.faint,
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Görsel açılamadı',
+                                          style: TextStyle(
+                                            fontFamily: kBody,
+                                            fontSize: 12.5,
+                                            color: c.muted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         );
@@ -557,6 +588,126 @@ class _SummaryLine extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Fotograflarin tam ekran hali: koyu zemin, ustte kapatma ve sayac.
+class _FotografOnizleme extends StatefulWidget {
+  const _FotografOnizleme({
+    required this.fotograflar,
+    required this.baslangic,
+    required this.adres,
+    required this.basliklar,
+  });
+
+  final List<int> fotograflar;
+  final int baslangic;
+  final String Function(int) adres;
+  final Map<String, String> basliklar;
+
+  @override
+  State<_FotografOnizleme> createState() => _FotografOnizlemeState();
+}
+
+class _FotografOnizlemeState extends State<_FotografOnizleme> {
+  late final PageController _sayfa = PageController(
+    initialPage: widget.baslangic,
+  );
+  late int _sira = widget.baslangic;
+
+  @override
+  void dispose() {
+    _sayfa.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const zemin = Color(0xFF0E141C);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: zemin,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 14, 6),
+                child: Row(
+                  children: [
+                    Pressable(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: Icon(
+                          LucideIcons.x,
+                          size: 22,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    if (widget.fotograflar.length > 1)
+                      Text(
+                        '${_sira + 1} / ${widget.fotograflar.length}',
+                        style: const TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: PageView.builder(
+                  controller: _sayfa,
+                  itemCount: widget.fotograflar.length,
+                  onPageChanged: (i) => setState(() => _sira = i),
+                  itemBuilder: (_, index) {
+                    return InteractiveViewer(
+                      minScale: 1,
+                      maxScale: 4,
+                      child: Center(
+                        child: Image.network(
+                          widget.adres(widget.fotograflar[index]),
+                          headers: widget.basliklar,
+                          fit: BoxFit.contain,
+                          errorBuilder: (hataContext, hata, iz) => const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                LucideIcons.imageOff,
+                                size: 36,
+                                color: Colors.white38,
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                'Görsel açılamadı',
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 14,
+                                  color: Colors.white54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdfrx/pdfrx.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
@@ -206,6 +210,49 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     );
   }
 
+  /// Paylasilan dosyanin adi.
+  ///
+  /// Turkce harfler once ASCII karsiligina cevriliyor: dogrudan
+  /// temizlenince "Aylik" yerine "Aylk" gibi eksik bir ad cikiyordu.
+  static String _dosyaAdi(String baslik) {
+    const karsilik = {
+      'ç': 'c', 'Ç': 'C', 'ğ': 'g', 'Ğ': 'G', 'ı': 'i', 'İ': 'I',
+      'ö': 'o', 'Ö': 'O', 'ş': 's', 'Ş': 'S', 'ü': 'u', 'Ü': 'U',
+    };
+    final tampon = StringBuffer();
+    for (final harf in baslik.split('')) {
+      tampon.write(karsilik[harf] ?? harf);
+    }
+    final temiz = tampon
+        .toString()
+        .replaceAll(RegExp(r'[^\w\s-]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return '${temiz.isEmpty ? 'belge' : temiz}.pdf';
+  }
+
+  /// Belgeyi paylasir: dosyanin kendisi gider, cihazin paylas menusu
+  /// WhatsApp, e-posta ve digerlerini listeler.
+  Future<void> _paylas(Uint8List bytes) async {
+    try {
+      final klasor = await getTemporaryDirectory();
+      final dosya = File('${klasor.path}/${_dosyaAdi(widget.title)}');
+      await dosya.writeAsBytes(bytes, flush: true);
+      if (!mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(dosya.path, mimeType: 'application/pdf')],
+          subject: widget.title,
+          text: widget.title,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Belge paylaşılamadı.')));
+    }
+  }
+
   /// Belgeyi tam ekran acar. Onizleme cercevesinde A4 bir sayfanin
   /// yazisi okunmuyordu; burada ekranin tamami belgenin ve parmakla
   /// yakinlastirilabiliyor.
@@ -298,35 +345,70 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
                   Positioned(
                     right: 10,
                     top: 10,
-                    child: Pressable(
-                      onTap: () => _tamEkranAc(bytes),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
-                        decoration: BoxDecoration(
-                          color: c.ink.withValues(alpha: .88),
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.expand,
-                              size: 15,
-                              color: c.surface,
+                    child: Row(
+                      children: [
+                        Pressable(
+                          onTap: () => _paylas(bytes),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
+                            decoration: BoxDecoration(
+                              color: c.ink.withValues(alpha: .88),
+                              borderRadius: BorderRadius.circular(11),
                             ),
-                            const SizedBox(width: 7),
-                            Text(
-                              'Tam Ekran',
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: c.surface,
-                              ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.share2,
+                                  size: 15,
+                                  color: c.surface,
+                                ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  'Paylaş',
+                                  style: TextStyle(
+                                    fontFamily: kBody,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.surface,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 8),
+                        Pressable(
+                          onTap: () => _tamEkranAc(bytes),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
+                            decoration: BoxDecoration(
+                              color: c.ink.withValues(alpha: .88),
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  LucideIcons.expand,
+                                  size: 15,
+                                  color: c.surface,
+                                ),
+                                const SizedBox(width: 7),
+                                Text(
+                                  'Tam Ekran',
+                                  style: TextStyle(
+                                    fontFamily: kBody,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: c.surface,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

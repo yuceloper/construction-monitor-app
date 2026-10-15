@@ -152,16 +152,19 @@ class DailyTaskService {
     if (photos.isEmpty) return getTask(taskId);
     final token = _token();
     try {
-      final istek = http.MultipartRequest(
-        'POST',
-        Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/photos'),
-      )..headers.addAll(_headers(token));
-
+      // Fotograflar tek tek gonderiliyor: hepsi tek istekte gidince
+      // sunucunun govde siniri (nginx 413) asiliyor ve hicbiri
+      // yuklenmiyordu.
+      var sonuc = await getTask(taskId);
       for (final photo in photos) {
         final bytes = await photo.readAsBytes();
         if (bytes.length > 10 * 1024 * 1024) {
           throw DailyTaskException('${photo.name} 10 MB sınırını aşıyor.');
         }
+        final istek = http.MultipartRequest(
+          'POST',
+          Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/photos'),
+        )..headers.addAll(_headers(token));
         istek.files.add(
           http.MultipartFile.fromBytes(
             'files',
@@ -170,14 +173,20 @@ class DailyTaskService {
             contentType: _mediaType(_contentType(photo.name)),
           ),
         );
-      }
 
-      final response = await http.Response.fromStream(await istek.send());
-      final body = utf8.decode(response.bodyBytes);
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return _taskFromApi(body, 'Fotoğraflar yüklenemedi.');
+        final response = await http.Response.fromStream(await istek.send());
+        final body = utf8.decode(response.bodyBytes);
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          sonuc = _taskFromApi(body, 'Fotoğraflar yüklenemedi.');
+          continue;
+        }
+        _throwForResponse(
+          response.statusCode,
+          body,
+          'Fotoğraflar yüklenemedi.',
+        );
       }
-      _throwForResponse(response.statusCode, body, 'Fotoğraflar yüklenemedi.');
+      return sonuc;
     } on http.ClientException {
       throw const DailyTaskException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
@@ -325,6 +334,13 @@ class DailyTaskService {
     if (statusCode == 403) {
       throw const DailyTaskException(
         'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
+    }
+    // Sunucu govde siniri: dosya kabul edilmiyor. Kullaniciya ne
+    // yapacagini soyleyen bir mesaj, "yuklenemedi"den daha isine yarar.
+    if (statusCode == 413) {
+      throw const DailyTaskException(
+        'Fotoğraf sunucunun boyut sınırını aşıyor. Daha küçük bir fotoğraf deneyin.',
       );
     }
     String? message;

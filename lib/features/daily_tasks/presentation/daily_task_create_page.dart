@@ -126,9 +126,11 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         _show('En fazla 10 fotoğraf ekleyebilirsiniz.');
         return;
       }
+      // Olcu sunucunun kabul ettigi araliga cekildi; 2400/85 ile tek
+      // fotograf 2 MB'i gecip reddedilebiliyordu.
       final picked = await _imagePicker.pickMultiImage(
-        imageQuality: 85,
-        maxWidth: 2400,
+        imageQuality: 75,
+        maxWidth: 1600,
         limit: kalan,
       );
       if (!mounted || picked.isEmpty) return;
@@ -316,12 +318,30 @@ class _DailyTaskCreatePageState extends State<DailyTaskCreatePage> {
         assignedToId: _memberId!,
         note: note,
       );
-      if (_photos.isNotEmpty) await _taskService.uploadPhotos(task.id, _photos);
-      if (_audioPath != null)
-        await _taskService.uploadAudioNote(task.id, _audioPath!);
+      String? ekUyari;
+      if (_photos.isNotEmpty) {
+        try {
+          await _taskService.uploadPhotos(task.id, _photos);
+        } on DailyTaskException catch (hata) {
+          // Is olusturuldu; burada durursak kullanici tekrar kaydedip
+          // ayni isi ikinci kez yaratiyor.
+          ekUyari = hata.message;
+        }
+      }
+      if (_audioPath != null) {
+        try {
+          await _taskService.uploadAudioNote(task.id, _audioPath!);
+        } on DailyTaskException catch (hata) {
+          ekUyari ??= hata.message;
+        }
+      }
 
       if (!mounted) return;
-      _show('Günlük iş kaydedildi.');
+      _show(
+        ekUyari == null
+            ? 'Günlük iş kaydedildi.'
+            : 'Günlük iş kaydedildi. $ekUyari',
+      );
       context.pop(true);
     } on DailyTaskException catch (error) {
       if (mounted) setState(() => _formHatasi = error.message);

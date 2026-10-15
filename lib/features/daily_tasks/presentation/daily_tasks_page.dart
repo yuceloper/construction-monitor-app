@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/active_site.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/genisleyen_metin.dart';
@@ -20,7 +21,8 @@ class DailyTasksPage extends StatefulWidget {
   State<DailyTasksPage> createState() => _DailyTasksPageState();
 }
 
-class _DailyTasksPageState extends State<DailyTasksPage> {
+class _DailyTasksPageState extends State<DailyTasksPage>
+    with WidgetsBindingObserver {
   final _service = DailyTaskService();
 
   bool _showAll = false;
@@ -68,6 +70,36 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   void initState() {
     super.initState();
     _loadTasks();
+    // Santiye degisince ve uygulama one gelince liste tazeleniyor;
+    // ekranda eski santiyenin ya da eskimis bir listenin kalmasi
+    // "veri yok" gibi gorunuyordu.
+    ActiveSite.revision.addListener(_santiyeDegisti);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    ActiveSite.revision.removeListener(_santiyeDegisti);
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _santiyeDegisti() {
+    if (!mounted) return;
+    setState(() {
+      _tasks = const [];
+      _filtreOncelik = null;
+      _filtreKisi = null;
+      _siralama = null;
+    });
+    _loadTasks();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState durum) {
+    if (durum == AppLifecycleState.resumed && mounted) {
+      _loadTasks(sessiz: _tasks.isNotEmpty);
+    }
   }
 
   /// Iki sekmede de hic is yok. Sekme serisi bu durumda gizleniyor.
@@ -81,11 +113,15 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   bool get _listeBos => _tasks.isEmpty && _errorMessage == null;
   bool _tamamlanmisVar = false;
 
-  Future<void> _loadTasks() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  /// [sessiz] verildiginde ekranda ne varsa duruyor: spinner ya da bos
+  /// durum arada bir an gorunup kaybolmuyor, liste gelince degisiyor.
+  Future<void> _loadTasks({bool sessiz = false}) async {
+    if (!sessiz) {
+      setState(() {
+        _isLoading = true;
+        _errorMessage = null;
+      });
+    }
 
     try {
       final tasks = await _service.getTasks(includeCompleted: _showAll);
@@ -314,13 +350,13 @@ class _DailyTasksPageState extends State<DailyTasksPage> {
   Future<void> _openCreate() async {
     final created = await context.push<bool>('/daily-tasks/create');
     if (!mounted || created != true) return;
-    await _loadTasks();
+    await _loadTasks(sessiz: _tasks.isNotEmpty);
   }
 
   Future<void> _openTask(DailyTaskSummary task) async {
     await context.push<bool>('/daily-tasks/${task.id}');
     if (!mounted) return;
-    await _loadTasks();
+    await _loadTasks(sessiz: _tasks.isNotEmpty);
   }
 
   @override
