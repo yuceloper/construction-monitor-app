@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 
 import '../../../app/theme.dart';
@@ -96,8 +95,9 @@ Future<WarningDraft?> showWarningCreateDialog(BuildContext context) async {
                         );
                         return;
                       }
+                      final temp = await getTemporaryDirectory();
                       final path =
-                          '${Directory.systemTemp.path}/warning-${DateTime.now().millisecondsSinceEpoch}.m4a';
+                          '${temp.path}/warning-${DateTime.now().millisecondsSinceEpoch}.m4a';
                       await recorder.start(
                         const RecordConfig(
                           encoder: AudioEncoder.aacLc,
@@ -129,20 +129,14 @@ Future<WarningDraft?> showWarningCreateDialog(BuildContext context) async {
               ),
               if (audioPath != null && !recording) ...[
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(LucideIcons.circleCheck, size: 17, color: context.colors.good),
-                    const SizedBox(width: 7),
-                    Text(
-                      'Sesli not hazır',
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: context.colors.sub,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Sesli not hazır',
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: context.colors.sub,
+                  ),
                 ),
               ],
               if (validationMessage != null) ...[
