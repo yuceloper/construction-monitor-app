@@ -52,7 +52,7 @@ class SiteService {
 
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/members'),
+        Uri.parse('${ApiConfig.baseUrl}/sites/$siteId/assignable-users'),
         headers: _headers(token),
       );
 
@@ -64,7 +64,7 @@ class SiteService {
         if (decoded is! Map<String, dynamic> ||
             decoded['success'] != true ||
             data is! List) {
-          throw const SiteException('Şantiye kullanıcıları alınamadı.');
+          throw const SiteException('Firma kullanıcıları alınamadı.');
         }
         return data
             .whereType<Map>()
@@ -73,7 +73,7 @@ class SiteService {
             .toList();
       }
 
-      _throwForStatus(response.statusCode, 'Şantiye kullanıcıları alınamadı.');
+      _throwForStatus(response.statusCode, 'Firma kullanıcıları alınamadı.');
     } on http.ClientException {
       throw const SiteException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
