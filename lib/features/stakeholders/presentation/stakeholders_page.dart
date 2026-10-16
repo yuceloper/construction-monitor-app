@@ -69,13 +69,13 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
   }
 
   Future<void> _call(StakeholderSummary item) async {
-    final phone = item.phoneNumber.trim();
+    final phone = _normalizePhone(item.phoneNumber);
     if (phone.isEmpty) {
       _show('Bu paydaş için telefon numarası kayıtlı değil.');
       return;
     }
 
-    final uri = Uri(scheme: 'tel', path: phone);
+    final uri = Uri(scheme: 'tel', path: '+$phone');
     final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!opened && mounted) {
       _show('Arama açılamadı. Gerçek cihazda tekrar deneyin.');
@@ -132,8 +132,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
           borderSide: BorderSide(color: color, width: width),
         );
 
-    // Arama alanina dokunduktan sonra bos bir yere basinca klavye
-    // kapanmiyor, arama acik kaliyordu.
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () => FocusScope.of(context).unfocus(),
@@ -147,9 +145,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                 title: 'Paydaşlar',
                 onBack: () => context.go('/dashboard'),
               ),
-              // Tanimli paydas yoksa arama alani ekranda durmuyor.
-              // Tarayicida liste zaten tek ekrana siginiyor; arama alani
-              // orada hic gosterilmiyor.
               if (_items.isNotEmpty && MediaQuery.sizeOf(context).width < 700)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
@@ -267,10 +262,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
         separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           final item = items[index];
-          // Telefonu olmayan paydasta Ara ve WhatsApp dugmeleri hicbir ise
-          // yaramiyordu; KONACIK'taki 68 kaydin 56'sinda telefon yok.
-          // Dugmeler kalkinca kart da ismin boyuna oturuyor, yarisi bos
-          // durmuyor.
           final telefonVar = item.phoneNumber.isNotEmpty;
           final altSatirVar =
               item.detail.isNotEmpty || item.contactPerson.isNotEmpty;
@@ -283,8 +274,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
               boxShadow: kartGolgesi(context),
             ),
             child: Row(
-              // Tek satirlik isimde yazi, dugmelerin hizasina ortaliyor;
-              // alt satirlar varsa yukaridan basliyor.
               crossAxisAlignment: altSatirVar
                   ? CrossAxisAlignment.start
                   : CrossAxisAlignment.center,
@@ -299,10 +288,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: kDisplay,
-                          // Firma adlari bir santiyede tamamen buyuk harf
-                          // ("3S KARADENIZ SU"), digerinde normal yazim
-                          // ("Bitez Yapi Market") giriliyor. Ayni puntoda
-                          // buyuk harf cok daha iri okunuyordu.
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -.2,
@@ -311,8 +296,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                       ),
                       if (item.detail.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        // Kart hicbir yere gitmiyor; kesilen aciklama
-                        // okunamiyordu, acilip kapanabiliyor.
                         GenisleyenMetin(
                           metin: item.detail,
                           satir: 2,
@@ -348,8 +331,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                       ],
                       if (item.phoneNumber.isNotEmpty) ...[
                         const SizedBox(height: 5),
-                        // Numara tek basina bosta duruyordu; ustundeki kisi
-                        // satiriyla ayni ritme girdi.
                         Row(
                           children: [
                             Icon(LucideIcons.phone, size: 17, color: c.muted),
@@ -370,8 +351,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                     ],
                   ),
                 ),
-                // Iki eylem de ayni capta yuvarlak dugme: biri markanin
-                // mavisi, digeri WhatsApp'in kendi yesili.
                 if (telefonVar) ...[
                   const SizedBox(width: 10),
                   _ContactAction(
@@ -385,8 +364,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                     tooltip: 'WhatsApp',
                     onTap: () => _openWhatsApp(item),
                     background: const Color(0xFF25D366),
-                    // Mesaj balonu: ayni capta dursalar da hangisinin arama
-                    // hangisinin WhatsApp oldugu sekilden anlasiliyor.
                     child: const Icon(
                       LucideIcons.messageCircle,
                       size: 22,
@@ -403,8 +380,6 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
   }
 }
 
-/// Paydas kartinin sag ucundaki eylem dugmesi. Gorsel cap 42, dokunma
-/// alani 48: eldivenli parmakla da rahat basiliyor.
 class _ContactAction extends StatelessWidget {
   const _ContactAction({
     required this.tooltip,
