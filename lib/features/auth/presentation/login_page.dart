@@ -25,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
   final _siteService = SiteService();
 
   bool _isLoading = false;
+  bool _passwordVisible = false;
   String? _errorMessage;
 
   @override
@@ -164,7 +165,7 @@ class _LoginPageState extends State<LoginPage> {
                               controller: _passwordController,
                               enabled: !_isLoading,
                               onChanged: _hatayiTemizle,
-                              obscureText: true,
+                              obscureText: !_passwordVisible,
                               textInputAction: TextInputAction.done,
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(25),
@@ -178,7 +179,26 @@ class _LoginPageState extends State<LoginPage> {
                                 color: c.ink,
                               ),
                               cursorColor: c.accent,
-                              decoration: _inputDecoration(c),
+                              decoration: _inputDecoration(c).copyWith(
+                                suffixIcon: IconButton(
+                                  tooltip: _passwordVisible
+                                      ? 'Parolayı gizle'
+                                      : 'Parolayı göster',
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () => setState(
+                                            () => _passwordVisible =
+                                                !_passwordVisible,
+                                          ),
+                                  icon: Icon(
+                                    _passwordVisible
+                                        ? LucideIcons.eyeOff
+                                        : LucideIcons.eye,
+                                    size: 20,
+                                    color: c.muted,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                           if (_errorMessage != null) ...[
