@@ -38,6 +38,7 @@ class WorkItemWarning {
   final DateTime? dueDate;
   final DateTime? createdAt;
   final String user;
+  final bool hasAudio;
 
   const WorkItemWarning({
     required this.id,
@@ -45,6 +46,7 @@ class WorkItemWarning {
     required this.dueDate,
     required this.createdAt,
     required this.user,
+    required this.hasAudio,
   });
 
   factory WorkItemWarning.fromJson(Map<String, dynamic> json) => WorkItemWarning(
@@ -53,6 +55,7 @@ class WorkItemWarning {
         dueDate: DateTime.tryParse(json['dueDate']?.toString() ?? ''),
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
         user: json['user']?.toString() ?? '',
+        hasAudio: json['hasAudio'] == true,
       );
 
   bool get isOverdue {
