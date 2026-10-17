@@ -66,12 +66,32 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       final results = await Future.wait([
         _progressService.getStagesByProject(widget.projectId),
         _workItemService.getByProject(widget.projectId),
-        _progressService.getProgressSummary(widget.projectId),
       ]);
 
       final stages = results[0] as List<ProgressStage>;
       final workItems = results[1] as List<WorkItemSummary>;
-      final progressSummary = results[2] as ProjectProgressSummary;
+
+      // Planlanan ilerleme ayri isteniyor ve alinamazsa ekran yine
+      // aciliyor. Ucu birden tek Future.wait icinde gidince bu servis
+      // hata verdiginde butun ekran "Surec bilgileri alinamadi"ya
+      // dusuyor, surec takibi hic acilmiyordu.
+      ProjectProgressSummary? progressSummary;
+      double? gerceklesenIlerleme;
+      try {
+        progressSummary = await _progressService.getProgressSummary(
+          widget.projectId,
+        );
+        gerceklesenIlerleme = progressSummary.actualProgress;
+      } catch (_) {
+        try {
+          gerceklesenIlerleme = await _progressService.getOverallProgress(
+            widget.projectId,
+          );
+        } catch (_) {
+          // Yuzde de alinamazsa listeden gelen deger korunuyor.
+        }
+      }
+
       final grouped = <int, List<WorkItemSummary>>{};
 
       for (final item in workItems) {
@@ -85,7 +105,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
       setState(() {
         _stages = stages;
         _workItemsByStage = grouped;
-        _overallProgress = progressSummary.actualProgress;
+        _overallProgress = gerceklesenIlerleme ?? _overallProgress;
         _progressSummary = progressSummary;
       });
     } on ProgressException catch (error) {
