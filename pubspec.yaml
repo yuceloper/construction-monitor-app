@@ -1,7 +1,7 @@
 name: construction_monitor_app
 description: "A new Flutter project."
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.13.1
@@ -56,4 +56,3 @@ flutter:
           weight: 500
         - asset: assets/fonts/IBMPlexSans-SemiBold.ttf
           weight: 600
-
