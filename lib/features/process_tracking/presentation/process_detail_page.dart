@@ -422,8 +422,8 @@ class _PlannedProgressRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final actualValue = actual.clamp(0, 100) / 100.0;
-    final plannedValue = planned == null ? null : planned!.clamp(0, 100) / 100.0;
+    final actualValue = actual.clamp(0, 100).toDouble() / 100.0;
+    final plannedValue = planned == null ? null : planned!.clamp(0, 100).toDouble() / 100.0;
     return LayoutBuilder(
       builder: (context, constraints) => Stack(
         clipBehavior: Clip.none,
@@ -438,7 +438,9 @@ class _PlannedProgressRail extends StatelessWidget {
           ),
           if (plannedValue != null)
             Positioned(
-              left: (constraints.maxWidth * plannedValue - 1).clamp(0.0, constraints.maxWidth - 2),
+              left: (constraints.maxWidth * plannedValue - 1)
+                  .clamp(0.0, constraints.maxWidth - 2)
+                  .toDouble(),
               top: -4,
               child: Container(width: 2, height: 18, color: Colors.white),
             ),
