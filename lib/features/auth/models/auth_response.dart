@@ -41,5 +41,19 @@ class AuthResponse {
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'accessToken': accessToken,
+        'refreshToken': refreshToken,
+        'tokenType': tokenType,
+        'userId': userId,
+        'username': username,
+        'email': email,
+        'firstName': firstName,
+        'lastName': lastName,
+        'role': role,
+        'companyId': companyId,
+        'companyName': companyName,
+      };
+
   String get fullName => '$firstName $lastName'.trim();
 }
