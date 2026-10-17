@@ -33,8 +33,19 @@ class NotificationService {
   Future<List<NotificationItem>> getNotifications() async {
     final token = _token();
     try {
-      final uri = Uri.parse('${ApiConfig.baseUrl}/notifications')
-          .replace(queryParameters: {'page': '0', 'size': '100'});
+      // Santiye suzgeci sunucuda uygulaniyor. Istemcide suzmek yetmiyor:
+      // sunucuda yuzlerce bildirim var, ilk yuz kayit baska bir
+      // santiyeden gelince bu santiyenin bildirimleri hic gorunmuyor ve
+      // ekran bos kaliyordu.
+      final seciliSantiye = SessionManager.instance.selectedSiteId;
+      final uri = Uri.parse('${ApiConfig.baseUrl}/notifications').replace(
+        queryParameters: {
+          'page': '0',
+          'size': '100',
+          if (seciliSantiye != null && seciliSantiye > 0)
+            'siteId': '$seciliSantiye',
+        },
+      );
       final response = await http.get(uri, headers: _headers(token));
       final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -45,10 +56,8 @@ class NotificationService {
         final data = decoded['data'];
         final content = data is Map<String, dynamic> ? data['content'] : null;
         if (content is! List) return const [];
-        // Sunucu butun santiyelerin bildirimlerini donduruyor; ekranda
-        // yalnizca secili santiyeninkiler duruyor. Santiyesi belirsiz
-        // (siteId gelmeyen) bildirimler gizlenmiyor.
-        final seciliSantiye = SessionManager.instance.selectedSiteId;
+        // Sunucu suzguyu uygulamazsa diye ikinci bir kontrol; santiyesi
+        // belirsiz (siteId gelmeyen) bildirimler gizlenmiyor.
         return content
             .whereType<Map>()
             .map(

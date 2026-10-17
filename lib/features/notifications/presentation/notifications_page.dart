@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../app/active_site.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/genisleyen_metin.dart';
@@ -28,6 +29,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   void initState() {
     super.initState();
+    _load();
+    // Santiye degisince liste de tazeleniyor; ekranda eski santiyenin
+    // bildirimleri kaliyordu.
+    ActiveSite.revision.addListener(_santiyeDegisti);
+  }
+
+  @override
+  void dispose() {
+    ActiveSite.revision.removeListener(_santiyeDegisti);
+    super.dispose();
+  }
+
+  void _santiyeDegisti() {
+    if (!mounted) return;
+    setState(() => _items = const []);
     _load();
   }
 

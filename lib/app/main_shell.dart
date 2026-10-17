@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/widgets/ekran_sigdir.dart';
 import '../features/notifications/services/notification_service.dart';
+import 'active_site.dart';
 import 'theme.dart';
 
 class MainShell extends StatefulWidget {
@@ -18,6 +19,28 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   final _notificationService = NotificationService();
   String? _lastLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    // Santiye degisince rozet yeniden sayiliyor. Sayi yalnizca sayfa
+    // degistiginde yenileniyordu: baska bir santiyeye gecilince eski
+    // santiyenin sayisi rozette kaliyor, liste bos olsa bile rozet
+    // dolu gorunuyordu.
+    ActiveSite.revision.addListener(_santiyeDegisti);
+  }
+
+  @override
+  void dispose() {
+    ActiveSite.revision.removeListener(_santiyeDegisti);
+    super.dispose();
+  }
+
+  void _santiyeDegisti() {
+    if (!mounted) return;
+    _lastLocation = null;
+    _notificationService.getUnreadCount().catchError((_) => 0);
+  }
 
   String _location(BuildContext context) {
     return GoRouterState.of(context).uri.toString();
