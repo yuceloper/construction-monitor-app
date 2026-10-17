@@ -28,6 +28,10 @@
 	<true/>
 	<key>NSAppTransportSecurity</key>
 	<dict>
+		<!-- Production API is currently served over HTTP by IP. Keep this only
+		     for TestFlight/internal testing; remove it once the API is on HTTPS. -->
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 		<key>NSExceptionDomains</key>
