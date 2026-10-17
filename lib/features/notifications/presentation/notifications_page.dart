@@ -22,9 +22,18 @@ class NotificationsPage extends StatefulWidget {
 
 class _NotificationsPageState extends State<NotificationsPage> {
   final _service = NotificationService();
+  final _kaydirma = ScrollController();
+
   List<NotificationItem> _items = const [];
   bool _loading = true;
   String? _error;
+
+  /// Kac sayfa cekildi, arkasinda baska sayfa kaldi mi ve su an bir
+  /// sayfa yolda mi. Bir santiyede yuzlerce bildirim olabiliyor; liste
+  /// kaydirdikca uzuyor, hepsi tek seferde cekilmiyor.
+  int _sayfa = 0;
+  bool _sonSayfa = true;
+  bool _sayfaYukleniyor = false;
 
   @override
   void initState() {
@@ -33,40 +42,80 @@ class _NotificationsPageState extends State<NotificationsPage> {
     // Santiye degisince liste de tazeleniyor; ekranda eski santiyenin
     // bildirimleri kaliyordu.
     ActiveSite.revision.addListener(_santiyeDegisti);
+    _kaydirma.addListener(_kaydirildi);
   }
 
   @override
   void dispose() {
     ActiveSite.revision.removeListener(_santiyeDegisti);
+    _kaydirma
+      ..removeListener(_kaydirildi)
+      ..dispose();
     super.dispose();
+  }
+
+  /// Listenin sonuna yaklasinca bir sonraki sayfa isteniyor.
+  void _kaydirildi() {
+    if (!_kaydirma.hasClients) return;
+    final kalan =
+        _kaydirma.position.maxScrollExtent - _kaydirma.position.pixels;
+    if (kalan < 400) _sonrakiSayfa();
   }
 
   void _santiyeDegisti() {
     if (!mounted) return;
-    setState(() => _items = const []);
+    setState(() {
+      _items = const [];
+      _sayfa = 0;
+      _sonSayfa = true;
+    });
     _load();
   }
 
+  /// Ilk sayfayi cekiyor; asagi kaydirildikca [_sonrakiSayfa] devam
+  /// ettiriyor.
+  ///
+  /// Tip suzgeci yok: sunucu WORK_ITEM_REMINDER gibi yeni tipler de
+  /// gonderiyor ve bunlar ekranda hic gorunmuyordu. Hangi bildirimin
+  /// gonderilecegine sunucu karar veriyor. Tarih suzgeci de kalkti:
+  /// sayfalama geldigi icin eski kayitlar listeyi sismiyor.
   Future<void> _load() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final all = await _service.getNotifications();
-      final cutoff = DateTime.now().subtract(const Duration(days: 15));
-      // Tip suzgeci kaldirildi: sunucu WORK_ITEM_REMINDER gibi yeni
-      // tipler de gonderiyor ve bunlar ekranda hic gorunmuyordu.
-      // Hangi bildirimin gonderilecegine sunucu karar veriyor.
-      final items = all
-          .where((item) => !item.createdAt.toLocal().isBefore(cutoff))
-          .toList();
+      final sayfa = await _service.getNotificationPage(sayfa: 0);
       if (!mounted) return;
-      setState(() => _items = items);
+      setState(() {
+        _items = sayfa.kayitlar;
+        _sayfa = 0;
+        _sonSayfa = sayfa.sonSayfa;
+      });
     } on NotificationException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// Bir sonraki sayfayi listenin altina ekliyor.
+  Future<void> _sonrakiSayfa() async {
+    if (_sayfaYukleniyor || _sonSayfa || _loading) return;
+    setState(() => _sayfaYukleniyor = true);
+    try {
+      final sayfa = await _service.getNotificationPage(sayfa: _sayfa + 1);
+      if (!mounted) return;
+      setState(() {
+        _items = [..._items, ...sayfa.kayitlar];
+        _sayfa += 1;
+        _sonSayfa = sayfa.sonSayfa;
+      });
+    } on NotificationException {
+      // Sessiz gecildi: ekranda duran liste bozulmuyor, kullanici
+      // tekrar kaydirinca yeniden deneniyor.
+    } finally {
+      if (mounted) setState(() => _sayfaYukleniyor = false);
     }
   }
 
@@ -104,7 +153,6 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   Widget build(BuildContext context) {
     final c = context.colors;
-    final unreadCount = _items.where((item) => !item.isRead).length;
 
     return ColoredBox(
       color: c.bg,
@@ -112,32 +160,38 @@ class _NotificationsPageState extends State<NotificationsPage> {
         child: Column(
           children: [
             const AppHeader(),
-            ScreenTitleBar(
-              title: 'Bildirimler',
-              onBack: () => context.go('/dashboard'),
-              trailing: unreadCount > 0
-                  ? Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 29,
-                        minHeight: 29,
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 9),
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: c.bad,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        style: const TextStyle(
-                          fontFamily: kBody,
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
+            // Rozet alt sekmedekiyle ayni sayaci okuyor. Ekrandaki
+            // listeden sayilinca kaydirdikca artiyor, altta 99+ yazarken
+            // ustte 75 gibi baska bir sayi duruyordu.
+            ValueListenableBuilder<int>(
+              valueListenable: NotificationUnreadCount.value,
+              builder: (context, okunmamis, _) => ScreenTitleBar(
+                title: 'Bildirimler',
+                onBack: () => context.go('/dashboard'),
+                trailing: okunmamis > 0
+                    ? Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 29,
+                          minHeight: 29,
                         ),
-                      ),
-                    )
-                  : null,
+                        padding: const EdgeInsets.symmetric(horizontal: 9),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: c.bad,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          okunmamis > 99 ? '99+' : '$okunmamis',
+                          style: const TextStyle(
+                            fontFamily: kBody,
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      )
+                    : null,
+              ),
             ),
             Expanded(child: _body()),
           ],
@@ -193,15 +247,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
       color: c.ink,
       onRefresh: _load,
       child: ListView.separated(
+        controller: _kaydirma,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        itemCount: _items.isEmpty ? 1 : _items.length,
+        // Son satir: sonraki sayfa gelirken kucuk bir gosterge duruyor.
+        itemCount: _items.isEmpty ? 1 : _items.length + (_sonSayfa ? 0 : 1),
         separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
             return const Padding(
               padding: EdgeInsets.only(top: 40),
               child: EmptyView(title: 'Bildirim bulunmamaktadır.'),
+            );
+          }
+          if (index >= _items.length) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              child: Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: c.muted,
+                  ),
+                ),
+              ),
             );
           }
           final item = _items[index];

@@ -7,6 +7,15 @@ import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/notification_item.dart';
 
+/// Bir bildirim sayfasi: o sayfanin kayitlari ve arkasinda baska sayfa
+/// kalip kalmadigi.
+class NotificationSayfasi {
+  const NotificationSayfasi({required this.kayitlar, required this.sonSayfa});
+
+  final List<NotificationItem> kayitlar;
+  final bool sonSayfa;
+}
+
 class NotificationUnreadCount {
   NotificationUnreadCount._();
 
@@ -30,7 +39,15 @@ class NotificationUnreadCount {
 /// Content-Type'ta charset bildirmiyor, http paketi boyle durumda latin1
 /// varsayiyor.
 class NotificationService {
-  Future<List<NotificationItem>> getNotifications() async {
+  /// Bildirimlerin tek bir sayfasi.
+  ///
+  /// Sunucuda bir santiyede yuzlerce bildirim birikebiliyor; hepsini tek
+  /// istekte cekmek hem uzun suruyor hem de listenin sonu gelmiyordu.
+  /// Ekran kaydirdikca sonraki sayfayi istiyor.
+  Future<NotificationSayfasi> getNotificationPage({
+    int sayfa = 0,
+    int adet = 25,
+  }) async {
     final token = _token();
     try {
       // Santiye suzgeci sunucuda uygulaniyor. Istemcide suzmek yetmiyor:
@@ -40,8 +57,8 @@ class NotificationService {
       final seciliSantiye = SessionManager.instance.selectedSiteId;
       final uri = Uri.parse('${ApiConfig.baseUrl}/notifications').replace(
         queryParameters: {
-          'page': '0',
-          'size': '100',
+          'page': '$sayfa',
+          'size': '$adet',
           if (seciliSantiye != null && seciliSantiye > 0)
             'siteId': '$seciliSantiye',
         },
@@ -55,10 +72,17 @@ class NotificationService {
         }
         final data = decoded['data'];
         final content = data is Map<String, dynamic> ? data['content'] : null;
-        if (content is! List) return const [];
+        if (content is! List) {
+          return const NotificationSayfasi(kayitlar: [], sonSayfa: true);
+        }
+        // Sunucu son sayfada 'last: true' donuyor; gelmezse dolu sayfa
+        // arkasinda baska sayfa olabilir diye kabul ediliyor.
+        final sonMu = data is Map<String, dynamic> && data['last'] is bool
+            ? data['last'] as bool
+            : content.length < adet;
         // Sunucu suzguyu uygulamazsa diye ikinci bir kontrol; santiyesi
         // belirsiz (siteId gelmeyen) bildirimler gizlenmiyor.
-        return content
+        final kayitlar = content
             .whereType<Map>()
             .map(
               (item) =>
@@ -72,6 +96,7 @@ class NotificationService {
                   item.siteId == seciliSantiye,
             )
             .toList();
+        return NotificationSayfasi(kayitlar: kayitlar, sonSayfa: sonMu);
       }
       _throwForResponse(response.statusCode, body, 'Bildirimler alınamadı.');
     } on http.ClientException {
@@ -85,17 +110,33 @@ class NotificationService {
     }
   }
 
-  /// Okunmamis bildirim sayisi.
+  /// Secili santiyedeki okunmamis bildirim sayisi.
   ///
-  /// Sunucudaki sayac butun santiyeleri topluyor; liste ise secili
-  /// santiyeyi gosteriyordu, rozet ile liste tutmuyordu. Sayi artik
-  /// ayni listeden hesaplaniyor.
+  /// Sunucudaki sayac santiye belirtilmezse butun santiyeleri topluyor;
+  /// liste ise secili santiyeyi gosteriyor ve rozet ile liste
+  /// tutmuyordu. Sayac da artik santiye ile sorulyor.
   Future<int> getUnreadCount() async {
+    final token = _token();
     try {
-      final bildirimler = await getNotifications();
-      final sayi = bildirimler.where((item) => !item.isRead).length;
-      NotificationUnreadCount.set(sayi);
-      return sayi;
+      final seciliSantiye = SessionManager.instance.selectedSiteId;
+      final uri = Uri.parse('${ApiConfig.baseUrl}/notifications/unread-count')
+          .replace(
+            queryParameters: {
+              if (seciliSantiye != null && seciliSantiye > 0)
+                'siteId': '$seciliSantiye',
+            },
+          );
+      final response = await http.get(uri, headers: _headers(token));
+      final body = utf8.decode(response.bodyBytes);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(body);
+        final data = decoded is Map<String, dynamic> ? decoded['data'] : null;
+        final ham = data is Map<String, dynamic> ? data['count'] : null;
+        final sayi = ham is num ? ham.toInt() : int.tryParse('$ham') ?? 0;
+        NotificationUnreadCount.set(sayi);
+        return sayi;
+      }
+      _throwForResponse(response.statusCode, body, 'Bildirim sayısı alınamadı.');
     } on http.ClientException {
       throw const NotificationException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
