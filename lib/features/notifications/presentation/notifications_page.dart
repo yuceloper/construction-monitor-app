@@ -250,8 +250,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         controller: _kaydirma,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        // Son satir: sonraki sayfa gelirken kucuk bir gosterge duruyor.
-        itemCount: _items.isEmpty ? 1 : _items.length + (_sonSayfa ? 0 : 1),
+        // Son satir: sonraki sayfa gelirken gosterge, liste bitince
+        // "tamami yuklendi" bilgisi duruyor.
+        itemCount: _items.isEmpty ? 1 : _items.length + 1,
         separatorBuilder: (_, __) => const SizedBox(height: Sizes.gap),
         itemBuilder: (_, index) {
           if (_items.isEmpty) {
@@ -260,18 +261,49 @@ class _NotificationsPageState extends State<NotificationsPage> {
               child: EmptyView(title: 'Bildirim bulunmamaktadır.'),
             );
           }
-          if (index >= _items.length) {
+          if (index >= _items.length && _sonSayfa) {
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
+              padding: const EdgeInsets.symmetric(vertical: 20),
               child: Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.4,
+                child: Text(
+                  '${_items.length} bildirimin tamamı yüklendi',
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w500,
                     color: c.muted,
                   ),
                 ),
+              ),
+            );
+          }
+          if (index >= _items.length) {
+            // Listenin sonundaki satir: sonraki sayfa gelirken bunu
+            // goruyoruz, boylece asagida devami oldugu anlasiliyor.
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      color: c.muted,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Daha fazla bildirim yükleniyor',
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: c.sub,
+                    ),
+                  ),
+                ],
               ),
             );
           }
