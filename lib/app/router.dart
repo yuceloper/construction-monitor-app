@@ -16,6 +16,7 @@ import '../features/process_tracking/presentation/process_detail_page.dart';
 import '../features/process_tracking/presentation/process_update_page.dart';
 import '../features/process_tracking/presentation/stage_update_page.dart';
 import '../features/process_tracking/presentation/work_detail_page.dart';
+import '../features/process_tracking/services/project_service.dart';
 import 'main_shell.dart';
 
 class AppRouter {
@@ -45,7 +46,7 @@ class AppRouter {
           ),
           GoRoute(
             path: '/daily-tasks/create',
-            pageBuilder: (context, state) => const NoTransitionPage(child: DailyTaskCreatePage()),
+            pageBuilder: (context, state) => const NoTransitionPage(child: _DailyTaskCreateGate()),
           ),
           GoRoute(
             path: '/daily-tasks/:taskId',
@@ -141,4 +142,63 @@ class AppRouter {
       ),
     ],
   );
+}
+
+class _DailyTaskCreateGate extends StatefulWidget {
+  const _DailyTaskCreateGate();
+
+  @override
+  State<_DailyTaskCreateGate> createState() => _DailyTaskCreateGateState();
+}
+
+class _DailyTaskCreateGateState extends State<_DailyTaskCreateGate> {
+  final _projectService = ProjectService();
+  bool _allowed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBlocks();
+  }
+
+  Future<void> _checkBlocks() async {
+    try {
+      final projects = await _projectService.getProjects();
+      if (!mounted) return;
+      if (projects.isNotEmpty) {
+        setState(() => _allowed = true);
+        return;
+      }
+      await _showAndClose('Blok tanımı yapılmadan iş ekleyemezsiniz.');
+    } on ProjectException catch (error) {
+      if (!mounted) return;
+      await _showAndClose(error.message);
+    }
+  }
+
+  Future<void> _showAndClose(String message) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Günlük İş Ekle'),
+        content: Text(message),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+    if (mounted) context.pop(false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_allowed) return const DailyTaskCreatePage();
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
 }
