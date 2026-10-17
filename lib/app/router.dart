@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/login_page.dart';
+import '../features/auth/services/session_manager.dart';
 import '../features/site_selection/presentation/site_selection_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
 import '../features/daily_tasks/presentation/daily_task_create_page.dart';
@@ -20,8 +21,24 @@ import '../features/process_tracking/services/project_service.dart';
 import 'main_shell.dart';
 
 class AppRouter {
+  static String get _initialLocation {
+    final session = SessionManager.instance;
+    if (!session.isAuthenticated) return '/login';
+    return session.selectedSiteId != null ? '/dashboard' : '/sites';
+  }
+
   static final GoRouter router = GoRouter(
-    initialLocation: '/login',
+    initialLocation: _initialLocation,
+    redirect: (context, state) {
+      final session = SessionManager.instance;
+      final isLogin = state.matchedLocation == '/login';
+
+      if (!session.isAuthenticated && !isLogin) return '/login';
+      if (session.isAuthenticated && isLogin) {
+        return session.selectedSiteId != null ? '/dashboard' : '/sites';
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/login',
