@@ -16,4 +16,10 @@ class SiteSummary {
       location: json['location']?.toString(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'location': location,
+      };
 }
