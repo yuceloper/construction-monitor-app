@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/progress_stage.dart';
+import '../models/project_progress_summary.dart';
 
 class ProgressService {
   Future<List<ProgressStage>> getStagesByProject(int projectId) async {
@@ -37,6 +38,15 @@ class ProgressService {
     }
 
     return parsed.clamp(0.0, 100.0);
+  }
+
+  Future<ProjectProgressSummary> getProgressSummary(int projectId) async {
+    final decoded = await _get('/progress/project/$projectId/summary');
+    final data = decoded['data'];
+    if (data is! Map) {
+      throw const ProgressException('Sunucu planlanan ilerleme bilgisini döndürmedi.');
+    }
+    return ProjectProgressSummary.fromJson(Map<String, dynamic>.from(data));
   }
 
   Future<Map<String, dynamic>> _get(String path) async {
