@@ -20,41 +20,7 @@ class AuthService {
         }),
       );
 
-      final responseBody = response.body;
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(responseBody);
-
-        if (decoded is! Map<String, dynamic>) {
-          throw const AuthException('Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.');
-        }
-
-        if (decoded['success'] != true) {
-          final message = decoded['message']?.toString().trim();
-          throw AuthException(
-            message != null && message.isNotEmpty
-                ? message
-                : 'Giriş başarısız.',
-          );
-        }
-
-        final data = decoded['data'];
-        if (data is! Map<String, dynamic>) {
-          throw const AuthException(
-            'Sunucu kullanıcı bilgilerini döndürmedi.',
-          );
-        }
-
-        final authResponse = AuthResponse.fromJson(data);
-
-        if (authResponse.accessToken.isEmpty) {
-          throw const AuthException('Sunucu access token döndürmedi.');
-        }
-
-        return authResponse;
-      }
-
-      throw AuthException(_readErrorMessage(responseBody, response.statusCode));
+      return _parseAuthResponse(response, loginRequest: true);
     } on http.ClientException {
       throw AuthException(
         'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
@@ -64,6 +30,63 @@ class AuthService {
         'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
       );
     }
+  }
+
+  Future<AuthResponse> refresh(String refreshToken) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/auth/refresh').replace(
+        queryParameters: {'refreshToken': refreshToken},
+      );
+      final response = await http.post(uri);
+      return _parseAuthResponse(response, loginRequest: false);
+    } on http.ClientException {
+      throw const AuthException('Sunucuya ulaşılamıyor.');
+    } on FormatException {
+      throw const AuthException('Oturum yenilenemedi.');
+    }
+  }
+
+  AuthResponse _parseAuthResponse(
+    http.Response response, {
+    required bool loginRequest,
+  }) {
+    final responseBody = response.body;
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final decoded = jsonDecode(responseBody);
+
+      if (decoded is! Map<String, dynamic>) {
+        throw const AuthException(
+          'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+        );
+      }
+
+      if (decoded['success'] != true) {
+        final message = decoded['message']?.toString().trim();
+        throw AuthException(
+          message != null && message.isNotEmpty
+              ? message
+              : (loginRequest ? 'Giriş başarısız.' : 'Oturum yenilenemedi.'),
+        );
+      }
+
+      final data = decoded['data'];
+      if (data is! Map<String, dynamic>) {
+        throw const AuthException('Sunucu kullanıcı bilgilerini döndürmedi.');
+      }
+
+      final authResponse = AuthResponse.fromJson(data);
+      if (authResponse.accessToken.isEmpty) {
+        throw const AuthException('Sunucu access token döndürmedi.');
+      }
+      return authResponse;
+    }
+
+    if (!loginRequest && (response.statusCode == 401 || response.statusCode == 403)) {
+      throw const AuthException('Oturum süresi doldu.');
+    }
+
+    throw AuthException(_readErrorMessage(responseBody, response.statusCode));
   }
 
   String _readErrorMessage(String body, int statusCode) {
