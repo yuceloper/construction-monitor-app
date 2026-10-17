@@ -61,23 +61,20 @@ Future<WarningDraft?> showWarningCreateDialog(BuildContext context) async {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ScrollableField(
-                builder: (scrollController) => TextField(
-                  autofocus: true,
-                  scrollController: scrollController,
-                  minLines: 3,
-                  maxLines: 5,
-                  maxLength: 500,
-                  inputFormatters: [LengthLimitingTextInputFormatter(500)],
-                  onChanged: (value) => draft = value,
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 15.5,
-                    color: context.colors.ink,
-                  ),
-                  cursorColor: context.colors.accent,
-                  decoration: warningField(context),
+              TextField(
+                autofocus: true,
+                minLines: 3,
+                maxLines: 5,
+                maxLength: 500,
+                inputFormatters: [LengthLimitingTextInputFormatter(500)],
+                onChanged: (value) => draft = value,
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 15.5,
+                  color: context.colors.ink,
                 ),
+                cursorColor: context.colors.accent,
+                decoration: warningField(context),
               ),
               const SizedBox(height: 10),
               SizedBox(
