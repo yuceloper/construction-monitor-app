@@ -223,7 +223,7 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                           Expanded(
                             child: _ProgressMetric(
                               value: '%$roundedProgress',
-                              label: 'Gerçekleşen',
+                              label: 'GERÇEKLEŞEN',
                               dotColor: c.anchorAccent,
                             ),
                           ),
@@ -237,15 +237,24 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                             Expanded(
                               child: _ProgressMetric(
                                 value: '%$planned',
-                                label: 'Planlanan',
+                                label: 'PLANLANAN',
                                 dotColor: Colors.white.withValues(alpha: .42),
                               ),
                             ),
                           ],
                         ],
                       ),
+                      const SizedBox(height: 14),
+                      _PlannedProgressRail(
+                        actual: roundedProgress,
+                        planned: planned,
+                        color: c.anchorAccent,
+                      ),
+                      // Durum bandi barin altinda: once ne kadar
+                      // ilerledigi goruluyor, sonra plana gore nerede
+                      // oldugu yaziyor.
                       if (planned != null && variance != null) ...[
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -272,14 +281,15 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                               Expanded(
                                 child: Text(
                                   behind
-                                      ? '%${variance.abs()} geride · Plandan daha yavaş'
+                                      ? '%${variance.abs()} GERİDE · PLANDAN DAHA YAVAŞ'
                                       : ahead
-                                      ? '%$variance önde · Plandan daha hızlı'
-                                      : 'Plan ile aynı seviyede',
+                                      ? '%$variance ÖNDE · PLANDAN DAHA HIZLI'
+                                      : 'PLAN İLE AYNI SEVİYEDE',
                                   style: const TextStyle(
                                     fontFamily: kBody,
-                                    fontSize: 13.5,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: .4,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -288,12 +298,6 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                           ),
                         ),
                       ],
-                      const SizedBox(height: 14),
-                      _PlannedProgressRail(
-                        actual: roundedProgress,
-                        planned: planned,
-                        color: c.anchorAccent,
-                      ),
                       if (_progressSummary?.plannedEndDate != null) ...[
                         const SizedBox(height: 9),
                         Text(
@@ -452,10 +456,24 @@ class _PlannedProgressRail extends StatelessWidget {
             height: 10,
             decoration: BoxDecoration(color: Colors.white.withValues(alpha: .12), borderRadius: BorderRadius.circular(99)),
           ),
+          // Planlanan kisim soluk mavi dolgu: gerceklesen sifirken bile
+          // bar mavi gorunuyor ve iki deger yan yana okunuyor.
+          if (plannedValue != null)
+            FractionallySizedBox(
+              widthFactor: plannedValue,
+              child: Container(
+                height: 10,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .38),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
           FractionallySizedBox(
             widthFactor: actualValue,
             child: Container(height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(99))),
           ),
+          // Planlanan sinirini belirten ince cizgi.
           if (plannedValue != null)
             Positioned(
               left: (constraints.maxWidth * plannedValue - 1)
