@@ -39,6 +39,9 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
   bool _isAddingWarning = false;
   int? _audioLoadingWarningId;
   int? _playingWarningId;
+
+  /// Calan uyarinin gecen suresi. Yalnizca calarken yaziliyor.
+  Duration _uyariSesKonumu = Duration.zero;
   String? _errorMessage;
   WorkItemDetail? _detail;
 
@@ -60,7 +63,13 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     super.initState();
     _warningAudioPlayer.onPlayerComplete.listen((_) {
       if (!mounted) return;
-      setState(() => _playingWarningId = null);
+      setState(() {
+        _playingWarningId = null;
+        _uyariSesKonumu = Duration.zero;
+      });
+    });
+    _warningAudioPlayer.onPositionChanged.listen((konum) {
+      if (mounted) setState(() => _uyariSesKonumu = konum);
     });
     _loadDetail();
   }
@@ -139,17 +148,30 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
     }
   }
 
+  /// Calan uyarinin suresi, "0:07" bicinde.
+  String get _uyariSesSuresi {
+    final dakika = _uyariSesKonumu.inMinutes;
+    final saniye = (_uyariSesKonumu.inSeconds % 60).toString().padLeft(2, '0');
+    return '$dakika:$saniye';
+  }
+
   Future<void> _playWarningAudio(WorkItemWarning warning) async {
     if (!warning.hasAudio || _audioLoadingWarningId != null) return;
 
     try {
       if (_playingWarningId == warning.id) {
         await _warningAudioPlayer.stop();
-        if (mounted) setState(() => _playingWarningId = null);
+        if (mounted) {
+          setState(() {
+            _playingWarningId = null;
+            _uyariSesKonumu = Duration.zero;
+          });
+        }
         return;
       }
 
       await _warningAudioPlayer.stop();
+      if (mounted) setState(() => _uyariSesKonumu = Duration.zero);
       setState(() => _audioLoadingWarningId = warning.id);
       final source = await _service.downloadWarningAudio(_id, warning.id);
       await _warningAudioPlayer.play(UrlSource(source));
@@ -436,6 +458,9 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                             createdDate: _date(item.createdAt),
                             audioLoading: _audioLoadingWarningId == item.id,
                             audioPlaying: _playingWarningId == item.id,
+                            audioSure: _playingWarningId == item.id
+                                ? _uyariSesSuresi
+                                : null,
                             onPlayAudio: () => _playWarningAudio(item),
                             onUpdate: () => _editWarning(item),
                             onDelete: () => _deleteWarning(item),
@@ -684,6 +709,9 @@ class _WarningCard extends StatelessWidget {
   final String createdDate;
   final bool audioLoading;
   final bool audioPlaying;
+
+  /// Calarken gecen sure, "0:07" gibi. Calmiyorsa null.
+  final String? audioSure;
   final VoidCallback onPlayAudio;
   final VoidCallback onUpdate;
   final VoidCallback onDelete;
@@ -693,6 +721,7 @@ class _WarningCard extends StatelessWidget {
     required this.createdDate,
     required this.audioLoading,
     required this.audioPlaying,
+    this.audioSure,
     required this.onPlayAudio,
     required this.onUpdate,
     required this.onDelete,
@@ -741,6 +770,20 @@ class _WarningCard extends StatelessWidget {
                         ),
                         if (item.hasAudio) ...[
                           const SizedBox(width: 8),
+                          // Calarken gecen sure hoparlorun solunda
+                          // duruyor; durunca kayboluyor.
+                          if (audioSure != null) ...[
+                            Text(
+                              audioSure!,
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: c.accent,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
                           SizedBox(
                             width: 36,
                             height: 36,
