@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cross_file/cross_file.dart';
@@ -163,19 +164,41 @@ class DailyTaskService {
       // Her fotograf kendi isteginde gidiyor: hepsi tek istekte gidince
       // sunucunun govde siniri (nginx 413) asiliyor ve hicbiri
       // yuklenmiyordu. Istekler ikiser ikiser es zamanli gonderiliyor;
-      // on fotograf sirayla gidince kaydetme cok uzun suruyor, ucer
-      // gonderilince de baglanti kopup yarisi yuklenmeden kaliyordu.
+      // on fotograf sirayla gidince kaydetme cok uzun suruyordu.
       const esZamanli = 2;
       var yuklenen = 0;
       onIlerleme?.call(0, photos.length);
-      for (var i = 0; i < photos.length; i += esZamanli) {
-        final grup = photos.skip(i).take(esZamanli).toList();
-        await Future.wait(
-          grup.map((photo) async {
-            await _tekFotografGonder(taskId, token, photo);
-            yuklenen += 1;
-            onIlerleme?.call(yuklenen, photos.length);
-          }),
+
+      // Dusen fotograflar toplanip bir kez daha deneniyor. Eskiden
+      // gruptan biri hata verince butun dongu kesiliyor ve geri kalan
+      // fotograflar hic gonderilmiyordu: on fotograftan ucu yuklenip
+      // yedisi sessizce kaliyordu.
+      var sirada = List<XFile>.from(photos);
+      for (var tur = 0; tur < 2 && sirada.isNotEmpty; tur++) {
+        final dusenler = <XFile>[];
+        for (var i = 0; i < sirada.length; i += esZamanli) {
+          final grup = sirada.skip(i).take(esZamanli).toList();
+          await Future.wait(
+            grup.map((photo) async {
+              try {
+                await _tekFotografGonder(taskId, token, photo);
+                yuklenen += 1;
+                onIlerleme?.call(yuklenen, photos.length);
+              } catch (_) {
+                dusenler.add(photo);
+              }
+            }),
+          );
+        }
+        sirada = dusenler;
+      }
+
+      if (sirada.isNotEmpty) {
+        // Is kaydi ve yuklenen fotograflar duruyor; kullanici kacinin
+        // eksik kaldigini goruyor.
+        throw DailyTaskException(
+          '${photos.length} fotoğraftan ${sirada.length} tanesi yüklenemedi. '
+          'İş kaydedildi, eksik fotoğrafları tekrar ekleyebilirsiniz.',
         );
       }
       return getTask(taskId);
@@ -215,7 +238,18 @@ class DailyTaskService {
 
     http.Response response;
     try {
-      response = await http.Response.fromStream(await istek.send());
+      // Sure siniri: sunucu yanit vermezse istek sonsuza kadar
+      // beklemiyor, kaydetme ekraninda takili kalmiyor.
+      response = await http.Response.fromStream(
+        await istek.send(),
+      ).timeout(const Duration(seconds: 60));
+    } on TimeoutException {
+      if (!tekrar) {
+        throw const DailyTaskException(
+          'Fotoğraf yüklenemedi, sunucu yanıt vermedi.',
+        );
+      }
+      return _tekFotografGonder(taskId, token, photo, tekrar: false);
     } on http.ClientException {
       if (!tekrar) rethrow;
       await Future<void>.delayed(const Duration(milliseconds: 400));

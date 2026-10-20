@@ -329,22 +329,29 @@ class _NotificationCard extends StatelessWidget {
     // ekranindaki gibi duruyor.
     final accent = isDaily ? c.accent : c.warn;
     final content = _NotificationContent.fromItem(item);
+    // Okunmus bildirim geri cekiliyor: zemini sonuk, serit soluk, yazi
+    // ince. Okunmamis olan beyaz kagitta, kalin baslikla ve basinda bir
+    // noktayla duruyor. Ikisi ayni gorunuyordu.
+    final okundu = item.isRead;
 
     return Pressable(
       onTap: onTap,
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: c.surface,
+          color: okundu ? c.surface2 : c.surface,
           borderRadius: BorderRadius.circular(Sizes.rCard),
-          border: Border.all(color: c.border),
-          boxShadow: kartGolgesi(context),
+          border: Border.all(color: okundu ? c.border2 : c.border),
+          boxShadow: okundu ? const [] : kartGolgesi(context),
         ),
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 5, color: accent),
+              Container(
+                width: 5,
+                color: okundu ? accent.withValues(alpha: .35) : accent,
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -355,6 +362,20 @@ class _NotificationCard extends StatelessWidget {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          if (!okundu) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6),
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: accent,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
                           Expanded(
                             child: Text(
                               content.title,
@@ -364,10 +385,12 @@ class _NotificationCard extends StatelessWidget {
                                 fontFamily: kDisplay,
                                 fontSize: 16,
                                 height: 1.2,
-                                fontWeight: isDaily
-                                    ? FontWeight.w600
-                                    : FontWeight.w700,
-                                color: c.ink,
+                                fontWeight: okundu
+                                    ? FontWeight.w500
+                                    : (isDaily
+                                          ? FontWeight.w600
+                                          : FontWeight.w700),
+                                color: okundu ? c.sub : c.ink,
                               ),
                             ),
                           ),

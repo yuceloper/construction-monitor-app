@@ -71,6 +71,22 @@ class _DailyTasksPageState extends State<DailyTasksPage>
     return liste;
   }
 
+  /// Secili butun olcutleri kaldiriyor.
+  void _filtreyiTemizle() {
+    setState(() {
+      _filtreOncelik = null;
+      _filtreKisi = null;
+      _siralama = 'yeni';
+    });
+  }
+
+  /// Kac olcut secili? Filtre dugmesinin yanindaki sayi bu.
+  int get _filtreSayisi => [
+    _filtreOncelik != null,
+    _filtreKisi != null,
+    _siralama != 'yeni',
+  ].where((secili) => secili).length;
+
   bool get _filtreVar =>
       _filtreOncelik != null || _filtreKisi != null || _siralama != 'yeni';
 
@@ -197,16 +213,20 @@ class _DailyTasksPageState extends State<DailyTasksPage>
         builder: (sheetContext, setSheetState) {
           final c = sheetContext.colors;
 
+          // Satirin kendi context'i gerekiyor: tarayicida secim listesi
+          // bu satirin altina yapisik aciliyor, yoksa ekranin tepesinde
+          // beliriyordu.
           Widget satir(
             String baslik,
             String? deger,
             IconData ikon,
-            VoidCallback onTap,
+            void Function(BuildContext satirContext) onTap,
           ) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: Pressable(
-                onTap: onTap,
+              child: Builder(
+                builder: (satirContext) => Pressable(
+                onTap: () => onTap(satirContext),
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(16, 15, 14, 15),
                   decoration: BoxDecoration(
@@ -249,6 +269,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                   ),
                 ),
               ),
+              ),
             );
           }
 
@@ -271,9 +292,10 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                   'Kritiklik',
                   _filtreOncelik == null ? null : _oncelikAdi(_filtreOncelik!),
                   LucideIcons.triangleAlert,
-                  () async {
+                  (satirContext) async {
                     final secim = await secimPaneliAc<String>(
                       sheetContext,
+                      alanContext: satirContext,
                       baslik: 'Kritiklik',
                       secili: _filtreOncelik ?? '',
                       secenekler: const [
@@ -294,9 +316,10 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                   'Tarihe Göre Sırala',
                   _siralama == 'yeni' ? 'Yeniden Eskiye' : 'Eskiden Yeniye',
                   LucideIcons.calendarDays,
-                  () async {
+                  (satirContext) async {
                     final secim = await secimPaneliAc<String>(
                       sheetContext,
+                      alanContext: satirContext,
                       baslik: 'Tarihe Göre Sırala',
                       secili: _siralama,
                       secenekler: const [
@@ -309,9 +332,12 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                     setSheetState(() {});
                   },
                 ),
-                satir('Kişi', _filtreKisi, LucideIcons.user, () async {
+                satir('Kişi', _filtreKisi, LucideIcons.user, (
+                  satirContext,
+                ) async {
                   final secim = await secimPaneliAc<String>(
                     sheetContext,
+                    alanContext: satirContext,
                     baslik: 'Kişi',
                     secili: _filtreKisi ?? '',
                     secenekler: [
@@ -326,11 +352,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                 if (_filtreVar)
                   Pressable(
                     onTap: () {
-                      setState(() {
-                        _filtreOncelik = null;
-                        _filtreKisi = null;
-                        _siralama = 'yeni';
-                      });
+                      _filtreyiTemizle();
                       Navigator.of(sheetContext).pop();
                     },
                     child: Padding(
@@ -436,15 +458,48 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                 padding: const EdgeInsets.fromLTRB(20, 2, 18, 8),
                 child: Row(
                   children: [
-                    // Filtre, is sayisinin solunda duruyor.
+                    // Filtre, is sayisinin solunda duruyor. Secim
+                    // varken dolu bir rozete donuyor: rengi degistirmek
+                    // tek basina fark edilmiyordu.
                     Pressable(
                       onTap: _filtrePaneliniAc,
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(0, 6, 12, 6),
-                        child: Icon(
-                          LucideIcons.slidersHorizontal,
-                          size: 18,
-                          color: _filtreVar ? c.accent : c.sub,
+                        padding: const EdgeInsets.fromLTRB(0, 4, 12, 4),
+                        child: Container(
+                          padding: _filtreVar
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 9,
+                                  vertical: 5,
+                                )
+                              : const EdgeInsets.symmetric(vertical: 2),
+                          decoration: _filtreVar
+                              ? BoxDecoration(
+                                  color: c.accent,
+                                  borderRadius: BorderRadius.circular(9),
+                                )
+                              : null,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                LucideIcons.slidersHorizontal,
+                                size: 18,
+                                color: _filtreVar ? c.surface : c.sub,
+                              ),
+                              if (_filtreVar) ...[
+                                const SizedBox(width: 6),
+                                Text(
+                                  '$_filtreSayisi',
+                                  style: TextStyle(
+                                    fontFamily: kBody,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                    color: c.surface,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -551,26 +606,39 @@ class _DailyTasksPageState extends State<DailyTasksPage>
             children: [
               SizedBox(
                 height: constraints.maxHeight,
-                child: EmptyView(
-                  title: _showAll
-                      ? 'Henüz günlük iş bulunmuyor.'
-                      : 'Aktif günlük iş bulunmuyor.',
-                  // Hic is yoksa dogrudan ekleme; aktif liste bos ama
-                  // tamamlanmis is varsa onlara gecis.
-                  actionLabel: _hicIsYok
-                      ? 'Ekle'
-                      : (_tamamlanmisVar && !_showAll ? 'Tümünü Göster' : null),
-                  actionIcon: _hicIsYok
-                      ? LucideIcons.plus
-                      : (_tamamlanmisVar && !_showAll
-                            ? LucideIcons.listChecks
-                            : null),
-                  onAction: _hicIsYok
-                      ? _openCreate
-                      : (_tamamlanmisVar && !_showAll
-                            ? () => _selectTab(true)
-                            : null),
-                ),
+                // Liste dolu ama secili olcutlere uyan is yoksa neden
+                // bos oldugu yaziyor ve filtre temizlenebiliyor; "is
+                // bulunmuyor" demek yaniltiyordu.
+                child: _filtreVar && _tasks.isNotEmpty
+                    ? EmptyView(
+                        title:
+                            'Aradığınız kriterlere göre kayıt bulunmamaktadır.',
+                        actionLabel: 'Filtreyi Temizle',
+                        actionIcon: LucideIcons.filterX,
+                        onAction: _filtreyiTemizle,
+                      )
+                    : EmptyView(
+                        title: _showAll
+                            ? 'Henüz günlük iş bulunmuyor.'
+                            : 'Aktif günlük iş bulunmuyor.',
+                        // Hic is yoksa dogrudan ekleme; aktif liste bos
+                        // ama tamamlanmis is varsa onlara gecis.
+                        actionLabel: _hicIsYok
+                            ? 'Ekle'
+                            : (_tamamlanmisVar && !_showAll
+                                  ? 'Tümünü Göster'
+                                  : null),
+                        actionIcon: _hicIsYok
+                            ? LucideIcons.plus
+                            : (_tamamlanmisVar && !_showAll
+                                  ? LucideIcons.listChecks
+                                  : null),
+                        onAction: _hicIsYok
+                            ? _openCreate
+                            : (_tamamlanmisVar && !_showAll
+                                  ? () => _selectTab(true)
+                                  : null),
+                      ),
               ),
             ],
           ),
