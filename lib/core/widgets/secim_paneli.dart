@@ -300,7 +300,8 @@ Future<T?> _webListesiAc<T>(
       // ustune. Ikisine de sigmazsa ekranin icine cekiliyor ama yine
       // alanin yakininda kaliyor. Eskiden bos alan olcusune bakiliyor
       // ve liste alandan cok uzakta, sayfanin tepesinde aciliyordu.
-      final gereken = (secenekler.length * 52.0 + 14).clamp(120.0, 360.0);
+      // Bir satir: 16+16 dolgu + yazi + aradaki 4 piksel bosluk.
+      final gereken = (secenekler.length * 58.0 + 20).clamp(120.0, 360.0);
       final altBosluk = kutu == null
           ? ekran.height - 160
           : ekran.height - kutu.bottom - bosluk - kenar;
