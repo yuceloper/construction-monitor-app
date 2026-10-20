@@ -14,6 +14,7 @@ import '../../../core/widgets/secim_paneli.dart';
 import '../models/daily_task_summary.dart';
 import '../../auth/services/session_manager.dart';
 import '../../site_selection/models/site_member_summary.dart';
+import '../../process_tracking/services/project_service.dart';
 import '../../site_selection/services/site_service.dart';
 import '../services/daily_task_service.dart';
 
@@ -28,6 +29,12 @@ class _DailyTasksPageState extends State<DailyTasksPage>
     with WidgetsBindingObserver {
   final _service = DailyTaskService();
   final _siteService = SiteService();
+  final _projectService = ProjectService();
+
+  /// Santiyede tanimli blok var mi? Ekle'ye basildiginda bos bir sayfa
+  /// acip uyariyi orada gostermek yerine, uyari listenin uzerinde
+  /// cikiyor; arkada uygulamanin kendi ekrani duruyor.
+  bool? _blokVar;
 
   /// Kisi filtresinin secenekleri. Listedeki islerin kisilerinden degil,
   /// is eklerken "Ilgili Kisi" alaninda cikan santiye calisanlarindan
@@ -95,6 +102,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
     super.initState();
     _loadTasks();
     _kisileriYukle();
+    _bloklariYukle();
     // Santiye degisince ve uygulama one gelince liste tazeleniyor;
     // ekranda eski santiyenin ya da eskimis bir listenin kalmasi
     // "veri yok" gibi gorunuyordu.
@@ -117,9 +125,24 @@ class _DailyTasksPageState extends State<DailyTasksPage>
       _filtreKisi = null;
       _siralama = 'yeni';
       _santiyeKisileri = const [];
+      _blokVar = null;
     });
     _loadTasks();
     _kisileriYukle();
+    _bloklariYukle();
+  }
+
+  /// Santiyede blok var mi, onceden ogreniliyor.
+  Future<void> _bloklariYukle() async {
+    try {
+      final projeler = await _projectService.getProjects();
+      if (!mounted) return;
+      setState(() => _blokVar = projeler.isNotEmpty);
+    } catch (_) {
+      // Bilinmiyorsa Ekle eskisi gibi calisiyor; kontrol acilan
+      // ekranda yapiliyor.
+      if (mounted) setState(() => _blokVar = null);
+    }
   }
 
   /// Kisi filtresinin seceneklerini santiye calisanlarindan dolduruyor.
@@ -395,9 +418,26 @@ class _DailyTasksPageState extends State<DailyTasksPage>
   }
 
   Future<void> _openCreate() async {
+    if (_blokVar == false) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Günlük İş Ekle'),
+          content: const Text('Blok tanımı yapılmadan iş ekleyemezsiniz.'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Tamam'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
     final created = await context.push<bool>('/daily-tasks/create');
     if (!mounted || created != true) return;
     await _loadTasks(sessiz: _tasks.isNotEmpty);
+    await _bloklariYukle();
   }
 
   Future<void> _openTask(DailyTaskSummary task) async {
