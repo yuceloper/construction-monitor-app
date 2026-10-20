@@ -1,11 +1,11 @@
 {
-  "name": "Şantiye Takip Uygulaması",
-  "short_name": "Şantiye Takip",
+  "name": "SAHADA - Süreç Takip",
+  "short_name": "SAHADA",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#f4f6f8",
   "theme_color": "#101827",
-  "description": "Construction Monitor Flutter Web",
+  "description": "SAHADA - Süreç Takip",
   "orientation": "portrait-primary",
   "prefer_related_applications": false
 }
