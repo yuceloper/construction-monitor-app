@@ -106,9 +106,12 @@ class _MainShellState extends State<MainShell> {
               builder: (context, unreadCount, _) {
                 // Tarayicida dort sekme butun pencereye yayiliyordu;
                 // cizgi kenardan kenara gidiyor ama menu icerikle ayni
-                // genislikte, ortali duruyor.
+                // genislikte, ortali duruyor. Olcu icerik sutunuyla ayni:
+                // menu daha dar kalinca ustteki panelle hizasizdi.
                 final en = MediaQuery.sizeOf(context).width;
-                final yanPay = en >= 700 ? (en - 620) / 2 : 0.0;
+                final yanPay = en > kIcerikEniMax
+                    ? (en - kIcerikEniMax) / 2
+                    : 0.0;
                 return DecoratedBox(
                   decoration: BoxDecoration(
                     border: Border(top: BorderSide(color: c.border)),

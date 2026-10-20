@@ -149,12 +149,19 @@ class SecimSatiri extends StatelessWidget {
 /// bilinmiyorsa) liste ekranin ustunde ortalanir.
 Rect? _sonAlanKutusu;
 
+/// [alanContext] verilince liste o alanin altina yapisik aciliyor.
+///
+/// [SeciciAlan] kendi yerini zaten kaydediyor; kendi satirini cizen
+/// ekranlar (gunluk isler filtresi gibi) satirin context'ini buradan
+/// gecirebiliyor. Verilmezse liste ekranin ustunde ortalaniyordu.
 Future<T?> secimPaneliAc<T>(
   BuildContext context, {
   required String baslik,
   required List<SecimSecenegi<T>> secenekler,
   required T? secili,
+  BuildContext? alanContext,
 }) {
+  if (alanContext != null) _alaninYeriniKaydet(alanContext);
   // Telefonda alttan panel; tarayicida alana yapisik liste. Mobil
   // davranis hic degismiyor.
   if (MediaQuery.sizeOf(context).width >= 700) {
@@ -289,16 +296,28 @@ Future<T?> _webListesiAc<T>(
           ? (ekran.width - en) / 2
           : kutu.left.clamp(kenar, ekran.width - en - kenar);
 
-      // Asagida yer varsa alana yapisik acilir, yoksa yukari dogru.
+      // Liste tiklanan alana yapisik duruyor: once altina, sigmazsa
+      // ustune. Ikisine de sigmazsa ekranin icine cekiliyor ama yine
+      // alanin yakininda kaliyor. Eskiden bos alan olcusune bakiliyor
+      // ve liste alandan cok uzakta, sayfanin tepesinde aciliyordu.
+      final gereken = (secenekler.length * 52.0 + 14).clamp(120.0, 360.0);
       final altBosluk = kutu == null
           ? ekran.height - 160
           : ekran.height - kutu.bottom - bosluk - kenar;
       final ustBosluk = kutu == null ? 0.0 : kutu.top - bosluk - kenar;
-      final asagi = kutu == null || altBosluk >= 180 || altBosluk >= ustBosluk;
-      final enYuksek = (asagi ? altBosluk : ustBosluk).clamp(120.0, 360.0);
-      final yukariAcilisUst = kutu == null
-          ? 0.0
-          : ekran.height - kutu.top + bosluk;
+      final asagi = kutu == null || altBosluk >= gereken || altBosluk >= ustBosluk;
+      final enYuksek = gereken.clamp(
+        120.0,
+        (asagi ? altBosluk : ustBosluk).clamp(120.0, 360.0),
+      );
+
+      // Dikey yer: alta sigiyorsa alanin hemen alti, degilse hemen ustu.
+      var ust = kutu == null
+          ? 120.0
+          : (asagi ? kutu.bottom + bosluk : kutu.top - bosluk - enYuksek);
+      final enAltSinir = ekran.height - kenar - enYuksek;
+      if (ust > enAltSinir) ust = enAltSinir;
+      if (ust < kenar) ust = kenar;
 
       final liste = Material(
         color: Colors.transparent,
@@ -337,12 +356,7 @@ Future<T?> _webListesiAc<T>(
 
       return Stack(
         children: [
-          Positioned(
-            left: sol,
-            top: asagi ? (kutu == null ? 120.0 : kutu.bottom + bosluk) : null,
-            bottom: asagi ? null : yukariAcilisUst,
-            child: liste,
-          ),
+          Positioned(left: sol, top: ust, child: liste),
         ],
       );
     },
