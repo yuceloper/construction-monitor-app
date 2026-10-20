@@ -29,10 +29,54 @@ class _LoginPageState extends State<LoginPage> {
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    // Kutu dolunca temizleme dugmesi beliriyor, bosalinca kayboluyor.
+    _usernameController.addListener(_yaziDegisti);
+    _passwordController.addListener(_yaziDegisti);
+  }
+
+  void _yaziDegisti() {
+    if (mounted) setState(() {});
+  }
+
+  @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
+    _usernameController
+      ..removeListener(_yaziDegisti)
+      ..dispose();
+    _passwordController
+      ..removeListener(_yaziDegisti)
+      ..dispose();
     super.dispose();
+  }
+
+  /// Kutunun sagindaki temizleme dugmesi. Kutu bosken yer kaplamiyor.
+  Widget? _temizleDugmesi(
+    AppColors c,
+    TextEditingController denetleyici, {
+    Widget? digerDugme,
+  }) {
+    final dolu = denetleyici.text.isNotEmpty;
+    if (!dolu && digerDugme == null) return null;
+    if (!dolu) return digerDugme;
+
+    final temizle = IconButton(
+      tooltip: 'Temizle',
+      onPressed: _isLoading
+          ? null
+          : () {
+              denetleyici.clear();
+              _hatayiTemizle('');
+            },
+      icon: Icon(LucideIcons.circleX, size: 20, color: c.muted),
+    );
+
+    if (digerDugme == null) return temizle;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [temizle, digerDugme],
+    );
   }
 
   Future<void> _login() async {
@@ -155,7 +199,12 @@ class _LoginPageState extends State<LoginPage> {
                                 color: c.ink,
                               ),
                               cursorColor: c.accent,
-                              decoration: _inputDecoration(c),
+                              decoration: _inputDecoration(c).copyWith(
+                                suffixIcon: _temizleDugmesi(
+                                  c,
+                                  _usernameController,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -180,22 +229,28 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               cursorColor: c.accent,
                               decoration: _inputDecoration(c).copyWith(
-                                suffixIcon: IconButton(
-                                  tooltip: _passwordVisible
-                                      ? 'Parolayı gizle'
-                                      : 'Parolayı göster',
-                                  onPressed: _isLoading
-                                      ? null
-                                      : () => setState(
+                                // Parolada once temizleme, sonra goster
+                                // dugmesi duruyor.
+                                suffixIcon: _temizleDugmesi(
+                                  c,
+                                  _passwordController,
+                                  digerDugme: IconButton(
+                                    tooltip: _passwordVisible
+                                        ? 'Parolayı gizle'
+                                        : 'Parolayı göster',
+                                    onPressed: _isLoading
+                                        ? null
+                                        : () => setState(
                                             () => _passwordVisible =
                                                 !_passwordVisible,
                                           ),
-                                  icon: Icon(
-                                    _passwordVisible
-                                        ? LucideIcons.eyeOff
-                                        : LucideIcons.eye,
-                                    size: 20,
-                                    color: c.muted,
+                                    icon: Icon(
+                                      _passwordVisible
+                                          ? LucideIcons.eyeOff
+                                          : LucideIcons.eye,
+                                      size: 20,
+                                      color: c.muted,
+                                    ),
                                   ),
                                 ),
                               ),

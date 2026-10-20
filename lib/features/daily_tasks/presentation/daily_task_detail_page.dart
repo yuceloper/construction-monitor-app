@@ -43,6 +43,11 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   DailyTaskSummary? _task;
   String _status = 'IN_PROGRESS';
 
+  /// Ekran acildigindaki hali. Guncelle dugmesi ancak bunlardan biri
+  /// degisince calisiyor.
+  String _ilkDurum = '';
+  String _ilkNot = '';
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +89,8 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             const {'TODO', 'IN_PROGRESS', 'COMPLETED'}.contains(task.status)
             ? task.status
             : 'TODO';
+        _ilkNot = _noteController.text.trim();
+        _ilkDurum = _status;
       });
     } on DailyTaskException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
@@ -168,11 +175,19 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
     }
   }
 
+  /// Ekran acildigindan beri bir sey degisti mi?
+  bool get _degisiklikVar =>
+      _status != _ilkDurum || _noteController.text.trim() != _ilkNot;
+
   Future<void> _save() async {
     if (_isSaving) return;
     final note = _noteController.text.trim();
     if (note.isEmpty) {
       _show('Not alanı zorunludur.');
+      return;
+    }
+    if (!_degisiklikVar) {
+      _show('Herhangi bir değişiklik yapılmadı.');
       return;
     }
 
@@ -184,7 +199,11 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
         note: note,
       );
       if (!mounted) return;
-      setState(() => _task = task);
+      setState(() {
+        _task = task;
+        _ilkNot = note;
+        _ilkDurum = _status;
+      });
       _show('Günlük iş güncellendi.');
       // Guncellemeden sonra listeye donuluyor ki yapilan degisiklik
       // listede goruneblisin.
@@ -532,6 +551,8 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                     controller: _noteController,
                     scrollController: scrollController,
                     enabled: !_isSaving,
+                    // Yazi degisince Guncelle dugmesi canlaniyor.
+                    onChanged: (_) => setState(() {}),
                     minLines: 5,
                     maxLines: 8,
                     maxLength: 500,
@@ -570,10 +591,15 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             ),
           ),
           const SizedBox(height: 22),
-          PrimaryButton(
-            label: 'GÜNCELLE',
-            busy: _isSaving,
-            onPressed: _isSaving ? null : _save,
+          // Degisiklik yokken dugme sonuk; yine de dokunulabiliyor ve
+          // neden calismadigini soyleyen bir uyari veriyor.
+          Opacity(
+            opacity: _degisiklikVar ? 1 : .55,
+            child: PrimaryButton(
+              label: 'GÜNCELLE',
+              busy: _isSaving,
+              onPressed: _isSaving ? null : _save,
+            ),
           ),
         ],
       ),

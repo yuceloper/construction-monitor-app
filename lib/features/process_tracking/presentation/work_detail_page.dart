@@ -44,6 +44,17 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
 
   int get _id => int.tryParse(widget.workId) ?? 0;
 
+  /// Bagimli isin kendi detayini aciyor. Ayni ekran yeniden yuklendigi
+  /// icin oradan geri donunce bu is kalemi geri geliyor.
+  Future<void> _bagimliIseGit(WorkItemDependency bagimli) async {
+    await context.push(
+      '/process/${Uri.encodeComponent(widget.blockName)}/work/${bagimli.id}'
+      '?title=${Uri.encodeQueryComponent(bagimli.title)}',
+    );
+    if (!mounted) return;
+    await _loadDetail();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -383,11 +394,22 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      for (final item in detail.dependencies)
-                        _DependencyRow(
-                          text: item,
-                          last: item == detail.dependencies.last,
-                        ),
+                      // Kimlikli liste varsa satira dokununca o isin
+                      // detayina gidiliyor; sunucu kimlik gondermezse
+                      // adlar eskisi gibi duz yaziyla duruyor.
+                      if (detail.dependencyItems.isNotEmpty)
+                        for (final item in detail.dependencyItems)
+                          _DependencyRow(
+                            text: item.title,
+                            last: item == detail.dependencyItems.last,
+                            onTap: () => _bagimliIseGit(item),
+                          )
+                      else
+                        for (final item in detail.dependencies)
+                          _DependencyRow(
+                            text: item,
+                            last: item == detail.dependencies.last,
+                          ),
                     ],
                   ),
           ),
@@ -487,15 +509,16 @@ class _Section extends StatelessWidget {
 }
 
 class _DependencyRow extends StatelessWidget {
-  const _DependencyRow({required this.text, required this.last});
+  const _DependencyRow({required this.text, required this.last, this.onTap});
 
   final String text;
   final bool last;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Padding(
+    final satir = Padding(
       padding: EdgeInsets.only(bottom: last ? 0 : 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,20 +529,48 @@ class _DependencyRow extends StatelessWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: GenisleyenMetin(
-              metin: text,
-              bicim: TextStyle(
-                fontFamily: kBody,
-                fontSize: 15.5,
-                height: 1.4,
-                fontWeight: FontWeight.w500,
-                color: c.ink,
+            child: onTap == null
+                ? GenisleyenMetin(
+                    metin: text,
+                    bicim: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 15.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      color: c.ink,
+                    ),
+                  )
+                // Dokunulabilen satirda metin acilir kapanir degil:
+                // acma dokunusu satirin kendi dokunusunu yutuyor.
+                : Text(
+                    text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: kBody,
+                      fontSize: 15.5,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                      color: c.ink,
+                    ),
+                  ),
+          ),
+          // Ok, satirin o ise gittigini belli ediyor.
+          if (onTap != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 8, top: 1),
+              child: Icon(
+                LucideIcons.chevronRight,
+                size: 19,
+                color: c.muted,
               ),
             ),
-          ),
         ],
       ),
     );
+
+    if (onTap == null) return satir;
+    return Pressable(onTap: onTap, child: satir);
   }
 }
 

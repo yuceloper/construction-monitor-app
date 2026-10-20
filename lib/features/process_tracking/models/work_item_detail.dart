@@ -1,7 +1,28 @@
+/// Bagimli bir is kalemi.
+///
+/// Sunucu adin yani sira kimligi de gonderiyor; satira dokununca o isin
+/// detayina gidilebilmesi icin kimlik gerekiyor.
+class WorkItemDependency {
+  final int id;
+  final String title;
+
+  const WorkItemDependency({required this.id, required this.title});
+
+  factory WorkItemDependency.fromJson(Map<String, dynamic> json) =>
+      WorkItemDependency(
+        id: (json['id'] as num?)?.toInt() ?? 0,
+        title: json['title']?.toString() ?? '',
+      );
+}
+
 class WorkItemDetail {
   final int id;
   final String title;
   final List<String> dependencies;
+
+  /// Kimlikli hali. Sunucu gondermezse bos kaliyor ve ekran yalnizca
+  /// [dependencies] adlarini gosteriyor.
+  final List<WorkItemDependency> dependencyItems;
   final List<WorkItemWarning> warnings;
   final List<WorkItemHistory> history;
 
@@ -9,6 +30,7 @@ class WorkItemDetail {
     required this.id,
     required this.title,
     required this.dependencies,
+    this.dependencyItems = const [],
     required this.warnings,
     required this.history,
   });
@@ -19,6 +41,14 @@ class WorkItemDetail {
       title: json['title']?.toString() ?? '',
       dependencies: (json['dependencies'] as List? ?? const [])
           .map((item) => item.toString())
+          .toList(),
+      dependencyItems: (json['dependencyItems'] as List? ?? const [])
+          .whereType<Map>()
+          .map(
+            (item) =>
+                WorkItemDependency.fromJson(Map<String, dynamic>.from(item)),
+          )
+          .where((item) => item.id > 0 && item.title.isNotEmpty)
           .toList(),
       warnings: (json['warnings'] as List? ?? const [])
           .whereType<Map>()
