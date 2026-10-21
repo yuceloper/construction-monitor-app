@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -72,41 +74,59 @@ class SesliNotOynatici extends StatelessWidget {
                           ),
                   ),
                   const SizedBox(width: 13),
+                  // Sure, basligin altinda duruyor. Yan yana oldugunda
+                  // dar pencerede baslik kirpiliyor ve sure sagdaki
+                  // dugmeye yapisik gorunuyordu.
                   Expanded(
-                    child: Text(
-                      oynuyor
-                          ? 'Sesli Not Oynatılıyor'
-                          : 'Sesli Notu Dinle',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15.5,
-                        color: c.ink,
-                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          oynuyor
+                              ? 'Sesli Not Oynatılıyor'
+                              : 'Sesli Notu Dinle',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15.5,
+                            color: c.ink,
+                          ),
+                        ),
+                        if (sure != null && sure!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            sure!,
+                            maxLines: 1,
+                            style: TextStyle(
+                              fontFamily: kBody,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                              color: c.sub,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  // Kayitta oldugu gibi dinlerken de gecen sure yaziyor.
-                  if (sure != null && sure!.isNotEmpty) ...[
-                    const SizedBox(width: 10),
-                    Text(
-                      sure!,
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: c.sub,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 14),
           if (onSil == null)
-            Icon(LucideIcons.volume2, color: c.accent, size: 21)
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: Center(
+                child: Icon(LucideIcons.volume2, color: c.accent, size: 21),
+              ),
+            )
           else
             Pressable(
               onTap: onSil,
