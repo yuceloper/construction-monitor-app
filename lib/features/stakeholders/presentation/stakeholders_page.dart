@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -353,13 +354,17 @@ class _StakeholdersPageState extends State<StakeholdersPage> {
                 ),
                 if (telefonVar) ...[
                   const SizedBox(width: 10),
-                  _ContactAction(
-                    tooltip: 'Ara',
-                    onTap: () => _call(item),
-                    background: Color.lerp(c.surface, c.accent, .12)!,
-                    child: Icon(LucideIcons.phone, size: 21, color: c.accent),
-                  ),
-                  const SizedBox(width: 8),
+                  // Tarayicida tel: baglantisini acacak bir uygulama yok,
+                  // dugme ise yaramiyordu; webde gizleniyor.
+                  if (!kIsWeb) ...[
+                    _ContactAction(
+                      tooltip: 'Ara',
+                      onTap: () => _call(item),
+                      background: Color.lerp(c.surface, c.accent, .12)!,
+                      child: Icon(LucideIcons.phone, size: 21, color: c.accent),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   _ContactAction(
                     tooltip: 'WhatsApp',
                     onTap: () => _openWhatsApp(item),
