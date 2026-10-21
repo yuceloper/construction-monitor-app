@@ -642,7 +642,10 @@ class _StageCard extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                      if (item.hasWarning) ...[
+                                      // Tamamlanan iste uyari rozeti
+                                      // gosterilmiyor; is kapandi.
+                                      if (item.hasWarning &&
+                                          !item.isCompleted) ...[
                                         const SizedBox(width: 8),
                                         StatusBadge(icon: LucideIcons.triangleAlert, color: c.bad),
                                       ],
