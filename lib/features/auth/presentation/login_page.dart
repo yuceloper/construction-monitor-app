@@ -73,9 +73,10 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     if (digerDugme == null) return temizle;
+    // Once goz, sonra temizle: parolada temizle dugmesi disa bakiyor.
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [temizle, digerDugme],
+      children: [digerDugme, temizle],
     );
   }
 
