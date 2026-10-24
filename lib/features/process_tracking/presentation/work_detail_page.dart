@@ -770,43 +770,56 @@ class _WarningCard extends StatelessWidget {
                         ),
                         if (item.hasAudio) ...[
                           const SizedBox(width: 8),
-                          // Calarken gecen sure hoparlorun solunda
-                          // duruyor; durunca kayboluyor.
-                          if (audioSure != null) ...[
-                            Text(
-                              audioSure!,
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: c.accent,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                          ],
+                          // Sure ile dugme tek grupta ve kendi icinde
+                          // ortali duruyor. Satirin hizasi "start"
+                          // oldugundan sure, 36'lik dugmenin ustune
+                          // kayiyor ve hizasiz gorunuyordu.
                           SizedBox(
-                            width: 36,
                             height: 36,
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              tooltip: audioPlaying ? 'Durdur' : 'Sesli notu dinle',
-                              onPressed: audioLoading ? null : onPlayAudio,
-                              icon: audioLoading
-                                  ? SizedBox(
-                                      width: 17,
-                                      height: 17,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: c.accent,
-                                      ),
-                                    )
-                                  : Icon(
-                                      audioPlaying
-                                          ? Icons.stop_rounded
-                                          : Icons.volume_up_rounded,
-                                      size: 22,
+                            child: Row(
+                              children: [
+                                // Calarken gecen sure hoparlorun
+                                // solunda duruyor; durunca kayboluyor.
+                                if (audioSure != null) ...[
+                                  Text(
+                                    audioSure!,
+                                    style: TextStyle(
+                                      fontFamily: kBody,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
                                       color: c.accent,
                                     ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                                SizedBox(
+                                  width: 36,
+                                  height: 36,
+                                  child: IconButton(
+                                    padding: EdgeInsets.zero,
+                                    tooltip: audioPlaying
+                                        ? 'Durdur'
+                                        : 'Sesli notu dinle',
+                                    onPressed: audioLoading ? null : onPlayAudio,
+                                    icon: audioLoading
+                                        ? SizedBox(
+                                            width: 17,
+                                            height: 17,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: c.accent,
+                                            ),
+                                          )
+                                        : Icon(
+                                            audioPlaying
+                                                ? Icons.stop_rounded
+                                                : Icons.volume_up_rounded,
+                                            size: 22,
+                                            color: c.accent,
+                                          ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
