@@ -13,6 +13,7 @@ import '../features/safety/presentation/safety_page.dart';
 import '../features/safety/presentation/safety_pdf_page.dart';
 import '../features/notifications/presentation/notifications_page.dart';
 import '../features/process_tracking/presentation/process_tracking_page.dart';
+import '../features/reports/presentation/report_page.dart';
 import '../features/process_tracking/presentation/process_detail_page.dart';
 import '../features/process_tracking/presentation/process_update_page.dart';
 import '../features/process_tracking/presentation/stage_update_page.dart';
@@ -89,6 +90,10 @@ class AppRouter {
                 child: SafetyPdfPage(documentId: documentId, title: title),
               );
             },
+          ),
+          GoRoute(
+            path: '/reports',
+            pageBuilder: (context, state) => const NoTransitionPage(child: ReportPage()),
           ),
           GoRoute(
             path: '/notifications',

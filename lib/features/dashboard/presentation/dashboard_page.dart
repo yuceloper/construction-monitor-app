@@ -65,6 +65,14 @@ class _DashboardPageState extends State<DashboardPage>
     onTap: () => context.go('/safety'),
   );
 
+  Widget _rapor(BuildContext context, bool genis) => _SecondaryCard(
+    title: 'Rapor',
+    icon: LucideIcons.chartColumnBig,
+    color: context.colors.teal,
+    genis: genis,
+    onTap: () => context.go('/reports'),
+  );
+
   Widget _bildirimler(BuildContext context, bool genis) =>
       ValueListenableBuilder<int>(
         valueListenable: NotificationUnreadCount.value,
@@ -105,7 +113,7 @@ class _DashboardPageState extends State<DashboardPage>
                     // Genis ekranda (tarayici) uc panel yan yana geldigi
                     // icin satir daha yuksek ve aralik 20.
                     final genisEkran = constraints.maxWidth >= 700;
-                    final altSira = genisEkran ? 1 : 3;
+                    final altSira = genisEkran ? 1 : 4;
 
                     final gap = genisEkran ? 20.0 : 14.0;
                     final row = genisEkran ? 124.0 : 72.0;
@@ -183,6 +191,13 @@ class _DashboardPageState extends State<DashboardPage>
                                 Expanded(
                                   child: _entering(
                                     5,
+                                    _rapor(context, genisEkran),
+                                  ),
+                                ),
+                                SizedBox(width: gap),
+                                Expanded(
+                                  child: _entering(
+                                    6,
                                     _bildirimler(context, genisEkran),
                                   ),
                                 ),
@@ -208,6 +223,14 @@ class _DashboardPageState extends State<DashboardPage>
                           SizedBox(height: gap),
                           _entering(
                             5,
+                            SizedBox(
+                              height: row,
+                              child: _rapor(context, genisEkran),
+                            ),
+                          ),
+                          SizedBox(height: gap),
+                          _entering(
+                            6,
                             SizedBox(
                               height: row,
                               child: _bildirimler(context, genisEkran),
