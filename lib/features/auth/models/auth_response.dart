@@ -10,6 +10,7 @@ class AuthResponse {
   final String role;
   final int? companyId;
   final String? companyName;
+  final bool mustChangePassword;
 
   const AuthResponse({
     required this.accessToken,
@@ -23,6 +24,7 @@ class AuthResponse {
     required this.role,
     this.companyId,
     this.companyName,
+    this.mustChangePassword = false,
   });
 
   factory AuthResponse.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class AuthResponse {
       role: json['role']?.toString() ?? '',
       companyId: (json['companyId'] as num?)?.toInt(),
       companyName: json['companyName']?.toString(),
+      mustChangePassword: json['mustChangePassword'] == true,
     );
   }
 
@@ -53,7 +56,23 @@ class AuthResponse {
         'role': role,
         'companyId': companyId,
         'companyName': companyName,
+        'mustChangePassword': mustChangePassword,
       };
+
+  AuthResponse copyWith({bool? mustChangePassword}) => AuthResponse(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        tokenType: tokenType,
+        userId: userId,
+        username: username,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        role: role,
+        companyId: companyId,
+        companyName: companyName,
+        mustChangePassword: mustChangePassword ?? this.mustChangePassword,
+      );
 
   String get fullName => '$firstName $lastName'.trim();
 }
