@@ -324,7 +324,7 @@ class _PolicyRow extends StatelessWidget {
           Icon(
             ok ? LucideIcons.circleCheck : LucideIcons.circle,
             size: 17,
-            color: ok ? c.good : c.faint,
+            color: ok ? c.ok : c.faint,
           ),
           const SizedBox(width: 8),
           Text(
