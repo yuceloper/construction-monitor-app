@@ -149,6 +149,27 @@ class DailyTaskService {
     }
   }
 
+  Future<void> deleteTask(int taskId) async {
+    final token = _token();
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/daily'),
+        headers: _headers(token),
+      );
+      final body = utf8.decode(response.bodyBytes);
+      if (response.statusCode >= 200 && response.statusCode < 300) return;
+      _throwForResponse(response.statusCode, body, 'Günlük iş silinemedi.');
+    } on http.ClientException {
+      throw const DailyTaskException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
+    } on FormatException {
+      throw const DailyTaskException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
+    }
+  }
+
   /// Fotograflari yukler.
   ///
   /// [onIlerleme] her fotograf bittiginde kacinci oldugunu bildiriyor;
