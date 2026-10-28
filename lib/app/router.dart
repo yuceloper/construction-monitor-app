@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/login_page.dart';
+import '../features/auth/presentation/password_change_page.dart';
 import '../features/auth/services/session_manager.dart';
 import '../features/site_selection/presentation/site_selection_page.dart';
 import '../features/dashboard/presentation/dashboard_page.dart';
@@ -25,19 +26,32 @@ class AppRouter {
   static String get _initialLocation {
     final session = SessionManager.instance;
     if (!session.isAuthenticated) return '/login';
-    return session.selectedSiteId != null ? '/dashboard' : '/sites';
+    if (session.selectedSiteId == null) return '/sites';
+    if (session.auth?.mustChangePassword == true) return '/change-password';
+    return '/dashboard';
   }
 
   static final GoRouter router = GoRouter(
     initialLocation: _initialLocation,
     redirect: (context, state) {
       final session = SessionManager.instance;
-      final isLogin = state.matchedLocation == '/login';
+      final location = state.matchedLocation;
+      final isLogin = location == '/login';
+      final isSiteSelection = location == '/sites';
+      final isPasswordChange = location == '/change-password';
 
       if (!session.isAuthenticated && !isLogin) return '/login';
-      if (session.isAuthenticated && isLogin) {
-        return session.selectedSiteId != null ? '/dashboard' : '/sites';
+      if (!session.isAuthenticated) return null;
+
+      if (session.selectedSiteId == null) {
+        return isSiteSelection ? null : '/sites';
       }
+
+      if (session.auth?.mustChangePassword == true) {
+        return isPasswordChange ? null : '/change-password';
+      }
+
+      if (isLogin || isSiteSelection || isPasswordChange) return '/dashboard';
       return null;
     },
     routes: [
@@ -48,6 +62,10 @@ class AppRouter {
       GoRoute(
         path: '/sites',
         builder: (context, state) => const SiteSelectionPage(),
+      ),
+      GoRoute(
+        path: '/change-password',
+        builder: (context, state) => const PasswordChangePage(),
       ),
       ShellRoute(
         builder: (context, state, child) {
