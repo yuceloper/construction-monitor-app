@@ -32,6 +32,39 @@ class AuthService {
     }
   }
 
+  Future<void> changePassword({
+    required String accessToken,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/change-password'),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'newPassword': newPassword,
+          'confirmPassword': confirmPassword,
+        }),
+      );
+
+      final body = utf8.decode(response.bodyBytes);
+      if (response.statusCode >= 200 && response.statusCode < 300) return;
+      throw AuthException(_readErrorMessage(body, response.statusCode));
+    } on http.ClientException {
+      throw const AuthException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
+    } on FormatException {
+      throw const AuthException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
+    }
+  }
+
   Future<AuthResponse> refresh(String refreshToken) async {
     try {
       final uri = Uri.parse('${ApiConfig.baseUrl}/auth/refresh').replace(
