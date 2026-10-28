@@ -94,7 +94,22 @@ class _MainShellState extends State<MainShell> {
 
     final c = context.colors;
 
-    return Scaffold(
+    final rootSection = const {
+      '/daily-tasks',
+      '/process',
+      '/notifications',
+      '/stakeholders',
+      '/safety',
+      '/reports',
+    }.contains(location);
+
+    return PopScope(
+      canPop: !rootSection,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (rootSection) context.go('/dashboard');
+      },
+      child: Scaffold(
       backgroundColor: c.bg,
       // Genis ekranda icerik ortalanip makul bir sutunda tutuluyor;
       // telefonda hicbir sey degismiyor.
@@ -161,6 +176,7 @@ class _MainShellState extends State<MainShell> {
                 );
               },
             ),
+      ),
     );
   }
 }
