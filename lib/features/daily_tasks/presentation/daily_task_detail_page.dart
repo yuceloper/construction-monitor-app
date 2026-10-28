@@ -11,6 +11,7 @@ import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/secim_paneli.dart';
 import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/sesli_not_oynatici.dart';
+import '../../auth/services/session_manager.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -30,6 +31,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isDeleting = false;
   bool _isAudioLoading = false;
   bool _isAudioPlaying = false;
 
@@ -214,6 +216,50 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       if (mounted) _show(error.message);
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  bool get _canDelete {
+    final currentUserId = SessionManager.instance.auth?.userId;
+    return currentUserId != null &&
+        currentUserId > 0 &&
+        _task?.createdById == currentUserId;
+  }
+
+  Future<void> _deleteTask() async {
+    if (_isDeleting || !_canDelete) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Günlük İşi Sil'),
+        content: const Text(
+          'Bu günlük iş kalıcı olarak silinecek. Devam etmek istiyor musunuz?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      await _service.deleteTask(widget.taskId);
+      if (!mounted) return;
+      context.pop(true);
+    } on DailyTaskException catch (error) {
+      if (mounted) _show(error.message);
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
     }
   }
 
@@ -598,9 +644,43 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             child: PrimaryButton(
               label: 'GÜNCELLE',
               busy: _isSaving,
-              onPressed: _isSaving ? null : _save,
+              onPressed: _isSaving || _isDeleting ? null : _save,
             ),
           ),
+          if (_canDelete) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isSaving || _isDeleting ? null : _deleteTask,
+                icon: _isDeleting
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: c.bad,
+                        ),
+                      )
+                    : Icon(LucideIcons.trash2, size: 18, color: c.bad),
+                label: Text(
+                  _isDeleting ? 'SİLİNİYOR...' : 'SİL',
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontWeight: FontWeight.w700,
+                    color: c.bad,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(48),
+                  side: BorderSide(color: c.bad),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(Sizes.rField),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
