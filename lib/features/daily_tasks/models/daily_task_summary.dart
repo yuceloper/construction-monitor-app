@@ -9,6 +9,8 @@ class DailyTaskSummary {
   final String priority;
   final int? assignedToId;
   final String assignedToName;
+  final int? createdById;
+  final String createdByName;
   final List<int> photoIds;
   final int? audioNoteId;
 
@@ -27,6 +29,8 @@ class DailyTaskSummary {
     required this.priority,
     required this.assignedToId,
     required this.assignedToName,
+    required this.createdById,
+    required this.createdByName,
     required this.photoIds,
     required this.audioNoteId,
     this.tarih,
@@ -45,6 +49,8 @@ class DailyTaskSummary {
       priority: json['priority']?.toString() ?? 'MEDIUM',
       assignedToId: (json['assignedToId'] as num?)?.toInt(),
       assignedToName: json['assignedToName']?.toString() ?? 'Atanmamış',
+      createdById: (json['createdById'] as num?)?.toInt(),
+      createdByName: json['createdByName']?.toString() ?? '',
       photoIds: rawPhotoIds is List
           ? rawPhotoIds
                 .whereType<num>()
