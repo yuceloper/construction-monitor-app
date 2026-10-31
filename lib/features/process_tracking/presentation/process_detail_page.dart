@@ -7,6 +7,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../auth/services/session_manager.dart';
 import '../models/progress_stage.dart';
 import '../models/project_progress_summary.dart';
 import '../models/work_item_summary.dart';
@@ -209,11 +210,12 @@ class _ProcessDetailPageState extends State<ProcessDetailPage> {
                             ),
                           ),
                           const Spacer(),
-                          SmallButton(
-                            label: 'Güncelle',
-                            onTap: _openUpdate,
-                            onDark: true,
-                          ),
+                          if (SessionManager.instance.auth?.canUpdateProcess ?? false)
+                            SmallButton(
+                              label: 'Güncelle',
+                              onTap: _openUpdate,
+                              onDark: true,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 12),
