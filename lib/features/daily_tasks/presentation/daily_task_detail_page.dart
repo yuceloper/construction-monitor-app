@@ -582,7 +582,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                 const SizedBox(height: 9),
                 SeciciAlan(
                   metin: _durumAdi(_status),
-                  onTap: _isSaving ? null : _durumSec,
+                  onTap: _isSaving || !_canUpdate ? null : _durumSec,
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -600,7 +600,7 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
                   builder: (scrollController) => TextField(
                     controller: _noteController,
                     scrollController: scrollController,
-                    enabled: !_isSaving,
+                    enabled: !_isSaving && _canUpdate,
                     // Yazi degisince Guncelle dugmesi canlaniyor.
                     onChanged: (_) => setState(() {}),
                     minLines: 5,
