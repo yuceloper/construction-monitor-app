@@ -97,6 +97,9 @@ class _DailyTasksPageState extends State<DailyTasksPage>
   bool get _filtreVar =>
       _filtreOncelik != null || _filtreKisi != null || _siralama != 'yeni';
 
+  bool get _canUpdate =>
+      SessionManager.instance.auth?.canUpdateDailyTasks ?? false;
+
   @override
   void initState() {
     super.initState();
@@ -556,28 +559,29 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                       ),
                     ),
                     const Spacer(),
-                    Pressable(
-                      onTap: _openCreate,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 6, 2, 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(LucideIcons.plus, size: 18, color: c.accent),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Ekle',
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w700,
-                                color: c.accent,
+                    if (_canUpdate)
+                      Pressable(
+                        onTap: _openCreate,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 6, 2, 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.plus, size: 18, color: c.accent),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Ekle',
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.accent,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -663,17 +667,17 @@ class _DailyTasksPageState extends State<DailyTasksPage>
                             : 'Aktif günlük iş bulunmuyor.',
                         // Hic is yoksa dogrudan ekleme; aktif liste bos
                         // ama tamamlanmis is varsa onlara gecis.
-                        actionLabel: _hicIsYok
+                        actionLabel: _hicIsYok && _canUpdate
                             ? 'Ekle'
                             : (_tamamlanmisVar && !_showAll
                                   ? 'Tümünü Göster'
                                   : null),
-                        actionIcon: _hicIsYok
+                        actionIcon: _hicIsYok && _canUpdate
                             ? LucideIcons.plus
                             : (_tamamlanmisVar && !_showAll
                                   ? LucideIcons.listChecks
                                   : null),
-                        onAction: _hicIsYok
+                        onAction: _hicIsYok && _canUpdate
                             ? _openCreate
                             : (_tamamlanmisVar && !_showAll
                                   ? () => _selectTab(true)
