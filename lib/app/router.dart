@@ -51,6 +51,17 @@ class AppRouter {
         return isPasswordChange ? null : '/change-password';
       }
 
+      final auth = session.auth;
+      if (location == '/daily-tasks/create' &&
+          !(auth?.canUpdateDailyTasks ?? false)) {
+        return '/daily-tasks';
+      }
+      if (location.startsWith('/process/') &&
+          location.contains('/update') &&
+          !(auth?.canUpdateProcess ?? false)) {
+        return '/process';
+      }
+
       if (isLogin || isSiteSelection || isPasswordChange) return '/dashboard';
       return null;
     },
