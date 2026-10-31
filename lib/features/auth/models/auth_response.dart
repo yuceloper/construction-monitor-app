@@ -8,6 +8,7 @@ class AuthResponse {
   final String firstName;
   final String lastName;
   final String role;
+  final List<String> permissions;
   final int? companyId;
   final String? companyName;
   final bool mustChangePassword;
@@ -22,6 +23,7 @@ class AuthResponse {
     required this.firstName,
     required this.lastName,
     required this.role,
+    this.permissions = const [],
     this.companyId,
     this.companyName,
     this.mustChangePassword = false,
@@ -38,6 +40,9 @@ class AuthResponse {
       firstName: json['firstName'] as String? ?? '',
       lastName: json['lastName'] as String? ?? '',
       role: json['role']?.toString() ?? '',
+      permissions: (json['permissions'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
+          .toList(),
       companyId: (json['companyId'] as num?)?.toInt(),
       companyName: json['companyName']?.toString(),
       mustChangePassword: json['mustChangePassword'] == true,
@@ -54,6 +59,7 @@ class AuthResponse {
         'firstName': firstName,
         'lastName': lastName,
         'role': role,
+        'permissions': permissions,
         'companyId': companyId,
         'companyName': companyName,
         'mustChangePassword': mustChangePassword,
@@ -69,10 +75,23 @@ class AuthResponse {
         firstName: firstName,
         lastName: lastName,
         role: role,
+        permissions: permissions,
         companyId: companyId,
         companyName: companyName,
         mustChangePassword: mustChangePassword ?? this.mustChangePassword,
       );
+
+  bool hasPermission(String permission) =>
+      role == 'SYSADMIN' || permissions.contains(permission);
+
+  bool get canViewProcess =>
+      hasPermission('PROCESS_VIEW') || hasPermission('PROCESS_UPDATE');
+  bool get canUpdateProcess => hasPermission('PROCESS_UPDATE');
+  bool get canViewDailyTasks =>
+      hasPermission('DAILY_TASK_VIEW') || hasPermission('DAILY_TASK_UPDATE');
+  bool get canUpdateDailyTasks => hasPermission('DAILY_TASK_UPDATE');
+  bool get canViewSafety => hasPermission('SAFETY_VIEW');
+  bool get isBackOfficeAdmin => hasPermission('BACKOFFICE_ADMIN');
 
   String get fullName => '$firstName $lastName'.trim();
 }
