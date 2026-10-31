@@ -97,15 +97,22 @@ class _DailyTasksPageState extends State<DailyTasksPage>
   bool get _filtreVar =>
       _filtreOncelik != null || _filtreKisi != null || _siralama != 'yeni';
 
+  bool get _canView =>
+      SessionManager.instance.auth?.canViewDailyTasks ?? false;
+
   bool get _canUpdate =>
       SessionManager.instance.auth?.canUpdateDailyTasks ?? false;
 
   @override
   void initState() {
     super.initState();
-    _loadTasks();
-    _kisileriYukle();
-    _bloklariYukle();
+    if (_canView) {
+      _loadTasks();
+      _kisileriYukle();
+      _bloklariYukle();
+    } else {
+      _isLoading = false;
+    }
     // Santiye degisince ve uygulama one gelince liste tazeleniyor;
     // ekranda eski santiyenin ya da eskimis bir listenin kalmasi
     // "veri yok" gibi gorunuyordu.
@@ -463,7 +470,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
               title: 'Günlük İşler',
               onBack: () => context.go('/dashboard'),
             ),
-            if (!_listeBos)
+            if (_canView && !_listeBos)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
                 child: Container(
@@ -496,7 +503,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
             // Ekle tek basina bir kutu degil; solda kac is oldugunu
             // soyleyen satirin sag ucu. Bosta asili durmuyor, yer
             // kaplamasi en az ve ustelik bilgi de tasiyor.
-            if (!_listeBos)
+            if (_canView && !_listeBos)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 2, 18, 8),
                 child: Row(
@@ -594,6 +601,20 @@ class _DailyTasksPageState extends State<DailyTasksPage>
 
   Widget _buildContent() {
     final c = context.colors;
+
+    if (!_canView) {
+      return Center(
+        child: Text(
+          'Yetkiniz bulunmamaktadır.',
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: c.bad,
+          ),
+        ),
+      );
+    }
 
     if (_isLoading) {
       return Center(
