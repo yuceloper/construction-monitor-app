@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../auth/services/session_manager.dart';
 import '../models/safety_document_summary.dart';
 import '../services/safety_document_service.dart';
 
@@ -26,8 +27,12 @@ class _SafetyPageState extends State<SafetyPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    if (_canViewSafety) _load();
+    else _isLoading = false;
   }
+
+  bool get _canViewSafety =>
+      SessionManager.instance.auth?.canViewSafety ?? false;
 
   Future<void> _load() async {
     setState(() {
@@ -113,6 +118,21 @@ class _SafetyPageState extends State<SafetyPage> {
 
   Widget _buildContent() {
     final c = context.colors;
+
+    if (!_canViewSafety) {
+      return Center(
+        child: Text(
+          'Yetkiniz bulunmamaktadır.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: c.bad,
+          ),
+        ),
+      );
+    }
 
     if (_isLoading) {
       return Center(
