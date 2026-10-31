@@ -7,6 +7,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../auth/services/session_manager.dart';
 import '../models/project_summary.dart';
 import '../services/project_service.dart';
 
@@ -35,8 +36,12 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   @override
   void initState() {
     super.initState();
-    _loadProjects();
+    if (_canViewProcess) _loadProjects();
+    else _isLoading = false;
   }
+
+  bool get _canViewProcess =>
+      SessionManager.instance.auth?.canViewProcess ?? false;
 
   Future<void> _loadProjects() async {
     setState(() {
@@ -102,6 +107,20 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
 
   Widget _buildContent() {
     final c = context.colors;
+
+    if (!_canViewProcess) {
+      return Center(
+        child: Text(
+          'Yetkiniz bulunmamaktadır.',
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: c.bad,
+          ),
+        ),
+      );
+    }
 
     if (_isLoading) {
       return Center(
