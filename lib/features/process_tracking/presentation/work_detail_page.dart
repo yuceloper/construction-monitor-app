@@ -11,6 +11,7 @@ import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/state_views.dart';
+import '../../auth/services/session_manager.dart';
 import '../models/work_item_detail.dart';
 import '../services/work_item_service.dart';
 import 'warning_create_dialog.dart';
@@ -33,6 +34,9 @@ class WorkDetailPage extends StatefulWidget {
 
 class _WorkDetailPageState extends State<WorkDetailPage> {
   final _service = WorkItemService();
+
+  bool get _canUpdateProcess =>
+      SessionManager.instance.auth?.canUpdateProcess ?? false;
   final _warningAudioPlayer = AudioPlayer();
 
   bool _isLoading = true;
@@ -462,6 +466,7 @@ class _WorkDetailPageState extends State<WorkDetailPage> {
                                 ? _uyariSesSuresi
                                 : null,
                             onPlayAudio: () => _playWarningAudio(item),
+                            canManage: _canUpdateProcess,
                             onUpdate: () => _editWarning(item),
                             onDelete: () => _deleteWarning(item),
                           ),
@@ -713,6 +718,7 @@ class _WarningCard extends StatelessWidget {
   /// Calarken gecen sure, "0:07" gibi. Calmiyorsa null.
   final String? audioSure;
   final VoidCallback onPlayAudio;
+  final bool canManage;
   final VoidCallback onUpdate;
   final VoidCallback onDelete;
 
@@ -723,6 +729,7 @@ class _WarningCard extends StatelessWidget {
     required this.audioPlaying,
     this.audioSure,
     required this.onPlayAudio,
+    required this.canManage,
     required this.onUpdate,
     required this.onDelete,
   });
@@ -860,23 +867,25 @@ class _WarningCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _WarningActionButton(
-                          icon: LucideIcons.pencil,
-                          label: 'Güncelle',
-                          onTap: onUpdate,
-                        ),
-                        const SizedBox(width: 10),
-                        _WarningActionButton(
-                          icon: LucideIcons.trash2,
-                          label: 'Sil',
-                          onTap: onDelete,
-                        ),
-                      ],
-                    ),
+                    if (canManage) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _WarningActionButton(
+                            icon: LucideIcons.pencil,
+                            label: 'Güncelle',
+                            onTap: onUpdate,
+                          ),
+                          const SizedBox(width: 10),
+                          _WarningActionButton(
+                            icon: LucideIcons.trash2,
+                            label: 'Sil',
+                            onTap: onDelete,
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
