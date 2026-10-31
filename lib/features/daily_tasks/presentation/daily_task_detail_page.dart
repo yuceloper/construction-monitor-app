@@ -219,9 +219,13 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
     }
   }
 
+  bool get _canUpdate =>
+      SessionManager.instance.auth?.canUpdateDailyTasks ?? false;
+
   bool get _canDelete {
     final currentUserId = SessionManager.instance.auth?.userId;
-    return currentUserId != null &&
+    return _canUpdate &&
+        currentUserId != null &&
         currentUserId > 0 &&
         _task?.createdById == currentUserId;
   }
@@ -639,14 +643,15 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
           const SizedBox(height: 22),
           // Degisiklik yokken dugme sonuk; yine de dokunulabiliyor ve
           // neden calismadigini soyleyen bir uyari veriyor.
-          Opacity(
-            opacity: _degisiklikVar ? 1 : .55,
-            child: PrimaryButton(
-              label: 'GÜNCELLE',
-              busy: _isSaving,
-              onPressed: _isSaving || _isDeleting ? null : _save,
+          if (_canUpdate)
+            Opacity(
+              opacity: _degisiklikVar ? 1 : .55,
+              child: PrimaryButton(
+                label: 'GÜNCELLE',
+                busy: _isSaving,
+                onPressed: _isSaving || _isDeleting ? null : _save,
+              ),
             ),
-          ),
           if (_canDelete) ...[
             const SizedBox(height: 10),
             SizedBox(
