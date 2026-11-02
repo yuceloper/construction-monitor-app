@@ -140,9 +140,6 @@ class BlockGroup {
     return (toplam / blocks.length).round();
   }
 
-  /// Hic blokta planlanan bitis tarihi yoksa ekranda bunu soyluyoruz;
-  /// aksi halde gecikme hesabi yokmus gibi gorunuyor.
-  bool get hasPlannedEnd => blocks.any((b) => b.plannedEnd != null);
 }
 
 /// "Son Güncellemeler" kartindaki tek satir.
@@ -169,11 +166,15 @@ class ReportUpdate {
 class ReportData {
   const ReportData({
     required this.siteName,
+    required this.sitePlannedEnd,
     required this.groups,
     required this.updates,
   });
 
   final String siteName;
+
+  /// Santiyenin genel planlanan bitis tarihi; girilmemis olabilir.
+  final DateTime? sitePlannedEnd;
 
   /// Sadece blogu olan tipler, sabit sirada: Evler, Dükkanlar,
   /// Apartmanlar. Tek tip varsa ekranda sekme cubugu cikmiyor.

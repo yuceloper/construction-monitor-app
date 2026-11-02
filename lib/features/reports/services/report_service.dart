@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
 import '../../notifications/services/notification_service.dart';
+import '../../site_selection/services/site_service.dart';
 import '../models/report_models.dart';
 
 /// Rapor servisi.
@@ -15,10 +16,14 @@ import '../models/report_models.dart';
 /// Govde utf8.decode(bodyBytes) ile okunuyor: sunucu Content-Type'ta
 /// charset bildirmiyor, http paketi boyle durumda latin1 varsayiyor.
 class ReportService {
-  ReportService({NotificationService? notificationService})
-    : _notificationService = notificationService ?? NotificationService();
+  ReportService({
+    NotificationService? notificationService,
+    SiteService? siteService,
+  }) : _notificationService = notificationService ?? NotificationService(),
+       _siteService = siteService ?? SiteService();
 
   final NotificationService _notificationService;
+  final SiteService _siteService;
 
   Future<ReportData> getReport() async {
     final token = _token();
@@ -29,10 +34,28 @@ class ReportService {
 
     return ReportData(
       siteName: SessionManager.instance.selectedSiteName ?? '',
+      sitePlannedEnd: await _santiyeBitisi(siteId),
       groups: gruplar,
       // Guncellemeler yan bilgi: alinamazsa rapor yine aciliyor.
       updates: await _guncellemeleriGetir(),
     );
+  }
+
+  /// Santiyenin genel planlanan bitis tarihi.
+  ///
+  /// Oturumda saklanan santiye kaydinda bu alan olmayabiliyor (eski
+  /// kayitlar), o yuzden listeden taze okunuyor. Alinamazsa rapor yine
+  /// aciliyor; ekran tarihin girilmedigini yaziyor.
+  Future<DateTime?> _santiyeBitisi(int siteId) async {
+    try {
+      final santiyeler = await _siteService.getSites();
+      for (final s in santiyeler) {
+        if (s.id == siteId) return s.plannedEndDate;
+      }
+    } catch (_) {
+      // Santiye listesi alinamadi; tarih bilinmiyor.
+    }
+    return null;
   }
 
   Future<List<BlockReport>> _bloklariGetir(String token, int siteId) async {

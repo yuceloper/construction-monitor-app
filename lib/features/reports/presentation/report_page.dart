@@ -130,8 +130,10 @@ class _ReportPageState extends State<ReportPage> {
         children: [
           if (data.siteName.isNotEmpty) ...[
             _SantiyeSatiri(ad: data.siteName),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
           ],
+          _PlanSeridi(bitis: data.sitePlannedEnd),
+          const SizedBox(height: 12),
           if (gruplar.length > 1) ...[
             _TipSekmeleri(
               gruplar: gruplar,
@@ -141,10 +143,6 @@ class _ReportPageState extends State<ReportPage> {
             const SizedBox(height: 14),
           ],
           _OzetKarti(grup: grup),
-          if (grup.blocks.isNotEmpty && !grup.hasPlannedEnd) ...[
-            const SizedBox(height: 12),
-            const _PlanYokSeridi(),
-          ],
           const SizedBox(height: 12),
           if (grup.blocks.isNotEmpty) ...[
             _SuzgecCipleri(grup: grup, secili: _filter, onSec: _suzgecSec),
@@ -500,12 +498,19 @@ class _OzetKutusu extends StatelessWidget {
   }
 }
 
-class _PlanYokSeridi extends StatelessWidget {
-  const _PlanYokSeridi();
+/// Santiyenin genel planlanan bitis tarihi.
+///
+/// Bloklar paralel ilerledigi icin bloklarin kendi bitis tarihleri
+/// raporda gosterilmiyor; tarih tek yerde, santiye seviyesinde duruyor.
+class _PlanSeridi extends StatelessWidget {
+  const _PlanSeridi({required this.bitis});
+
+  final DateTime? bitis;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final yok = bitis == null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -515,11 +520,17 @@ class _PlanYokSeridi extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(LucideIcons.calendarOff, size: 15, color: c.muted),
+          Icon(
+            yok ? LucideIcons.calendarOff : LucideIcons.calendarCheck,
+            size: 15,
+            color: c.muted,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Planlanan bitiş tarihi girilmemiş',
+              yok
+                  ? 'Şantiyenin planlanan bitiş tarihi girilmemiş'
+                  : 'Şantiye planlanan bitiş: ${tarihYaz(bitis!)}',
               style: TextStyle(
                 fontFamily: kBody,
                 fontSize: 13,
@@ -533,6 +544,11 @@ class _PlanYokSeridi extends StatelessWidget {
     );
   }
 }
+
+/// gg.aa.yyyy. Rapor ekraninda tek bicim kullaniliyor.
+String tarihYaz(DateTime t) =>
+    '${t.day.toString().padLeft(2, '0')}.'
+    '${t.month.toString().padLeft(2, '0')}.${t.year}';
 
 class _SuzgecCipleri extends StatelessWidget {
   const _SuzgecCipleri({
@@ -737,33 +753,14 @@ class _BlokSatiri extends StatelessWidget {
                 const SizedBox(height: 7),
                 ProgressRail(percent: blok.progress, height: 6, color: renk),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      blok.state.label,
-                      style: TextStyle(
-                        fontFamily: kBody,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: renk,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        blok.plannedEnd == null
-                            ? 'Bitiş tarihi girilmemiş'
-                            : 'Bitiş: ${_tarih(blok.plannedEnd!)}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 12,
-                          color: blok.plannedEnd == null ? c.faint : c.muted,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  blok.state.label,
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: renk,
+                  ),
                 ),
               ],
             ),
@@ -775,8 +772,6 @@ class _BlokSatiri extends StatelessWidget {
     );
   }
 
-  static String _tarih(DateTime t) =>
-      '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}';
 }
 
 /// Secili tipin son guncellemeleri.
