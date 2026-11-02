@@ -550,9 +550,9 @@ class _SuzgecCipleri extends StatelessWidget {
     final c = context.colors;
     final ogeler = <(String, int, BlockState?)>[
       ('Tümü', grup.total, null),
-      ('Geciken', grup.delayed, BlockState.delayed),
-      ('Devam eden', grup.inProgress, BlockState.inProgress),
       ('Tamamlanan', grup.completed, BlockState.completed),
+      ('Devam Eden', grup.inProgress, BlockState.inProgress),
+      ('Geciken', grup.delayed, BlockState.delayed),
       if (grup.notStarted > 0)
         ('Başlanmadı', grup.notStarted, BlockState.notStarted),
     ];
