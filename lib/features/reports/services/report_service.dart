@@ -11,8 +11,9 @@ import '../models/report_models.dart';
 /// Rapor servisi.
 ///
 /// Sunucuda hazir bir rapor ucu yok. Blok listesi tek cagriyla
-/// /projects'ten geliyor (tip, durum, ilerleme ve planlanan bitis tarihi
-/// o yanitta var); "Son Güncellemeler" ise bildirimlerden besleniyor.
+/// /projects'ten geliyor (tip, durum, ilerleme ve baslangic tarihi o
+/// yanitta var), santiyenin genel bitis tarihi /sites'ten okunuyor;
+/// "Son Güncellemeler" ise bildirimlerden besleniyor.
 /// Govde utf8.decode(bodyBytes) ile okunuyor: sunucu Content-Type'ta
 /// charset bildirmiyor, http paketi boyle durumda latin1 varsayiyor.
 class ReportService {
@@ -29,12 +30,15 @@ class ReportService {
     final token = _token();
     final siteId = _siteId();
 
-    final bloklar = await _bloklariGetir(token, siteId);
+    // Gecikme hesabi santiyenin genel bitis tarihine dayandigi icin
+    // tarih bloklardan once okunuyor.
+    final santiyeBitisi = await _santiyeBitisi(siteId);
+    final bloklar = await _bloklariGetir(token, siteId, santiyeBitisi);
     final gruplar = _grupla(bloklar);
 
     return ReportData(
       siteName: SessionManager.instance.selectedSiteName ?? '',
-      sitePlannedEnd: await _santiyeBitisi(siteId),
+      sitePlannedEnd: santiyeBitisi,
       groups: gruplar,
       // Guncellemeler yan bilgi: alinamazsa rapor yine aciliyor.
       updates: await _guncellemeleriGetir(),
@@ -58,7 +62,11 @@ class ReportService {
     return null;
   }
 
-  Future<List<BlockReport>> _bloklariGetir(String token, int siteId) async {
+  Future<List<BlockReport>> _bloklariGetir(
+    String token,
+    int siteId,
+    DateTime? santiyeBitisi,
+  ) async {
     try {
       final uri = Uri.parse(
         '${ApiConfig.baseUrl}/projects',
@@ -82,6 +90,7 @@ class ReportService {
               (item) => BlockReport.fromJson(
                 Map<String, dynamic>.from(item),
                 bugun: bugun,
+                santiyeBitisi: santiyeBitisi,
               ),
             )
             .where((b) => b.id > 0 && b.name.isNotEmpty)

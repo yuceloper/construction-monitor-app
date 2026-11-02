@@ -33,7 +33,7 @@ extension BlockTypeLabel on BlockType {
 }
 
 /// Blogun rapordaki durumu. Sunucu COMPLETED gondermedigi icin ilerleme
-/// yuzdesi ve planlanan bitis tarihinden turetiliyor.
+/// yuzdesi ile santiyenin genel takviminden turetiliyor.
 enum BlockState { completed, delayed, inProgress, notStarted }
 
 extension BlockStateLabel on BlockState {
@@ -51,7 +51,7 @@ class BlockReport {
     required this.name,
     required this.type,
     required this.progress,
-    required this.plannedEnd,
+    required this.expectedProgress,
     required this.state,
   });
 
@@ -62,8 +62,9 @@ class BlockReport {
   /// 0-100 arasi, yuvarlanmis ilerleme.
   final int progress;
 
-  /// Planlanan bitis tarihi. Girilmemis olabilir.
-  final DateTime? plannedEnd;
+  /// Takvime gore bugun beklenen ilerleme. Blogun baslangici ya da
+  /// santiyenin genel bitis tarihi girilmemisse hesaplanamiyor.
+  final int? expectedProgress;
 
   final BlockState state;
 
@@ -72,6 +73,7 @@ class BlockReport {
   factory BlockReport.fromJson(
     Map<String, dynamic> json, {
     required DateTime bugun,
+    required DateTime? santiyeBitisi,
   }) {
     final ham = json['overallProgress'];
     final yuzde = ham is num
@@ -79,38 +81,76 @@ class BlockReport {
         : double.tryParse(ham?.toString() ?? '') ?? 0;
     final ilerleme = yuzde.clamp(0, 100).round();
 
-    final bitis = DateTime.tryParse(json['endDate']?.toString() ?? '');
+    // Blogun kendi endDate'i okunmuyor: bloklar paralel ilerledigi
+    // icin gecikme santiyenin genel takvimine gore hesaplaniyor.
+    final baslangic = DateTime.tryParse(json['startDate']?.toString() ?? '');
     final durum = json['status']?.toString();
+
+    final beklenen = _beklenenIlerleme(
+      baslangic: baslangic,
+      santiyeBitisi: santiyeBitisi,
+      bugun: bugun,
+    );
 
     return BlockReport(
       id: (json['id'] as num?)?.toInt() ?? 0,
       name: json['name']?.toString() ?? '',
       type: BlockTypeLabel.fromApi(json['projectType']?.toString()),
       progress: ilerleme,
-      plannedEnd: bitis,
+      expectedProgress: beklenen,
       state: _durumHesapla(
         ilerleme: ilerleme,
-        bitis: bitis,
+        beklenen: beklenen,
         sunucuDurumu: durum,
-        bugun: bugun,
       ),
     );
   }
 
-  /// Sirasi onemli: tamamlanan blok, tarihi gecmis olsa da geciken
-  /// sayilmiyor.
+  /// Takvime gore bugun beklenen ilerleme yuzdesi.
+  ///
+  /// Surec takip ekranindaki plan-gerceklesen karsilastirmasinin ayni
+  /// mantigi: gecen sure, toplam surenin ne kadarini kapsiyorsa
+  /// ilerlemenin de o kadar olmasi bekleniyor. Bitis tarihi olarak
+  /// blogun kendi tarihi degil santiyenin genel tarihi kullaniliyor.
+  static int? _beklenenIlerleme({
+    required DateTime? baslangic,
+    required DateTime? santiyeBitisi,
+    required DateTime bugun,
+  }) {
+    if (baslangic == null || santiyeBitisi == null) return null;
+
+    DateTime gun(DateTime t) => DateTime(t.year, t.month, t.day);
+    final bas = gun(baslangic);
+    final son = gun(santiyeBitisi);
+    final simdi = gun(bugun);
+
+    // Takvim tutarsizsa (bitis baslangictan once) hesap yapilmiyor.
+    if (!son.isAfter(bas)) return null;
+
+    // Blok henuz baslamadi: beklenen ilerleme yok.
+    if (simdi.isBefore(bas)) return 0;
+
+    // Santiyenin genel bitis tarihi gecti: blogun bitmis olmasi
+    // bekleniyor.
+    if (!simdi.isBefore(son)) return 100;
+
+    final toplamGun = son.difference(bas).inDays;
+    final gecenGun = simdi.difference(bas).inDays;
+    return (gecenGun * 100 / toplamGun).round().clamp(0, 100);
+  }
+
+  /// Sirasi onemli: tamamlanan blok, takvimi gecmis olsa da geciken
+  /// sayilmiyor. Beklenen ilerleme hesaplanamadiginda (takvim
+  /// girilmemis) hicbir blok geciken sayilmiyor.
   static BlockState _durumHesapla({
     required int ilerleme,
-    required DateTime? bitis,
+    required int? beklenen,
     required String? sunucuDurumu,
-    required DateTime bugun,
   }) {
     if (ilerleme >= 100 || sunucuDurumu == 'COMPLETED') {
       return BlockState.completed;
     }
-    if (bitis != null && bitis.isBefore(DateTime(bugun.year, bugun.month, bugun.day))) {
-      return BlockState.delayed;
-    }
+    if (beklenen != null && ilerleme < beklenen) return BlockState.delayed;
     if (ilerleme > 0) return BlockState.inProgress;
     return BlockState.notStarted;
   }

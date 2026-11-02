@@ -529,7 +529,8 @@ class _PlanSeridi extends StatelessWidget {
           Expanded(
             child: Text(
               yok
-                  ? 'Şantiyenin planlanan bitiş tarihi girilmemiş'
+                  ? 'Şantiyenin planlanan bitiş tarihi girilmemiş — '
+                        'gecikme hesaplanamıyor'
                   : 'Şantiye planlanan bitiş: ${tarihYaz(bitis!)}',
               style: TextStyle(
                 fontFamily: kBody,
@@ -753,14 +754,34 @@ class _BlokSatiri extends StatelessWidget {
                 const SizedBox(height: 7),
                 ProgressRail(percent: blok.progress, height: 6, color: renk),
                 const SizedBox(height: 6),
-                Text(
-                  blok.state.label,
-                  style: TextStyle(
-                    fontFamily: kBody,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: renk,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      blok.state.label,
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: renk,
+                      ),
+                    ),
+                    if (blok.state == BlockState.delayed &&
+                        blok.expectedProgress != null) ...[
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'bugün beklenen %${blok.expectedProgress}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: kBody,
+                            fontSize: 12,
+                            color: c.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
