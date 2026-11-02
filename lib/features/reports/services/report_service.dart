@@ -103,15 +103,18 @@ class ReportService {
   Future<List<ReportUpdate>> _guncellemeleriGetir() async {
     try {
       // Santiye suzgecini bildirim servisi kendi uyguluyor.
+      // Tipe bolunecegi icin genis cekiliyor: 5 kayitta tek bir tipe
+      // hic guncelleme dusmeyebiliyordu.
       final sayfa = await _notificationService.getNotificationPage(
         sayfa: 0,
-        adet: 5,
+        adet: 30,
       );
       return sayfa.kayitlar
           .map(
             (b) => ReportUpdate(
               title: b.title,
               detail: b.message,
+              blockId: b.projectId,
               blockName: b.projectName,
               date: b.createdAt,
             ),

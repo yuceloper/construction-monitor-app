@@ -150,12 +150,18 @@ class ReportUpdate {
   const ReportUpdate({
     required this.title,
     required this.detail,
+    required this.blockId,
     required this.blockName,
     required this.date,
   });
 
   final String title;
   final String detail;
+
+  /// Guncellemenin ait oldugu blok. Sunucu her bildirimde vermiyor;
+  /// bos oldugunda guncelleme bir tipe yazilamiyor.
+  final int? blockId;
+
   final String? blockName;
   final DateTime date;
 }

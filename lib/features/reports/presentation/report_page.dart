@@ -159,7 +159,7 @@ class _ReportPageState extends State<ReportPage> {
             onBlok: _blogaGit,
           ),
           const SizedBox(height: 12),
-          _SonGuncellemeler(kayitlar: _data!.updates),
+          _SonGuncellemeler(grup: grup, kayitlar: _data!.updates),
         ],
       ),
     );
@@ -779,20 +779,33 @@ class _BlokSatiri extends StatelessWidget {
       '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}';
 }
 
+/// Secili tipin son guncellemeleri.
+///
+/// Bildirim ucunda tip suzgeci yok; gelen kayitlar blok kimligine gore
+/// gruba ayriliyor. Blok kimligi olmayan kayit bir tipe yazilamadigi
+/// icin gosterilmiyor.
 class _SonGuncellemeler extends StatelessWidget {
-  const _SonGuncellemeler({required this.kayitlar});
+  const _SonGuncellemeler({required this.grup, required this.kayitlar});
+
+  final BlockGroup grup;
   final List<ReportUpdate> kayitlar;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final gosterilen = kayitlar.take(3).toList();
+    final kimlikler = {for (final b in grup.blocks) b.id};
+    final gosterilen = kayitlar
+        .where((g) => g.blockId != null && kimlikler.contains(g.blockId))
+        .take(3)
+        .toList();
 
     return SectionCard(
       icon: LucideIcons.history,
       title: 'Son Güncellemeler',
       child: gosterilen.isEmpty
-          ? const EmptyState(message: 'Henüz güncelleme yok.')
+          ? EmptyState(
+              message: '${grup.label} için henüz güncelleme yok.',
+            )
           : Column(
               children: [
                 for (final g in gosterilen) ...[
