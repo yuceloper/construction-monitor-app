@@ -312,9 +312,7 @@ class _OzetKarti extends StatelessWidget {
         icon: LucideIcons.building2,
         label: 'Toplam Blok',
         adet: toplam,
-        yuzde: toplam == 0 ? 0 : 100,
         renk: c.ink,
-        oranRenk: c.sub,
       ),
       _OzetKutusu(
         icon: LucideIcons.circleCheck,
@@ -409,8 +407,6 @@ class _OzetKarti extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 14),
-          _DagilimSeridi(grup: grup),
         ],
       ),
     );
@@ -426,20 +422,18 @@ class _OzetKutusu extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.adet,
-    required this.yuzde,
     required this.renk,
-    this.oranRenk,
+    this.yuzde,
   });
 
   final IconData icon;
   final String label;
   final int adet;
-  final int yuzde;
   final Color renk;
 
-  /// Toplam kutusunda oran notr renkte duruyor; digerlerinde sayiyla
-  /// ayni renk.
-  final Color? oranRenk;
+  /// Toplam blok kutusunda oran yazilmiyor: toplamin kendi icindeki
+  /// payi her zaman %100 ve bir sey anlatmiyor.
+  final int? yuzde;
 
   @override
   Widget build(BuildContext context) {
@@ -488,97 +482,20 @@ class _OzetKutusu extends StatelessWidget {
               ),
             ),
           ),
-          Center(
-            child: Text(
-              '%$yuzde',
-              style: TextStyle(
-                fontFamily: kBody,
-                fontSize: 12.5,
-                fontWeight: FontWeight.w700,
-                color: oranRenk ?? renk,
+          if (yuzde != null)
+            Center(
+              child: Text(
+                '%$yuzde',
+                style: TextStyle(
+                  fontFamily: kBody,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: renk,
+                ),
               ),
             ),
-          ),
         ],
       ),
-    );
-  }
-}
-
-/// Tamamlanan / devam eden / geciken / baslanmamis paylari tek seritte,
-/// altinda her payin yuzdesi kendi renginde.
-///
-/// Cok ince paylarin etiketi yazilmiyor: 50 blokluk santiyede tek blok
-/// %2 ediyor ve yazi komsu paya tasiyor.
-class _DagilimSeridi extends StatelessWidget {
-  const _DagilimSeridi({required this.grup});
-  final BlockGroup grup;
-
-  /// Etiket yazilacak en kucuk pay.
-  static const _etiketEsigi = .08;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = context.colors;
-
-    if (grup.total == 0) {
-      return Container(
-        height: 12,
-        decoration: BoxDecoration(
-          color: c.track,
-          borderRadius: BorderRadius.circular(99),
-        ),
-      );
-    }
-
-    final paylar = <(int, Color, Color)>[
-      (grup.completed, c.ok, c.ok),
-      (grup.inProgress, c.warn, c.warn),
-      (grup.delayed, c.bad, c.bad),
-      (grup.notStarted, c.track, c.muted),
-    ].where((p) => p.$1 > 0).toList();
-
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(99),
-          child: SizedBox(
-            height: 12,
-            child: Row(
-              // Varsayilan hiza ortalama; dolgularin kendi yuksekligi
-              // olmadigi icin cizilmiyordu.
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final p in paylar)
-                  Expanded(flex: p.$1, child: ColoredBox(color: p.$2)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 5),
-        Row(
-          children: [
-            for (final p in paylar)
-              Expanded(
-                flex: p.$1,
-                child: p.$1 / grup.total >= _etiketEsigi
-                    ? Text(
-                        '%${(p.$1 * 100 / grup.total).round()}',
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.clip,
-                        style: TextStyle(
-                          fontFamily: kBody,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: p.$3,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-          ],
-        ),
-      ],
     );
   }
 }
