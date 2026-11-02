@@ -652,7 +652,7 @@ class _BlokListesi extends StatelessWidget {
                         border: Border.all(color: c.border),
                       ),
                       child: Text(
-                        'Kalan ${tumu.length - gosterilen.length} bloğu göster',
+                        'Daha Fazla Göster',
                         style: TextStyle(
                           fontFamily: kBody,
                           fontSize: 14,
