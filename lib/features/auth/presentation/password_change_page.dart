@@ -27,21 +27,11 @@ class _PasswordChangePageState extends State<PasswordChangePage> {
   bool _showConfirm = false;
   String? _error;
 
-  bool get _hasUpper => RegExp(r'[A-Z]').hasMatch(_password.text);
-  bool get _hasLower => RegExp(r'[a-z]').hasMatch(_password.text);
-  bool get _hasDigit => RegExp(r'\d').hasMatch(_password.text);
-  bool get _hasSpecial => RegExp(r'[^A-Za-z0-9]').hasMatch(_password.text);
-  bool get _hasLength => _password.text.length >= 10;
+  bool get _hasLength => _password.text.length >= 6;
   bool get _matches =>
       _password.text.isNotEmpty && _password.text == _confirm.text;
 
-  bool get _policyOk =>
-      _hasUpper &&
-      _hasLower &&
-      _hasDigit &&
-      _hasSpecial &&
-      _hasLength &&
-      _matches;
+  bool get _policyOk => _hasLength && _matches;
 
   @override
   void initState() {
@@ -71,7 +61,7 @@ class _PasswordChangePageState extends State<PasswordChangePage> {
   Future<void> _submit() async {
     if (_busy) return;
     if (!_policyOk) {
-      setState(() => _error = 'Parola kurallarını eksiksiz karşılayın.');
+      setState(() => _error = 'Parola en az 6 karakter olmalı ve alanlar eşleşmelidir.');
       return;
     }
 
@@ -186,11 +176,7 @@ class _PasswordChangePageState extends State<PasswordChangePage> {
                               },
                             ),
                             const SizedBox(height: 18),
-                            _PolicyRow(label: 'En az 10 karakter', ok: _hasLength),
-                            _PolicyRow(label: 'En az 1 büyük harf', ok: _hasUpper),
-                            _PolicyRow(label: 'En az 1 küçük harf', ok: _hasLower),
-                            _PolicyRow(label: 'En az 1 rakam', ok: _hasDigit),
-                            _PolicyRow(label: 'En az 1 özel karakter', ok: _hasSpecial),
+                            _PolicyRow(label: 'En az 6 karakter', ok: _hasLength),
                             _PolicyRow(label: 'Parolalar eşleşiyor', ok: _matches),
                             if (_error != null) ...[
                               const SizedBox(height: 16),
