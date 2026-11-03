@@ -7,6 +7,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../auth/services/auth_service.dart';
 import '../../auth/services/session_manager.dart';
 import '../models/project_summary.dart';
 import '../services/project_service.dart';
@@ -20,6 +21,7 @@ class ProcessTrackingPage extends StatefulWidget {
 
 class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   final _projectService = ProjectService();
+  final _authService = AuthService();
 
   bool _housesExpanded = false;
   bool _shopsExpanded = false;
@@ -36,12 +38,41 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   @override
   void initState() {
     super.initState();
-    if (_canViewProcess) _loadProjects();
-    else _isLoading = false;
+    _initialize();
   }
 
   bool get _canViewProcess =>
       SessionManager.instance.auth?.canViewProcess ?? false;
+
+  Future<void> _initialize() async {
+    final session = SessionManager.instance;
+    try {
+      final refreshToken = session.refreshToken;
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        final freshAuth = await _authService.refresh(refreshToken);
+        await session.setAuth(freshAuth);
+      }
+
+      if (!mounted) return;
+      if (!_canViewProcess) {
+        setState(() {
+          _projects = const [];
+          _errorMessage = null;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await _loadProjects();
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _projects = const [];
+        _errorMessage = error.message;
+        _isLoading = false;
+      });
+    }
+  }
 
   Future<void> _loadProjects() async {
     setState(() {
