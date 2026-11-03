@@ -11,7 +11,7 @@ class ConstructionMonitorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Construction Monitor',
+      title: 'SAHADA Süreç Takip',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,
