@@ -6,6 +6,10 @@ import 'empty_illustration.dart';
 import 'panel.dart';
 import 'pressable.dart';
 
+/// Yetki engelinde gosterilen metin. Sunucu da ayni cumleyi donduruyor;
+/// gelen mesajin yetki engeli olup olmadigi bununla anlasiliyor.
+const String kYetkiYokMesaji = 'Yetkiniz bulunmamaktadır.';
+
 /// Shown while a screen waits for the backend. Quiet on purpose - a centred
 /// indicator and nothing else, because the wait is normally short.
 class LoadingView extends StatelessWidget {
@@ -20,6 +24,62 @@ class LoadingView extends StatelessWidget {
         child: CircularProgressIndicator(
           strokeWidth: 2.6,
           color: context.colors.ink,
+        ),
+      ),
+    );
+  }
+}
+
+/// Yetki engeline carpan kullaniciya gosteriliyor.
+///
+/// Bir hata degil: istek calisti, kullanicinin o bolumu gorme yetkisi yok.
+/// Bu yuzden ErrorView gibi "Tekrar Dene" sunmuyor; bos ekranlarla ayni
+/// hizada, ayni yazi biciminde duruyor. Isaret olarak kilit kullaniliyor:
+/// bos kutu "icerik yok" demek, burada icerik var ama kapali.
+class PermissionView extends StatelessWidget {
+  const PermissionView({super.key, this.message = kYetkiYokMesaji});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(32, kEmptyTopGap, 32, 32),
+        child: FadeSlideIn(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 300),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 86,
+                  height: 86,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: c.inset,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: c.border),
+                  ),
+                  child: Icon(LucideIcons.lock, size: 34, color: c.muted),
+                ),
+                const SizedBox(height: 22),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: kBody,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
+                    color: c.sub,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

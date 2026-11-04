@@ -602,19 +602,7 @@ class _DailyTasksPageState extends State<DailyTasksPage>
   Widget _buildContent() {
     final c = context.colors;
 
-    if (!_canView) {
-      return Center(
-        child: Text(
-          'Yetkiniz bulunmamaktadır.',
-          style: TextStyle(
-            fontFamily: kBody,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: c.bad,
-          ),
-        ),
-      );
-    }
+    if (!_canView) return const PermissionView();
 
     if (_isLoading) {
       return Center(

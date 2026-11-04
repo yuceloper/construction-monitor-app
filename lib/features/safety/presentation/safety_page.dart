@@ -119,20 +119,7 @@ class _SafetyPageState extends State<SafetyPage> {
   Widget _buildContent() {
     final c = context.colors;
 
-    if (!_canViewSafety) {
-      return Center(
-        child: Text(
-          'Yetkiniz bulunmamaktadır.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: kBody,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: c.bad,
-          ),
-        ),
-      );
-    }
+    if (!_canViewSafety) return const PermissionView();
 
     if (_isLoading) {
       return Center(

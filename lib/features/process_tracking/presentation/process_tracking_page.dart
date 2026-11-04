@@ -75,7 +75,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
         if (!mounted) return;
         setState(() {
           _projects = const [];
-          _errorMessage = 'Yetkiniz bulunmamaktadır.';
+          _errorMessage = kYetkiYokMesaji;
           _isLoading = false;
         });
         return;
@@ -157,19 +157,12 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   Widget _buildContent() {
     final c = context.colors;
 
-    if (!_canViewProcess) {
-      return Center(
-        child: Text(
-          'Yetkiniz bulunmamaktadır.',
-          style: TextStyle(
-            fontFamily: kBody,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: c.bad,
-          ),
-        ),
-      );
-    }
+    if (!_canViewProcess) return const PermissionView();
+
+    // Santiye erisimi geri alindiginda sunucu da ayni yetki mesajini
+    // donduruyor. Bu durumda "Tekrar Dene" bir ise yaramiyor, yetki
+    // gorunumu gosteriliyor.
+    if (_errorMessage == kYetkiYokMesaji) return const PermissionView();
 
     if (_isLoading) {
       return Center(
