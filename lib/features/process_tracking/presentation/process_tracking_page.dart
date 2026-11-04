@@ -9,6 +9,7 @@ import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../auth/services/auth_service.dart';
 import '../../auth/services/session_manager.dart';
+import '../../site_selection/services/site_service.dart';
 import '../models/project_summary.dart';
 import '../services/project_service.dart';
 
@@ -22,6 +23,7 @@ class ProcessTrackingPage extends StatefulWidget {
 class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
   final _projectService = ProjectService();
   final _authService = AuthService();
+  final _siteService = SiteService();
 
   bool _housesExpanded = false;
   bool _shopsExpanded = false;
@@ -58,6 +60,22 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
         setState(() {
           _projects = const [];
           _errorMessage = null;
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final selectedSiteId = session.selectedSiteId;
+      final sites = await _siteService.getSites();
+      final canAccessSelectedSite = selectedSiteId != null &&
+          sites.any((site) => site.id == selectedSiteId);
+
+      if (!canAccessSelectedSite) {
+        await session.clearSelectedSite();
+        if (!mounted) return;
+        setState(() {
+          _projects = const [];
+          _errorMessage = 'Yetkiniz bulunmamaktadır.';
           _isLoading = false;
         });
         return;
