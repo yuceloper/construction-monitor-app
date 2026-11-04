@@ -125,13 +125,22 @@ class DailyTaskService {
     required int taskId,
     required String status,
     required String note,
+    int? projectId,
+    String? priority,
+    int? assignedToId,
   }) async {
     final token = _token();
     try {
       final response = await http.put(
         Uri.parse('${ApiConfig.baseUrl}/tasks/$taskId/daily'),
         headers: _headers(token, json: true),
-        body: jsonEncode({'status': status, 'note': note}),
+        body: jsonEncode({
+          'status': status,
+          'note': note,
+          if (projectId != null) 'projectId': projectId,
+          if (priority != null) 'priority': priority,
+          if (assignedToId != null) 'assignedToId': assignedToId,
+        }),
       );
       final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
