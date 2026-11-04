@@ -12,6 +12,10 @@ import '../../../core/widgets/secim_paneli.dart';
 import '../../../core/widgets/kisa_ad.dart';
 import '../../../core/widgets/sesli_not_oynatici.dart';
 import '../../auth/services/session_manager.dart';
+import '../../process_tracking/models/project_summary.dart';
+import '../../process_tracking/services/project_service.dart';
+import '../../site_selection/models/site_member_summary.dart';
+import '../../site_selection/services/site_service.dart';
 import '../models/daily_task_summary.dart';
 import '../services/daily_task_service.dart';
 
@@ -26,6 +30,8 @@ class DailyTaskDetailPage extends StatefulWidget {
 
 class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   final _service = DailyTaskService();
+  final _projectService = ProjectService();
+  final _siteService = SiteService();
   final _noteController = TextEditingController();
   final _audioPlayer = AudioPlayer();
 
@@ -43,12 +49,20 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   String? _audioPath;
   String? _errorMessage;
   DailyTaskSummary? _task;
+  List<ProjectSummary> _projects = const [];
+  List<SiteMemberSummary> _members = const [];
   String _status = 'IN_PROGRESS';
+  int? _projectId;
+  int? _memberId;
+  String _priority = 'MEDIUM';
 
   /// Ekran acildigindaki hali. Guncelle dugmesi ancak bunlardan biri
   /// degisince calisiyor.
   String _ilkDurum = '';
   String _ilkNot = '';
+  int? _ilkProjectId;
+  int? _ilkMemberId;
+  String _ilkPriority = '';
 
   @override
   void initState() {
@@ -82,17 +96,34 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       _errorMessage = null;
     });
     try {
-      final task = await _service.getTask(widget.taskId);
+      final siteId = SessionManager.instance.selectedSiteId;
+      final results = await Future.wait([
+        _service.getTask(widget.taskId),
+        _projectService.getProjects(),
+        if (siteId != null && siteId > 0)
+          _siteService.getMembers(siteId)
+        else
+          Future.value(<SiteMemberSummary>[]),
+      ]);
       if (!mounted) return;
+      final task = results[0] as DailyTaskSummary;
       setState(() {
         _task = task;
+        _projects = results[1] as List<ProjectSummary>;
+        _members = results[2] as List<SiteMemberSummary>;
         _noteController.text = task.notes.isNotEmpty ? task.notes : task.title;
         _status =
             const {'TODO', 'IN_PROGRESS', 'COMPLETED'}.contains(task.status)
             ? task.status
             : 'TODO';
+        _projectId = task.projectId;
+        _memberId = task.assignedToId;
+        _priority = task.priority;
         _ilkNot = _noteController.text.trim();
         _ilkDurum = _status;
+        _ilkProjectId = _projectId;
+        _ilkMemberId = _memberId;
+        _ilkPriority = _priority;
       });
     } on DailyTaskException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
@@ -179,7 +210,11 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
 
   /// Ekran acildigindan beri bir sey degisti mi?
   bool get _degisiklikVar =>
-      _status != _ilkDurum || _noteController.text.trim() != _ilkNot;
+      _status != _ilkDurum ||
+      _noteController.text.trim() != _ilkNot ||
+      _projectId != _ilkProjectId ||
+      _memberId != _ilkMemberId ||
+      _priority != _ilkPriority;
 
   Future<void> _save() async {
     if (_isSaving) return;
@@ -199,12 +234,21 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
         taskId: widget.taskId,
         status: _status,
         note: note,
+        projectId: _projectId,
+        priority: _priority,
+        assignedToId: _memberId,
       );
       if (!mounted) return;
       setState(() {
         _task = task;
         _ilkNot = note;
         _ilkDurum = _status;
+        _projectId = task.projectId;
+        _memberId = task.assignedToId;
+        _priority = task.priority;
+        _ilkProjectId = _projectId;
+        _ilkMemberId = _memberId;
+        _ilkPriority = _priority;
       });
       _show('Günlük iş güncellendi.');
       // Guncellemeden sonra listeye donuluyor ki yapilan degisiklik
@@ -298,6 +342,73 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
       secili: _status,
     );
     if (secim != null && mounted) setState(() => _status = secim);
+  }
+
+  String get _projectLabel {
+    final project = _projects.where((p) => p.id == _projectId).firstOrNull;
+    if (project == null) return _task == null
+        ? ''
+        : '${_task!.typeLabel} - ${_task!.projectName}';
+    final type = project.projectType == 'SHOP'
+        ? 'Dükkanlar'
+        : project.projectType == 'APARTMENT'
+        ? 'Apartmanlar'
+        : 'Evler';
+    return '$type - ${project.name}';
+  }
+
+  String get _memberLabel {
+    final member = _members.where((m) => m.id == _memberId).firstOrNull;
+    return member?.fullName ?? _task?.assignedToName ?? '';
+  }
+
+  String get _priorityLabel => switch (_priority) {
+    'LOW' => 'Düşük',
+    'HIGH' || 'CRITICAL' => 'Yüksek',
+    _ => 'Orta',
+  };
+
+  Future<void> _projectSec() async {
+    final secim = await secimPaneliAc<int>(
+      context,
+      baslik: 'Blok',
+      secenekler: [
+        for (final project in _projects)
+          SecimSecenegi(
+            project.id,
+            '${project.projectType == 'SHOP' ? 'Dükkanlar' : project.projectType == 'APARTMENT' ? 'Apartmanlar' : 'Evler'} - ${project.name}',
+          ),
+      ],
+      secili: _projectId,
+    );
+    if (secim != null && mounted) setState(() => _projectId = secim);
+  }
+
+  Future<void> _prioritySec() async {
+    final secim = await secimPaneliAc<String>(
+      context,
+      baslik: 'Kritiklik Seviyesi',
+      secenekler: const [
+        SecimSecenegi('LOW', 'Düşük'),
+        SecimSecenegi('MEDIUM', 'Orta'),
+        SecimSecenegi('HIGH', 'Yüksek'),
+      ],
+      secili: _priority,
+    );
+    if (secim != null && mounted) setState(() => _priority = secim);
+  }
+
+  Future<void> _memberSec() async {
+    final secim = await secimPaneliAc<int>(
+      context,
+      baslik: 'İlgili Kişi',
+      secenekler: [
+        for (final member in _members)
+          SecimSecenegi(member.id, member.fullName),
+      ],
+      secili: _memberId,
+    );
+    if (secim != null && mounted) setState(() => _memberId = secim);
   }
 
   @override
@@ -569,6 +680,54 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  'Blok',
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.2,
+                    color: c.ink,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                SeciciAlan(
+                  metin: _projectLabel,
+                  onTap: _isSaving || !_canUpdate ? null : _projectSec,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Kritiklik',
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.2,
+                    color: c.ink,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                SeciciAlan(
+                  metin: _priorityLabel,
+                  onTap: _isSaving || !_canUpdate ? null : _prioritySec,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'İlgili Kişi',
+                  style: TextStyle(
+                    fontFamily: kDisplay,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.2,
+                    color: c.ink,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                SeciciAlan(
+                  metin: _memberLabel,
+                  onTap: _isSaving || !_canUpdate ? null : _memberSec,
+                ),
+                const SizedBox(height: 20),
                 Text(
                   'Durum',
                   style: TextStyle(
