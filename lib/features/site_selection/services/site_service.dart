@@ -105,9 +105,7 @@ class SiteService {
       throw const SiteException('Oturum süresi dolmuş olabilir. Lütfen tekrar giriş yapın.');
     }
     if (statusCode == 403) {
-      throw const SiteException(
-        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
-      );
+      throw const SiteException('Yetkiniz bulunmamaktadır.');
     }
     throw SiteException('$fallback Lütfen daha sonra tekrar deneyiniz.');
   }
