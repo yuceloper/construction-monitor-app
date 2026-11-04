@@ -21,12 +21,15 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailController = TextEditingController();
   final _authService = AuthService();
   final _siteService = SiteService();
 
   bool _isLoading = false;
   bool _passwordVisible = false;
+  bool _forgotMode = false;
   String? _errorMessage;
+  String? _successMessage;
 
   @override
   void initState() {
@@ -48,6 +51,7 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController
       ..removeListener(_yaziDegisti)
       ..dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -134,9 +138,42 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      setState(() => _errorMessage = 'E-posta adresi zorunludur.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _successMessage = null;
+    });
+
+    try {
+      final message = await _authService.forgotPassword(email: email);
+      if (!mounted) return;
+      setState(() => _successMessage = message);
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(() => _errorMessage = error.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _errorMessage = 'Beklenmeyen bir hata oluştu.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   /// Kullanici yazmaya baslayinca eski hata mesaji kalkiyor.
   void _hatayiTemizle(String _) {
-    if (_errorMessage != null) setState(() => _errorMessage = null);
+    if (_errorMessage != null || _successMessage != null) {
+      setState(() {
+        _errorMessage = null;
+        _successMessage = null;
+      });
+    }
   }
 
   @override
@@ -184,123 +221,184 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _Field(
-                            label: 'Kullanıcı Adı',
-                            child: TextField(
-                              controller: _usernameController,
-                              enabled: !_isLoading,
-                              onChanged: _hatayiTemizle,
-                              textInputAction: TextInputAction.next,
-                              inputFormatters: [
-                                LengthLimitingTextInputFormatter(25),
-                              ],
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontSize: 17,
-                                color: c.ink,
-                              ),
-                              cursorColor: c.accent,
-                              decoration: _inputDecoration(c).copyWith(
-                                suffixIcon: _temizleDugmesi(
-                                  c,
-                                  _usernameController,
+                          if (!_forgotMode) ...[
+                            _Field(
+                              label: 'Kullanıcı Adı',
+                              child: TextField(
+                                controller: _usernameController,
+                                enabled: !_isLoading,
+                                onChanged: _hatayiTemizle,
+                                textInputAction: TextInputAction.next,
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(25),
+                                ],
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 17,
+                                  color: c.ink,
+                                ),
+                                cursorColor: c.accent,
+                                decoration: _inputDecoration(c).copyWith(
+                                  suffixIcon: _temizleDugmesi(
+                                    c,
+                                    _usernameController,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 20),
-                          _Field(
-                            label: 'Parola',
-                            child: TextField(
-                              controller: _passwordController,
-                              enabled: !_isLoading,
-                              onChanged: _hatayiTemizle,
-                              obscureText: !_passwordVisible,
-                              textInputAction: TextInputAction.done,
-                              inputFormatters: [
-                                LengthLimitingTextInputFormatter(25),
-                              ],
-                              onSubmitted: (_) {
-                                if (!_isLoading) _login();
-                              },
-                              style: TextStyle(
-                                fontFamily: kBody,
-                                fontSize: 17,
-                                color: c.ink,
-                              ),
-                              cursorColor: c.accent,
-                              decoration: _inputDecoration(c).copyWith(
-                                // Parolada once temizleme, sonra goster
-                                // dugmesi duruyor.
-                                suffixIcon: _temizleDugmesi(
-                                  c,
-                                  _passwordController,
-                                  digerDugme: IconButton(
-                                    tooltip: _passwordVisible
-                                        ? 'Parolayı gizle'
-                                        : 'Parolayı göster',
-                                    onPressed: _isLoading
-                                        ? null
-                                        : () => setState(
-                                            () => _passwordVisible =
-                                                !_passwordVisible,
-                                          ),
-                                    icon: Icon(
-                                      _passwordVisible
-                                          ? LucideIcons.eyeOff
-                                          : LucideIcons.eye,
-                                      size: 20,
-                                      color: c.muted,
+                            const SizedBox(height: 20),
+                            _Field(
+                              label: 'Parola',
+                              child: TextField(
+                                controller: _passwordController,
+                                enabled: !_isLoading,
+                                onChanged: _hatayiTemizle,
+                                obscureText: !_passwordVisible,
+                                textInputAction: TextInputAction.done,
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(25),
+                                ],
+                                onSubmitted: (_) {
+                                  if (!_isLoading) _login();
+                                },
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 17,
+                                  color: c.ink,
+                                ),
+                                cursorColor: c.accent,
+                                decoration: _inputDecoration(c).copyWith(
+                                  suffixIcon: _temizleDugmesi(
+                                    c,
+                                    _passwordController,
+                                    digerDugme: IconButton(
+                                      tooltip: _passwordVisible
+                                          ? 'Parolayı gizle'
+                                          : 'Parolayı göster',
+                                      onPressed: _isLoading
+                                          ? null
+                                          : () => setState(
+                                              () => _passwordVisible =
+                                                  !_passwordVisible,
+                                            ),
+                                      icon: Icon(
+                                        _passwordVisible
+                                            ? LucideIcons.eyeOff
+                                            : LucideIcons.eye,
+                                        size: 20,
+                                        color: c.muted,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: _isLoading
+                                    ? null
+                                    : () => setState(() {
+                                          _forgotMode = true;
+                                          _errorMessage = null;
+                                          _successMessage = null;
+                                        }),
+                                child: const Text('Şifremi Unuttum'),
+                              ),
+                            ),
+                          ] else ...[
+                            Text(
+                              'Kayıtlı e-posta adresinizi girin. Yeni geçici parolanız e-posta ile gönderilecektir.',
+                              style: TextStyle(
+                                fontFamily: kBody,
+                                fontSize: 14.5,
+                                height: 1.45,
+                                color: c.sub,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _Field(
+                              label: 'E-posta',
+                              child: TextField(
+                                controller: _emailController,
+                                enabled: !_isLoading,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.done,
+                                onChanged: _hatayiTemizle,
+                                onSubmitted: (_) {
+                                  if (!_isLoading) _forgotPassword();
+                                },
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 17,
+                                  color: c.ink,
+                                ),
+                                cursorColor: c.accent,
+                                decoration: _inputDecoration(c),
+                              ),
+                            ),
+                          ],
                           if (_errorMessage != null) ...[
                             const SizedBox(height: 18),
                             Container(
-                              padding: const EdgeInsets.fromLTRB(
-                                14,
-                                12,
-                                14,
-                                12,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                               decoration: BoxDecoration(
                                 color: c.bad.withValues(alpha: .08),
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(
-                                    LucideIcons.circleAlert,
-                                    size: 18,
-                                    color: c.bad,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      _errorMessage!,
-                                      style: TextStyle(
-                                        fontFamily: kBody,
-                                        fontSize: 14.5,
-                                        height: 1.4,
-                                        fontWeight: FontWeight.w500,
-                                        color: c.bad,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                _errorMessage!,
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 14.5,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w500,
+                                  color: c.bad,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (_successMessage != null) ...[
+                            const SizedBox(height: 18),
+                            Container(
+                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                              decoration: BoxDecoration(
+                                color: c.ok.withValues(alpha: .08),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Text(
+                                _successMessage!,
+                                style: TextStyle(
+                                  fontFamily: kBody,
+                                  fontSize: 14.5,
+                                  height: 1.4,
+                                  fontWeight: FontWeight.w500,
+                                  color: c.ok,
+                                ),
                               ),
                             ),
                           ],
                           const SizedBox(height: 26),
                           PrimaryButton(
-                            label: 'GİRİŞ',
+                            label: _forgotMode ? 'YENİ PAROLA GÖNDER' : 'GİRİŞ',
                             busy: _isLoading,
-                            onPressed: _isLoading ? null : _login,
+                            onPressed: _isLoading
+                                ? null
+                                : (_forgotMode ? _forgotPassword : _login),
                           ),
+                          if (_forgotMode) ...[
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () => setState(() {
+                                        _forgotMode = false;
+                                        _errorMessage = null;
+                                        _successMessage = null;
+                                      }),
+                              child: const Text('Giriş ekranına dön'),
+                            ),
+                          ],
                         ],
                       ),
                     ),
