@@ -67,6 +67,11 @@ class SessionManager {
     await _write(_siteKey, jsonEncode(site.toJson()));
   }
 
+  Future<void> clearSelectedSite() async {
+    _selectedSite = null;
+    await _delete(_siteKey);
+  }
+
   Future<void> clear() async {
     _auth = null;
     _selectedSite = null;
