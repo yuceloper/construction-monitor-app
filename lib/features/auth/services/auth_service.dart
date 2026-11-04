@@ -32,6 +32,36 @@ class AuthService {
     }
   }
 
+  Future<String> forgotPassword({required String email}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/auth/forgot-password'),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      final body = utf8.decode(response.bodyBytes);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(body);
+        if (decoded is Map<String, dynamic>) {
+          final message = decoded['message']?.toString().trim();
+          if (message != null && message.isNotEmpty) return message;
+        }
+        return 'E-posta adresi sistemde kayıtlıysa yeni parolanız gönderildi.';
+      }
+
+      throw AuthException(_readErrorMessage(body, response.statusCode));
+    } on http.ClientException {
+      throw const AuthException(
+        'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.',
+      );
+    } on FormatException {
+      throw const AuthException(
+        'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
+      );
+    }
+  }
+
   Future<void> changePassword({
     required String accessToken,
     required String newPassword,
