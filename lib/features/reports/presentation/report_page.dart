@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
@@ -8,6 +9,7 @@ import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/state_views.dart';
 import '../models/report_models.dart';
+import '../services/report_pdf_service.dart';
 import '../services/report_service.dart';
 
 /// Blok bazli rapor ekrani.
@@ -24,9 +26,11 @@ class ReportPage extends StatefulWidget {
 
 class _ReportPageState extends State<ReportPage> {
   final _service = ReportService();
+  final _pdfService = ReportPdfService();
 
   ReportData? _data;
   bool _isLoading = true;
+  bool _isExportingPdf = false;
   String? _errorMessage;
 
   /// Secili sekme ve suzgec. Sekme degisince suzgec sifirlaniyor, yoksa
@@ -92,6 +96,48 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
+  Future<void> _pdfOlarakAktar(BuildContext anchorContext) async {
+    final data = _data;
+    if (data == null || _isExportingPdf) return;
+
+    setState(() => _isExportingPdf = true);
+    try {
+      final bytes = await _pdfService.build(data);
+      if (!mounted) return;
+
+      final now = DateTime.now();
+      final fileName =
+          'sahada_surec_raporu_${now.year}'
+          '${now.month.toString().padLeft(2, '0')}'
+          '${now.day.toString().padLeft(2, '0')}.pdf';
+      final renderBox = anchorContext.findRenderObject() as RenderBox?;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          title: 'SAHADA Süreç Takip Raporu',
+          subject: 'SAHADA Süreç Takip Raporu',
+          files: [
+            XFile.fromData(bytes, mimeType: 'application/pdf'),
+          ],
+          fileNameOverrides: [fileName],
+          downloadFallbackEnabled: true,
+          sharePositionOrigin: renderBox == null
+              ? null
+              : renderBox.localToGlobal(Offset.zero) & renderBox.size,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('PDF raporu oluşturulamadı: $error'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isExportingPdf = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
@@ -103,7 +149,32 @@ class _ReportPageState extends State<ReportPage> {
         child: Column(
           children: [
             const AppHeader(),
-            ScreenTitleBar(title: 'Rapor', onBack: () => context.go('/dashboard')),
+            ScreenTitleBar(
+              title: 'Rapor',
+              onBack: () => context.go('/dashboard'),
+              trailing: Builder(
+                builder: (buttonContext) {
+                  final wide = MediaQuery.sizeOf(context).width >= 430;
+                  return OutlinedButton.icon(
+                    onPressed: _data == null || _isLoading || _isExportingPdf
+                        ? null
+                        : () => _pdfOlarakAktar(buttonContext),
+                    icon: _isExportingPdf
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(LucideIcons.fileDown, size: 17),
+                    label: Text(
+                      _isExportingPdf
+                          ? 'Hazırlanıyor...'
+                          : (wide ? 'PDF olarak aktar' : 'PDF'),
+                    ),
+                  );
+                },
+              ),
+            ),
             Expanded(child: _govde()),
           ],
         ),
