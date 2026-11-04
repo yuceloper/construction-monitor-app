@@ -345,7 +345,13 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   }
 
   String get _projectLabel {
-    final project = _projects.where((p) => p.id == _projectId).firstOrNull;
+    ProjectSummary? project;
+    for (final item in _projects) {
+      if (item.id == _projectId) {
+        project = item;
+        break;
+      }
+    }
     if (project == null) return _task == null
         ? ''
         : '${_task!.typeLabel} - ${_task!.projectName}';
@@ -358,7 +364,13 @@ class _DailyTaskDetailPageState extends State<DailyTaskDetailPage> {
   }
 
   String get _memberLabel {
-    final member = _members.where((m) => m.id == _memberId).firstOrNull;
+    SiteMemberSummary? member;
+    for (final item in _members) {
+      if (item.id == _memberId) {
+        member = item;
+        break;
+      }
+    }
     return member?.fullName ?? _task?.assignedToName ?? '';
   }
 
