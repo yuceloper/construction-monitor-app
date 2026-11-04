@@ -18,13 +18,12 @@ class ReportPdfService {
       await rootBundle.load('assets/fonts/IBMPlexSans-SemiBold.ttf'),
     );
 
-    final document = pw.Document(
-      theme: pw.ThemeData.withFont(
-        base: regular,
-        bold: bold,
-        italic: regular,
-        boldItalic: bold,
-      ),
+    final document = pw.Document();
+    final theme = pw.ThemeData.withFont(
+      base: regular,
+      bold: bold,
+      italic: regular,
+      boldItalic: bold,
     );
 
     final allBlocks = data.groups.expand((group) => group.blocks).toList();
@@ -50,6 +49,8 @@ class ReportPdfService {
 
     document.addPage(
       pw.MultiPage(
+        theme: theme,
+        maxPages: 100,
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.fromLTRB(32, 34, 32, 34),
         header: (context) => _header(data, now, bold, medium),
