@@ -27,6 +27,7 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
 
   bool _housesExpanded = false;
   bool _shopsExpanded = false;
+  bool _apartmentsExpanded = false;
   bool _isLoading = true;
   String? _errorMessage;
   List<ProjectSummary> _projects = const [];
@@ -36,6 +37,9 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
 
   List<ProjectSummary> get _shops =>
       _projects.where((project) => project.isShop).toList();
+
+  List<ProjectSummary> get _apartments =>
+      _projects.where((project) => project.isApartment).toList();
 
   @override
   void initState() {
@@ -213,7 +217,10 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
             // Ayni anda tek panel acik kalsin.
             setState(() {
               _housesExpanded = !_housesExpanded;
-              if (_housesExpanded) _shopsExpanded = false;
+              if (_housesExpanded) {
+                _shopsExpanded = false;
+                _apartmentsExpanded = false;
+              }
             });
           },
           child: _buildProjectList(projects: _houses),
@@ -227,10 +234,30 @@ class _ProcessTrackingPageState extends State<ProcessTrackingPage> {
           onTap: () {
             setState(() {
               _shopsExpanded = !_shopsExpanded;
-              if (_shopsExpanded) _housesExpanded = false;
+              if (_shopsExpanded) {
+                _housesExpanded = false;
+                _apartmentsExpanded = false;
+              }
             });
           },
           child: _buildProjectList(projects: _shops),
+        ),
+      if (_apartments.isNotEmpty)
+        _SectionCard(
+          title: 'Apartmanlar',
+          countLabel: '${_apartments.length} Apartman',
+          icon: LucideIcons.building2,
+          expanded: _apartmentsExpanded,
+          onTap: () {
+            setState(() {
+              _apartmentsExpanded = !_apartmentsExpanded;
+              if (_apartmentsExpanded) {
+                _housesExpanded = false;
+                _shopsExpanded = false;
+              }
+            });
+          },
+          child: _buildProjectList(projects: _apartments),
         ),
     ];
 
