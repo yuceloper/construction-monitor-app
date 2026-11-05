@@ -35,4 +35,5 @@ class ProjectSummary {
   int get roundedProgress => overallProgress.round();
   bool get isHouse => projectType == 'HOUSE';
   bool get isShop => projectType == 'SHOP';
+  bool get isApartment => projectType == 'APARTMENT';
 }
