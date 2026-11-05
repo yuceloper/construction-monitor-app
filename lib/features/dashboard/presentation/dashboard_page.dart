@@ -5,6 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/pressable.dart';
+import '../../auth/services/session_manager.dart';
 import '../../notifications/services/notification_service.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -70,7 +71,15 @@ class _DashboardPageState extends State<DashboardPage>
     icon: LucideIcons.chartColumnBig,
     color: context.colors.teal,
     genis: genis,
-    onTap: () => context.go('/reports'),
+    onTap: () {
+      if (!(SessionManager.instance.auth?.canViewReports ?? false)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yetkiniz bulunmamaktadır.')),
+        );
+        return;
+      }
+      context.go('/reports');
+    },
   );
 
   Widget _bildirimler(BuildContext context, bool genis) =>
