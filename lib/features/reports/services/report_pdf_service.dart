@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../../app/brand.dart';
 import '../models/report_models.dart';
 
 class ReportPdfService {
@@ -17,6 +18,21 @@ class ReportPdfService {
     final bold = pw.Font.ttf(
       await rootBundle.load('assets/fonts/IBMPlexSans-SemiBold.ttf'),
     );
+
+    // Marka logosu: uygulamanin basligindaki ile ayni kaynak, boylece
+    // marka degisince rapor da degisiyor. Okunamazsa yazi ile devam
+    // ediliyor, rapor yine olusuyor.
+    final marka = Brand.config.value;
+    pw.MemoryImage? logo;
+    final logoYolu = marka.logoAsset;
+    if (logoYolu != null && logoYolu.isNotEmpty) {
+      try {
+        final veri = await rootBundle.load(logoYolu);
+        logo = pw.MemoryImage(veri.buffer.asUint8List());
+      } catch (_) {
+        logo = null;
+      }
+    }
 
     final document = pw.Document();
     final theme = pw.ThemeData.withFont(
@@ -53,7 +69,7 @@ class ReportPdfService {
         maxPages: 100,
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.fromLTRB(32, 34, 32, 34),
-        header: (context) => _header(data, now, bold, medium),
+        header: (context) => _header(data, now, bold, medium, logo, marka),
         footer: (context) => _footer(context, medium),
         build: (context) => [
           pw.SizedBox(height: 14),
@@ -149,6 +165,8 @@ class ReportPdfService {
     DateTime now,
     pw.Font bold,
     pw.Font medium,
+    pw.MemoryImage? logo,
+    BrandConfig marka,
   ) {
     return pw.Container(
       padding: const pw.EdgeInsets.only(bottom: 10),
@@ -164,15 +182,18 @@ class ReportPdfService {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
-                pw.Text(
-                  'SAHADA',
-                  style: pw.TextStyle(
-                    font: bold,
-                    fontSize: 19,
-                    color: PdfColors.blueGrey900,
+                if (logo != null)
+                  pw.Image(logo, height: 26)
+                else
+                  pw.Text(
+                    marka.name,
+                    style: pw.TextStyle(
+                      font: bold,
+                      fontSize: 19,
+                      color: PdfColors.blueGrey900,
+                    ),
                   ),
-                ),
-                pw.SizedBox(height: 2),
+                pw.SizedBox(height: 4),
                 pw.Text(
                   'Süreç Takip Raporu',
                   style: pw.TextStyle(
