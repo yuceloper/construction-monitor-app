@@ -42,12 +42,7 @@ class AuthService {
 
       final body = utf8.decode(response.bodyBytes);
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        final decoded = jsonDecode(body);
-        if (decoded is Map<String, dynamic>) {
-          final message = decoded['message']?.toString().trim();
-          if (message != null && message.isNotEmpty) return message;
-        }
-        return 'E-posta adresi sistemde kayıtlıysa yeni parolanız gönderildi.';
+        return 'Yeni parolanız e-posta olarak iletilmiştir.';
       }
 
       throw AuthException(_readErrorMessage(body, response.statusCode));
