@@ -52,14 +52,28 @@ class AppRouter {
       }
 
       final auth = session.auth;
+
+      // İzleme yetkisi temel yetkidir. Güncelleme yetkisi tek başına
+      // detay/güncelleme ekranlarına erişim sağlamaz.
+      if (location.startsWith('/daily-tasks/') &&
+          !(auth?.canViewDailyTasks ?? false)) {
+        return '/daily-tasks';
+      }
       if (location == '/daily-tasks/create' &&
           !(auth?.canUpdateDailyTasks ?? false)) {
         return '/daily-tasks';
       }
       if (location.startsWith('/process/') &&
+          !(auth?.canViewProcess ?? false)) {
+        return '/process';
+      }
+      if (location.startsWith('/process/') &&
           location.contains('/update') &&
           !(auth?.canUpdateProcess ?? false)) {
         return '/process';
+      }
+      if (location == '/reports' && !(auth?.canViewReports ?? false)) {
+        return '/dashboard';
       }
 
       if (isLogin || isSiteSelection || isPasswordChange) return '/dashboard';
