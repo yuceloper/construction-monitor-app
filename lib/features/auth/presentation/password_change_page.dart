@@ -28,10 +28,48 @@ class _PasswordChangePageState extends State<PasswordChangePage> {
   String? _error;
 
   bool get _hasLength => _password.text.length >= 6;
+  bool get _hasLetter =>
+      RegExp(r'[A-Za-zÇĞİÖŞÜçğıöşü]').hasMatch(_password.text);
+  bool get _hasDigit => RegExp(r'\d').hasMatch(_password.text);
+  bool get _hasSequentialRun => _containsSequentialRun(_password.text, 3);
   bool get _matches =>
       _password.text.isNotEmpty && _password.text == _confirm.text;
 
-  bool get _policyOk => _hasLength && _matches;
+  bool get _policyOk =>
+      _hasLength &&
+      _hasLetter &&
+      _hasDigit &&
+      !_hasSequentialRun &&
+      _matches;
+
+  bool _containsSequentialRun(String value, int minimumRun) {
+    final normalized = value.toLowerCase();
+    var ascending = 1;
+    var descending = 1;
+
+    for (var i = 1; i < normalized.length; i++) {
+      final previous = normalized.codeUnitAt(i - 1);
+      final current = normalized.codeUnitAt(i);
+      final previousChar = normalized[i - 1];
+      final currentChar = normalized[i];
+      final previousIsAlphaNumeric =
+          RegExp(r'[a-z0-9]').hasMatch(previousChar);
+      final currentIsAlphaNumeric =
+          RegExp(r'[a-z0-9]').hasMatch(currentChar);
+
+      if (!previousIsAlphaNumeric || !currentIsAlphaNumeric) {
+        ascending = 1;
+        descending = 1;
+        continue;
+      }
+
+      ascending = current == previous + 1 ? ascending + 1 : 1;
+      descending = current == previous - 1 ? descending + 1 : 1;
+
+      if (ascending >= minimumRun || descending >= minimumRun) return true;
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -61,7 +99,10 @@ class _PasswordChangePageState extends State<PasswordChangePage> {
   Future<void> _submit() async {
     if (_busy) return;
     if (!_policyOk) {
-      setState(() => _error = 'Parola en az 6 karakter olmalı ve alanlar eşleşmelidir.');
+      setState(
+        () => _error =
+            'Parola en az 6 karakter olmalı, en az 1 harf ve 1 rakam içermeli, ardışık karakter içermemeli ve alanlar eşleşmelidir.',
+      );
       return;
     }
 
@@ -177,6 +218,12 @@ class _PasswordChangePageState extends State<PasswordChangePage> {
                             ),
                             const SizedBox(height: 18),
                             _PolicyRow(label: 'En az 6 karakter', ok: _hasLength),
+                            _PolicyRow(label: 'En az 1 harf', ok: _hasLetter),
+                            _PolicyRow(label: 'En az 1 rakam', ok: _hasDigit),
+                            _PolicyRow(
+                              label: 'Ardışık karakter içermiyor',
+                              ok: !_hasSequentialRun,
+                            ),
                             _PolicyRow(label: 'Parolalar eşleşiyor', ok: _matches),
                             if (_error != null) ...[
                               const SizedBox(height: 16),
