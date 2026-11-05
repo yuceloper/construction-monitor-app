@@ -1,8 +1,9 @@
 // Rapor ekraninin veri tipleri.
 //
-// Sunucuda ayri bir rapor ucu yok; veriler /projects ucundan gelen blok
-// listesinden türetiliyor. Hesaplar burada toplandi ki ekran sadece
-// gostermekle ugrassin.
+// Sunucuda ayri bir rapor ucu yok; blok listesi /projects'ten, her
+// blogun plan karsilastirmasi ise surec takibin kullandigi
+// /progress/project/{id}/summary ucundan geliyor. Veriler burada
+// toplandi ki ekran sadece gostermekle ugrassin.
 
 /// Sunucunun gonderdigi blok tipi: HOUSE / SHOP / APARTMENT.
 enum BlockType { house, shop, apartment, other }
@@ -32,8 +33,8 @@ extension BlockTypeLabel on BlockType {
   };
 }
 
-/// Blogun rapordaki durumu. Sunucu COMPLETED gondermedigi icin ilerleme
-/// yuzdesi ile santiyenin genel takviminden turetiliyor.
+/// Blogun rapordaki durumu. Gecikme sunucunun plan karsilastirmasindan
+/// geliyor, tamamlanma ise ilerleme yuzdesinden turetiliyor.
 enum BlockState { completed, delayed, inProgress, notStarted }
 
 extension BlockStateLabel on BlockState {
@@ -62,35 +63,33 @@ class BlockReport {
   /// 0-100 arasi, yuvarlanmis ilerleme.
   final int progress;
 
-  /// Takvime gore bugun beklenen ilerleme. Blogun baslangici ya da
-  /// santiyenin genel bitis tarihi girilmemisse hesaplanamiyor.
+  /// Sunucunun bugun icin bekledigi ilerleme (plannedProgress).
+  /// Surec takip ekrani da ayni degeri gosteriyor. Ozet alinamazsa
+  /// null kaliyor ve ekranda plan karsilastirmasi yazilmiyor.
   final int? expectedProgress;
 
   final BlockState state;
 
-  /// [bugun] disaridan veriliyor: ayni listedeki butun bloklar ayni ani
-  /// referans alsin ve test edilebilsin diye.
+  /// Plan karsilastirmasi sunucudan geliyor: [beklenen] sunucunun bugun
+  /// icin bekledigi ilerleme, [geride] ise sunucunun hesapladigi
+  /// sapmanin eksi olup olmadigi. Surec takip ekrani da ayni iki degeri
+  /// kullaniyor; ikisi tek kaynaktan beslendigi icin rapor ile surec
+  /// takip ayni blokta ayni gecikmeyi gosteriyor.
+  ///
+  /// [gerceklesen] de ozetten geliyor; ozet alinamazsa blok listesinin
+  /// kendi yuzdesi kullaniliyor.
   factory BlockReport.fromJson(
     Map<String, dynamic> json, {
-    required DateTime bugun,
-    required DateTime? santiyeBitisi,
+    required int? beklenen,
+    required bool? geride,
+    int? gerceklesen,
   }) {
     final ham = json['overallProgress'];
     final yuzde = ham is num
         ? ham.toDouble()
         : double.tryParse(ham?.toString() ?? '') ?? 0;
-    final ilerleme = yuzde.clamp(0, 100).round();
-
-    // Blogun kendi endDate'i okunmuyor: bloklar paralel ilerledigi
-    // icin gecikme santiyenin genel takvimine gore hesaplaniyor.
-    final baslangic = DateTime.tryParse(json['startDate']?.toString() ?? '');
+    final ilerleme = gerceklesen ?? yuzde.clamp(0, 100).round();
     final durum = json['status']?.toString();
-
-    final beklenen = _beklenenIlerleme(
-      baslangic: baslangic,
-      santiyeBitisi: santiyeBitisi,
-      bugun: bugun,
-    );
 
     return BlockReport(
       id: (json['id'] as num?)?.toInt() ?? 0,
@@ -100,57 +99,25 @@ class BlockReport {
       expectedProgress: beklenen,
       state: _durumHesapla(
         ilerleme: ilerleme,
-        beklenen: beklenen,
+        geride: geride,
         sunucuDurumu: durum,
       ),
     );
   }
 
-  /// Takvime gore bugun beklenen ilerleme yuzdesi.
-  ///
-  /// Surec takip ekranindaki plan-gerceklesen karsilastirmasinin ayni
-  /// mantigi: gecen sure, toplam surenin ne kadarini kapsiyorsa
-  /// ilerlemenin de o kadar olmasi bekleniyor. Bitis tarihi olarak
-  /// blogun kendi tarihi degil santiyenin genel tarihi kullaniliyor.
-  static int? _beklenenIlerleme({
-    required DateTime? baslangic,
-    required DateTime? santiyeBitisi,
-    required DateTime bugun,
-  }) {
-    if (baslangic == null || santiyeBitisi == null) return null;
-
-    DateTime gun(DateTime t) => DateTime(t.year, t.month, t.day);
-    final bas = gun(baslangic);
-    final son = gun(santiyeBitisi);
-    final simdi = gun(bugun);
-
-    // Takvim tutarsizsa (bitis baslangictan once) hesap yapilmiyor.
-    if (!son.isAfter(bas)) return null;
-
-    // Blok henuz baslamadi: beklenen ilerleme yok.
-    if (simdi.isBefore(bas)) return 0;
-
-    // Santiyenin genel bitis tarihi gecti: blogun bitmis olmasi
-    // bekleniyor.
-    if (!simdi.isBefore(son)) return 100;
-
-    final toplamGun = son.difference(bas).inDays;
-    final gecenGun = simdi.difference(bas).inDays;
-    return (gecenGun * 100 / toplamGun).round().clamp(0, 100);
-  }
-
-  /// Sirasi onemli: tamamlanan blok, takvimi gecmis olsa da geciken
-  /// sayilmiyor. Beklenen ilerleme hesaplanamadiginda (takvim
-  /// girilmemis) hicbir blok geciken sayilmiyor.
+  /// Sirasi onemli: tamamlanan blok, planin gerisinde olsa da geciken
+  /// sayilmiyor. Sapma sunucudan alinamadiginda blok geciken
+  /// sayilmiyor: rapor olmayan bir gecikmeyi uydurmaktansa plan
+  /// karsilastirmasini hic yazmiyor.
   static BlockState _durumHesapla({
     required int ilerleme,
-    required int? beklenen,
+    required bool? geride,
     required String? sunucuDurumu,
   }) {
     if (ilerleme >= 100 || sunucuDurumu == 'COMPLETED') {
       return BlockState.completed;
     }
-    if (beklenen != null && ilerleme < beklenen) return BlockState.delayed;
+    if (geride == true) return BlockState.delayed;
     if (ilerleme > 0) return BlockState.inProgress;
     return BlockState.notStarted;
   }

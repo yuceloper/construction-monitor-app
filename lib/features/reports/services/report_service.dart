@@ -5,47 +5,52 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/api_config.dart';
 import '../../auth/services/session_manager.dart';
 import '../../notifications/services/notification_service.dart';
+import '../../process_tracking/models/project_progress_summary.dart';
+import '../../process_tracking/services/progress_service.dart';
 import '../../site_selection/services/site_service.dart';
 import '../models/report_models.dart';
 
 /// Rapor servisi.
 ///
 /// Sunucuda hazir bir rapor ucu yok. Blok listesi tek cagriyla
-/// /projects'ten geliyor (tip, durum, ilerleme ve baslangic tarihi o
-/// yanitta var), santiyenin genel bitis tarihi /sites'ten okunuyor;
-/// "Son Güncellemeler" ise bildirimlerden besleniyor.
+/// /projects'ten geliyor, her blogun plan karsilastirmasi surec takibin
+/// kullandigi /progress/project/{id}/summary ucundan okunuyor; gecikme
+/// boylece iki ekranda ayni cikiyor. Santiyenin genel bitis tarihi
+/// /sites'ten, "Son Güncellemeler" ise bildirimlerden besleniyor.
 /// Govde utf8.decode(bodyBytes) ile okunuyor: sunucu Content-Type'ta
 /// charset bildirmiyor, http paketi boyle durumda latin1 varsayiyor.
 class ReportService {
   ReportService({
     NotificationService? notificationService,
     SiteService? siteService,
+    ProgressService? progressService,
   }) : _notificationService = notificationService ?? NotificationService(),
-       _siteService = siteService ?? SiteService();
+       _siteService = siteService ?? SiteService(),
+       _progressService = progressService ?? ProgressService();
 
   final NotificationService _notificationService;
   final SiteService _siteService;
+  final ProgressService _progressService;
 
   Future<ReportData> getReport() async {
     final token = _token();
     final siteId = _siteId();
 
-    // Gecikme hesabi santiyenin genel bitis tarihine dayandigi icin
-    // tarih bloklardan once okunuyor.
-    final santiyeBitisi = await _santiyeBitisi(siteId);
-    final bloklar = await _bloklariGetir(token, siteId, santiyeBitisi);
-    final gruplar = _grupla(bloklar);
+    final hamBloklar = await _hamBloklariGetir(token, siteId);
+    final ozetler = await _ozetleriGetir(hamBloklar);
+    final gruplar = _grupla(_bloklariKur(hamBloklar, ozetler));
 
     return ReportData(
       siteName: SessionManager.instance.selectedSiteName ?? '',
-      sitePlannedEnd: santiyeBitisi,
+      sitePlannedEnd: await _santiyeBitisi(siteId),
       groups: gruplar,
       // Guncellemeler yan bilgi: alinamazsa rapor yine aciliyor.
       updates: await _guncellemeleriGetir(),
     );
   }
 
-  /// Santiyenin genel planlanan bitis tarihi.
+  /// Santiyenin genel planlanan bitis tarihi. Rapor basliginda
+  /// gosteriliyor; gecikme hesabinda kullanilmiyor, onu sunucu yapiyor.
   ///
   /// Oturumda saklanan santiye kaydinda bu alan olmayabiliyor (eski
   /// kayitlar), o yuzden listeden taze okunuyor. Alinamazsa rapor yine
@@ -62,10 +67,11 @@ class ReportService {
     return null;
   }
 
-  Future<List<BlockReport>> _bloklariGetir(
+  /// Blok listesinin ham kayitlari. BlockReport'a cevirmeden once her
+  /// blogun ozeti de cekilecegi icin bu adim sadece okuyor.
+  Future<List<Map<String, dynamic>>> _hamBloklariGetir(
     String token,
     int siteId,
-    DateTime? santiyeBitisi,
   ) async {
     try {
       final uri = Uri.parse(
@@ -83,17 +89,9 @@ class ReportService {
           throw const ReportException('Rapor verisi alınamadı.');
         }
 
-        final bugun = DateTime.now();
         return data
             .whereType<Map>()
-            .map(
-              (item) => BlockReport.fromJson(
-                Map<String, dynamic>.from(item),
-                bugun: bugun,
-                santiyeBitisi: santiyeBitisi,
-              ),
-            )
-            .where((b) => b.id > 0 && b.name.isNotEmpty)
+            .map((item) => Map<String, dynamic>.from(item))
             .toList();
       }
       _throwForResponse(response.statusCode, body);
@@ -106,6 +104,58 @@ class ReportService {
         'Teknik bir hata bulunuyor. Lütfen daha sonra tekrar deneyiniz.',
       );
     }
+  }
+
+  /// Her blogun plan karsilastirmasi, surec takip ekraninin kullandigi
+  /// ucun aynisindan okunuyor: boylece iki ekran ayni blokta ayni
+  /// gecikmeyi gosteriyor.
+  ///
+  /// Sunucu toplu bir uc sunmadigi icin blok basina bir cagri gidiyor;
+  /// cagrilar paralel yapiliyor. Tek bir blogun ozeti alinamazsa (yetki
+  /// yok, uc hata verdi) o blok plansiz kaliyor ve geciken sayilmiyor;
+  /// rapor yine aciliyor.
+  Future<Map<int, ProjectProgressSummary>> _ozetleriGetir(
+    List<Map<String, dynamic>> hamBloklar,
+  ) async {
+    final idler = hamBloklar
+        .map((b) => (b['id'] as num?)?.toInt() ?? 0)
+        .where((id) => id > 0)
+        .toList();
+
+    final sonuclar = await Future.wait<MapEntry<int, ProjectProgressSummary>?>(
+      idler.map((id) async {
+        try {
+          return MapEntry(id, await _progressService.getProgressSummary(id));
+        } catch (_) {
+          return null;
+        }
+      }),
+    );
+
+    return {
+      for (final kayit in sonuclar)
+        if (kayit != null) kayit.key: kayit.value,
+    };
+  }
+
+  /// Ham kayitlari ozetleriyle birlestirip rapor bloklarini kuruyor.
+  List<BlockReport> _bloklariKur(
+    List<Map<String, dynamic>> hamBloklar,
+    Map<int, ProjectProgressSummary> ozetler,
+  ) {
+    return hamBloklar
+        .map((item) {
+          final ozet = ozetler[(item['id'] as num?)?.toInt() ?? 0];
+          final sapma = ozet?.variance;
+          return BlockReport.fromJson(
+            item,
+            beklenen: ozet?.plannedProgress?.round(),
+            geride: sapma == null ? null : sapma < 0,
+            gerceklesen: ozet?.actualProgress.round(),
+          );
+        })
+        .where((b) => b.id > 0 && b.name.isNotEmpty)
+        .toList();
   }
 
   /// Tipler sabit sirada diziliyor; blogu olmayan tip hic gosterilmiyor.
