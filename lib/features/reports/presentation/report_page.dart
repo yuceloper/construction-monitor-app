@@ -561,6 +561,7 @@ class _OzetKutusu extends StatelessWidget {
 ///
 /// Bloklar paralel ilerledigi icin bloklarin kendi bitis tarihleri
 /// raporda gosterilmiyor; tarih tek yerde, santiye seviyesinde duruyor.
+/// Gecikmeyi bu tarih belirlemiyor: onu sunucu blok blok hesapliyor.
 class _PlanSeridi extends StatelessWidget {
   const _PlanSeridi({required this.bitis});
 
@@ -588,8 +589,7 @@ class _PlanSeridi extends StatelessWidget {
           Expanded(
             child: Text(
               yok
-                  ? 'Şantiyenin planlanan bitiş tarihi girilmemiş — '
-                        'gecikme hesaplanamıyor'
+                  ? 'Şantiyenin planlanan bitiş tarihi girilmemiş'
                   : 'Şantiye planlanan bitiş: ${tarihYaz(bitis!)}',
               style: TextStyle(
                 fontFamily: kBody,
