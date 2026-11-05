@@ -152,28 +152,6 @@ class _ReportPageState extends State<ReportPage> {
             ScreenTitleBar(
               title: 'Rapor',
               onBack: () => context.go('/dashboard'),
-              trailing: Builder(
-                builder: (buttonContext) {
-                  final wide = MediaQuery.sizeOf(context).width >= 430;
-                  return OutlinedButton.icon(
-                    onPressed: _data == null || _isLoading || _isExportingPdf
-                        ? null
-                        : () => _pdfOlarakAktar(buttonContext),
-                    icon: _isExportingPdf
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(LucideIcons.fileDown, size: 17),
-                    label: Text(
-                      _isExportingPdf
-                          ? 'Hazırlanıyor...'
-                          : (wide ? 'PDF olarak aktar' : 'PDF'),
-                    ),
-                  );
-                },
-              ),
             ),
             Expanded(child: _govde()),
           ],
@@ -199,10 +177,20 @@ class _ReportPageState extends State<ReportPage> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 22),
         children: [
-          if (data.siteName.isNotEmpty) ...[
-            _SantiyeSatiri(ad: data.siteName),
-            const SizedBox(height: 10),
-          ],
+          _SantiyeSatiri(
+            ad: data.siteName,
+            trailing: Builder(
+              builder: (buttonContext) => SmallButton(
+                label: MediaQuery.sizeOf(context).width >= 430
+                    ? 'PDF Olarak Aktar'
+                    : 'PDF',
+                icon: LucideIcons.fileText,
+                busy: _isExportingPdf,
+                onTap: () => _pdfOlarakAktar(buttonContext),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           _PlanSeridi(bitis: data.sitePlannedEnd),
           const SizedBox(height: 12),
           if (gruplar.length > 1) ...[
@@ -237,29 +225,39 @@ class _ReportPageState extends State<ReportPage> {
 
 /// Basligin altindaki santiye satiri.
 class _SantiyeSatiri extends StatelessWidget {
-  const _SantiyeSatiri({required this.ad});
+  const _SantiyeSatiri({required this.ad, this.trailing});
+
   final String ad;
+
+  /// Satirin sagindaki aksiyon. Rapor aksiyonu burada duruyor: ekran
+  /// adiyla ayni hizada degil, icerigin basladigi satirda.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     return Row(
       children: [
-        Icon(LucideIcons.mapPin, size: 15, color: c.muted),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            ad,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: kBody,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: c.sub,
+        if (ad.isEmpty)
+          const Spacer()
+        else ...[
+          Icon(LucideIcons.mapPin, size: 15, color: c.muted),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              ad,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontFamily: kBody,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: c.sub,
+              ),
             ),
           ),
-        ),
+        ],
+        if (trailing != null) ...[const SizedBox(width: 10), trailing!],
       ],
     );
   }
