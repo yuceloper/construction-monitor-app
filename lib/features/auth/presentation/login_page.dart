@@ -154,6 +154,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final message = await _authService.forgotPassword(email: email);
       if (!mounted) return;
+      _emailController.clear();
       setState(() => _successMessage = message);
     } on AuthException catch (error) {
       if (!mounted) return;
@@ -299,24 +300,30 @@ class _LoginPageState extends State<LoginPage> {
                                 onPressed: _isLoading
                                     ? null
                                     : () => setState(() {
+                                          _emailController.clear();
                                           _forgotMode = true;
                                           _errorMessage = null;
                                           _successMessage = null;
                                         }),
-                                child: const Text('Şifremi Unuttum'),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.fromLTRB(8, 10, 0, 4),
+                                  minimumSize: const Size(0, 38),
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text('Parolamı Unuttum'),
                               ),
                             ),
-                          ] else ...[
+                          ] else if (_successMessage == null) ...[
                             Text(
                               'Kayıtlı e-posta adresinizi girin. Yeni geçici parolanız e-posta ile gönderilecektir.',
                               style: TextStyle(
                                 fontFamily: kBody,
                                 fontSize: 14.5,
-                                height: 1.45,
+                                height: 1.5,
                                 color: c.sub,
                               ),
                             ),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: 22),
                             _Field(
                               label: 'E-posta',
                               child: TextField(
@@ -335,6 +342,47 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 cursorColor: c.accent,
                                 decoration: _inputDecoration(c),
+                              ),
+                            ),
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                              decoration: BoxDecoration(
+                                color: c.ok.withValues(alpha: .08),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: c.ok.withValues(alpha: .24),
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: c.ok.withValues(alpha: .14),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      LucideIcons.circleCheck,
+                                      size: 24,
+                                      color: c.ok,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _successMessage!,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: kBody,
+                                      fontSize: 15,
+                                      height: 1.45,
+                                      fontWeight: FontWeight.w600,
+                                      color: c.ink,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -358,45 +406,39 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ],
-                          if (_successMessage != null) ...[
-                            const SizedBox(height: 18),
-                            Container(
-                              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-                              decoration: BoxDecoration(
-                                color: c.ok.withValues(alpha: .08),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Text(
-                                _successMessage!,
-                                style: TextStyle(
-                                  fontFamily: kBody,
-                                  fontSize: 14.5,
-                                  height: 1.4,
-                                  fontWeight: FontWeight.w500,
-                                  color: c.ok,
-                                ),
-                              ),
+                          const SizedBox(height: 24),
+                          if (!_forgotMode)
+                            PrimaryButton(
+                              label: 'GİRİŞ',
+                              busy: _isLoading,
+                              onPressed: _isLoading ? null : _login,
+                            )
+                          else if (_successMessage == null)
+                            PrimaryButton(
+                              label: 'YENİ PAROLA GÖNDER',
+                              busy: _isLoading,
+                              onPressed: _isLoading ? null : _forgotPassword,
                             ),
-                          ],
-                          const SizedBox(height: 26),
-                          PrimaryButton(
-                            label: _forgotMode ? 'YENİ PAROLA GÖNDER' : 'GİRİŞ',
-                            busy: _isLoading,
-                            onPressed: _isLoading
-                                ? null
-                                : (_forgotMode ? _forgotPassword : _login),
-                          ),
                           if (_forgotMode) ...[
-                            const SizedBox(height: 8),
-                            TextButton(
+                            const SizedBox(height: 12),
+                            TextButton.icon(
                               onPressed: _isLoading
                                   ? null
                                   : () => setState(() {
+                                        _emailController.clear();
                                         _forgotMode = false;
                                         _errorMessage = null;
                                         _successMessage = null;
                                       }),
-                              child: const Text('Giriş ekranına dön'),
+                              icon: const Icon(LucideIcons.arrowLeft, size: 17),
+                              label: const Text('GİRİŞ EKRANINA DÖN'),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                textStyle: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: .2,
+                                ),
+                              ),
                             ),
                           ],
                         ],
