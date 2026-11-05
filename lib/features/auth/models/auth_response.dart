@@ -84,13 +84,14 @@ class AuthResponse {
   bool hasPermission(String permission) =>
       role == 'SYSADMIN' || permissions.contains(permission);
 
-  bool get canViewProcess =>
-      hasPermission('PROCESS_VIEW') || hasPermission('PROCESS_UPDATE');
-  bool get canUpdateProcess => hasPermission('PROCESS_UPDATE');
-  bool get canViewDailyTasks =>
-      hasPermission('DAILY_TASK_VIEW') || hasPermission('DAILY_TASK_UPDATE');
-  bool get canUpdateDailyTasks => hasPermission('DAILY_TASK_UPDATE');
+  bool get canViewProcess => hasPermission('PROCESS_VIEW');
+  bool get canUpdateProcess =>
+      canViewProcess && hasPermission('PROCESS_UPDATE');
+  bool get canViewDailyTasks => hasPermission('DAILY_TASK_VIEW');
+  bool get canUpdateDailyTasks =>
+      canViewDailyTasks && hasPermission('DAILY_TASK_UPDATE');
   bool get canViewSafety => hasPermission('SAFETY_VIEW');
+  bool get canViewReports => hasPermission('REPORT_VIEW');
   bool get isBackOfficeAdmin => hasPermission('BACKOFFICE_ADMIN');
 
   String get fullName => '$firstName $lastName'.trim();
