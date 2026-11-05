@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
@@ -10,6 +9,7 @@ import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/state_views.dart';
 import '../models/report_models.dart';
 import '../services/report_pdf_service.dart';
+import 'report_pdf_page.dart';
 import '../services/report_service.dart';
 
 /// Blok bazli rapor ekrani.
@@ -96,7 +96,9 @@ class _ReportPageState extends State<ReportPage> {
     );
   }
 
-  Future<void> _pdfOlarakAktar(BuildContext anchorContext) async {
+  /// Raporu PDF'e cevirip onizlemede aciyor. Paylasma orada, belge
+  /// gorulduktten sonra yapiliyor.
+  Future<void> _pdfOlarakAktar() async {
     final data = _data;
     if (data == null || _isExportingPdf) return;
 
@@ -110,20 +112,10 @@ class _ReportPageState extends State<ReportPage> {
           'sahada_surec_raporu_${now.year}'
           '${now.month.toString().padLeft(2, '0')}'
           '${now.day.toString().padLeft(2, '0')}.pdf';
-      final renderBox = anchorContext.findRenderObject() as RenderBox?;
 
-      await SharePlus.instance.share(
-        ShareParams(
-          title: 'SAHADA Süreç Takip Raporu',
-          subject: 'SAHADA Süreç Takip Raporu',
-          files: [
-            XFile.fromData(bytes, mimeType: 'application/pdf'),
-          ],
-          fileNameOverrides: [fileName],
-          downloadFallbackEnabled: true,
-          sharePositionOrigin: renderBox == null
-              ? null
-              : renderBox.localToGlobal(Offset.zero) & renderBox.size,
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => ReportPdfPage(bytes: bytes, fileName: fileName),
         ),
       );
     } catch (error) {
@@ -179,15 +171,13 @@ class _ReportPageState extends State<ReportPage> {
         children: [
           _SantiyeSatiri(
             ad: data.siteName,
-            trailing: Builder(
-              builder: (buttonContext) => SmallButton(
-                label: MediaQuery.sizeOf(context).width >= 430
-                    ? 'PDF Olarak Aktar'
-                    : 'PDF',
-                icon: LucideIcons.fileText,
-                busy: _isExportingPdf,
-                onTap: () => _pdfOlarakAktar(buttonContext),
-              ),
+            trailing: SmallButton(
+              label: MediaQuery.sizeOf(context).width >= 430
+                  ? 'PDF Olarak Aktar'
+                  : 'PDF',
+              icon: LucideIcons.fileText,
+              busy: _isExportingPdf,
+              onTap: _pdfOlarakAktar,
             ),
           ),
           const SizedBox(height: 10),
