@@ -1,0 +1,73 @@
+name: Deploy Flutter Web (Production)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy Flutter Web
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build production web
+        run: |
+          flutter build web --release \
+            --base-href / \
+            --dart-define=API_BASE_URL=https://backend.sahadasurectakip.com/api/v1
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.PROD_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload Flutter web and verify
+        env:
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+          PROD_USER: ${{ secrets.PROD_USER }}
+        run: |
+          set -euo pipefail
+          ssh -o BatchMode=yes "$PROD_USER@$PROD_HOST" \
+            "mkdir -p /var/www/sahada-app"
+          rsync -az --delete -e "ssh -o BatchMode=yes" \
+            build/web/ "$PROD_USER@$PROD_HOST:/var/www/sahada-app/"
+          ssh -o BatchMode=yes "$PROD_USER@$PROD_HOST" 'bash -se' <<'REMOTE'
+          set -euo pipefail
+          test -s /var/www/sahada-app/index.html
+          nginx -t
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' \
+            --resolve app.sahadasurectakip.com:443:127.0.0.1 \
+            https://app.sahadasurectakip.com/)
+          test "$status" = 200
+          echo "Flutter web HTTPS readiness check passed"
+          REMOTE
