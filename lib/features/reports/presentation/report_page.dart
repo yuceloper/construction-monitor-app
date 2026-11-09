@@ -7,6 +7,7 @@ import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/panel.dart';
 import '../../../core/widgets/pressable.dart';
 import '../../../core/widgets/state_views.dart';
+import '../../auth/services/session_manager.dart';
 import '../models/report_models.dart';
 import '../services/report_pdf_service.dart';
 import 'report_pdf_page.dart';
@@ -42,10 +43,17 @@ class _ReportPageState extends State<ReportPage> {
   static const _ilkGosterim = 7;
   bool _hepsiAcik = false;
 
+  bool get _canViewReports =>
+      SessionManager.instance.auth?.canViewReports ?? false;
+
   @override
   void initState() {
     super.initState();
-    _load();
+    if (_canViewReports) {
+      _load();
+    } else {
+      _isLoading = false;
+    }
   }
 
   Future<void> _load() async {
@@ -153,6 +161,7 @@ class _ReportPageState extends State<ReportPage> {
   }
 
   Widget _govde() {
+    if (!_canViewReports) return const PermissionView();
     if (_isLoading) return const LoadingView();
     if (_errorMessage != null) {
       return ErrorView(message: _errorMessage!, onRetry: _load);
