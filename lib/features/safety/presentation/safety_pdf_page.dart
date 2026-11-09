@@ -38,6 +38,8 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
   List<SafetyDocumentSummary> _monthlyDocuments = const [];
   int? _selectedDocumentId;
   bool _isMonthlyReport = false;
+  bool _isPdfDocument = true;
+  String _documentName = 'dokuman';
 
   @override
   void initState() {
@@ -81,6 +83,10 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
       if (!mounted) return;
       setState(() {
         _isMonthlyReport = isMonthly;
+        _isPdfDocument = current?.isPdf ?? true;
+        _documentName = current?.originalName.isNotEmpty == true
+            ? current!.originalName
+            : widget.title;
         _monthlyDocuments = monthlyByKey.values.toList();
         if (_isMonthlyReport &&
             !_monthlyDocuments.any(
@@ -91,7 +97,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
         }
       });
 
-      await _loadPdf(_selectedDocumentId ?? widget.documentId);
+      await _loadDocument(_selectedDocumentId ?? widget.documentId);
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
@@ -103,7 +109,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     }
   }
 
-  Future<void> _loadPdf(int documentId) async {
+  Future<void> _loadDocument(int documentId) async {
     setState(() {
       _selectedDocumentId = documentId;
       _pdfBytes = null;
@@ -111,9 +117,18 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
     });
 
     try {
-      final bytes = await _service.getPdfBytes(documentId);
+      final documents = await _service.getDocuments();
+      final selected = documents.where((document) => document.id == documentId).firstOrNull;
+      final isPdf = selected?.isPdf ?? _isPdfDocument;
+      final bytes = await _service.getDocumentBytes(documentId, expectPdf: isPdf);
       if (!mounted) return;
-      setState(() => _pdfBytes = bytes);
+      setState(() {
+        _isPdfDocument = isPdf;
+        _documentName = selected?.originalName.isNotEmpty == true
+            ? selected!.originalName
+            : _documentName;
+        _pdfBytes = bytes;
+      });
     } on SafetyDocumentException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
@@ -163,7 +178,7 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
       secili: _selectedDocumentId,
     );
     if (secim != null && mounted && secim != _selectedDocumentId) {
-      _loadPdf(secim);
+      _loadDocument(secim);
     }
   }
 
@@ -236,7 +251,10 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
   Future<void> _paylas(Uint8List bytes) async {
     try {
       final klasor = await getTemporaryDirectory();
-      final dosya = File('${klasor.path}/${_dosyaAdi(widget.title)}');
+      final paylasimAdi = _documentName.trim().isNotEmpty
+          ? _documentName
+          : _dosyaAdi(widget.title);
+      final dosya = File('${klasor.path}/$paylasimAdi');
       await dosya.writeAsBytes(bytes, flush: true);
       if (!mounted) return;
       // Mail ile paylasildiginda konu satirinda once uygulamanin adi
@@ -296,11 +314,85 @@ class _SafetyPdfPageState extends State<SafetyPdfPage> {
       // Diger ekranlardaki hata gorunumuyle ayni.
       return ErrorView(
         message: _errorMessage!,
-        onRetry: () => _loadPdf(_selectedDocumentId ?? widget.documentId),
+        onRetry: () => _loadDocument(_selectedDocumentId ?? widget.documentId),
       );
     }
 
     final bytes = _pdfBytes;
+
+    if (!_isPdfDocument && bytes != null) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Expanded(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.fileText, size: 48, color: c.muted),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Bu doküman PDF olmadığı için uygulama içinde önizlenemiyor.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 15.5,
+                          height: 1.45,
+                          fontWeight: FontWeight.w600,
+                          color: c.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _documentName,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: kBody,
+                          fontSize: 13.5,
+                          color: c.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Pressable(
+              onTap: () => _paylas(bytes),
+              child: Container(
+                height: Sizes.tapTarget,
+                width: double.infinity,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: c.ink,
+                  borderRadius: BorderRadius.circular(Sizes.rBtn),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(LucideIcons.share2, size: 19, color: c.bg),
+                    const SizedBox(width: 10),
+                    Text(
+                      'PAYLAŞ / AÇ',
+                      style: TextStyle(
+                        fontFamily: kBody,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .6,
+                        color: c.bg,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     // Belge hazir olunca birden belirip goz yoruyordu; iskelet sayfa ile
     // ayni cercevede duruyor ve yerini yumusak bir gecisle biraktiriyor.
