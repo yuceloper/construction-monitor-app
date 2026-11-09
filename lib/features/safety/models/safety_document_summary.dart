@@ -4,6 +4,7 @@ class SafetyDocumentSummary {
   final String documentType;
   final String title;
   final String originalName;
+  final String contentType;
   final int sizeBytes;
   final DateTime? documentDate;
 
@@ -13,6 +14,7 @@ class SafetyDocumentSummary {
     required this.documentType,
     required this.title,
     required this.originalName,
+    required this.contentType,
     required this.sizeBytes,
     required this.documentDate,
   });
@@ -24,8 +26,13 @@ class SafetyDocumentSummary {
       documentType: json['documentType']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
       originalName: json['originalName']?.toString() ?? '',
+      contentType: json['contentType']?.toString() ?? '',
       sizeBytes: (json['sizeBytes'] as num?)?.toInt() ?? 0,
       documentDate: DateTime.tryParse(json['documentDate']?.toString() ?? ''),
     );
   }
+
+  bool get isPdf =>
+      contentType.toLowerCase() == 'application/pdf' ||
+      originalName.toLowerCase().endsWith('.pdf');
 }
