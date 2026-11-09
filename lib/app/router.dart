@@ -72,10 +72,6 @@ class AppRouter {
           !(auth?.canUpdateProcess ?? false)) {
         return '/process';
       }
-      if (location == '/reports' && !(auth?.canViewReports ?? false)) {
-        return '/dashboard';
-      }
-
       if (isLogin || isSiteSelection || isPasswordChange) return '/dashboard';
       return null;
     },
