@@ -9,6 +9,49 @@ import '../../../app/theme.dart';
 import '../../../core/widgets/app_header.dart';
 import '../../../core/widgets/pressable.dart';
 
+/// Belgeyi okunur bir ende tutan cerceve.
+///
+/// Telefonda onizleme bulundugu yeri oldugu gibi dolduruyor. Genis
+/// ekranda ayni cerceve 1000 piksele aciliyor ve sayfa o ene
+/// sigdirildigi icin gereginden buyuk cikiyor, satirlar da ekranin bir
+/// ucundan digerine uzuyordu. Belge sutunu bu yuzden belli bir enden
+/// genis olmuyor ve ortada duruyor.
+///
+/// Cerceve sayfa oranina (A4) cekilmiyor: yukseklik az oldugunda --
+/// telefonun yan cevrilmis hali gibi -- oran, eni de kisitlayip
+/// belgeyi okunmaz hale getiriyor. Enine sigdirip dikeyde kaydirmak
+/// her PDF okuyucunun yaptigi sey.
+class _OnizlemeCercevesi extends StatelessWidget {
+  const _OnizlemeCercevesi({
+    required this.decoration,
+    required this.clipBehavior,
+    required this.child,
+  });
+
+  final BoxDecoration decoration;
+  final Clip clipBehavior;
+  final Widget child;
+
+  /// Belge sutununun en fazla eni.
+  static const double _enCok = 760;
+
+  @override
+  Widget build(BuildContext context) {
+    final govde = Container(
+      clipBehavior: clipBehavior,
+      decoration: decoration,
+      child: child,
+    );
+
+    return LayoutBuilder(
+      builder: (context, kisit) {
+        if (kisit.maxWidth <= _enCok) return govde;
+        return Center(child: SizedBox(width: _enCok, child: govde));
+      },
+    );
+  }
+}
+
 /// Rapor PDF'inin onizlemesi.
 ///
 /// Dosya once burada gorunuyor, paylasma ikinci adim: kullanici neyi
@@ -86,7 +129,7 @@ class _ReportPdfPageState extends State<ReportPdfPage> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Container(
+                child: _OnizlemeCercevesi(
                   clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: c.surface,

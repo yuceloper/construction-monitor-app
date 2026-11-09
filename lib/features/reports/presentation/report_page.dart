@@ -235,29 +235,43 @@ class _SantiyeSatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Row(
-      children: [
-        if (ad.isEmpty)
-          const Spacer()
-        else ...[
-          Icon(LucideIcons.mapPin, size: 15, color: c.muted),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              ad,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontFamily: kBody,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: c.sub,
-              ),
-            ),
+    return LayoutBuilder(
+      builder: (context, kisit) {
+        // Tarayicida sutun 1000 piksele kadar aciliyor. Ad Expanded
+        // kalinca ad solda, aksiyon sagda, aralarinda avuc dolusu
+        // bosluk duruyordu; ikisi ayni seyin parcasi olduklari halde
+        // birbirine ait gorunmuyorlardi. Genis ekranda ad kendi
+        // genisliginde duruyor ve aksiyon hemen yanina geliyor.
+        // Telefonda hicbir sey degismiyor: orada satir zaten dolu.
+        final genis = kisit.maxWidth >= 600;
+        final adYazisi = Text(
+          ad,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: kBody,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: c.sub,
           ),
-        ],
-        if (trailing != null) ...[const SizedBox(width: 10), trailing!],
-      ],
+        );
+
+        return Row(
+          children: [
+            if (ad.isEmpty)
+              const Spacer()
+            else ...[
+              Icon(LucideIcons.mapPin, size: 15, color: c.muted),
+              const SizedBox(width: 7),
+              if (genis)
+                Flexible(child: adYazisi)
+              else
+                Expanded(child: adYazisi),
+            ],
+            if (trailing != null) ...[const SizedBox(width: 10), trailing!],
+          ],
+        );
+      },
     );
   }
 }
@@ -373,14 +387,16 @@ class _OzetKarti extends StatelessWidget {
     final c = context.colors;
     final toplam = grup.total;
 
-    final kutular = <Widget>[
+    List<Widget> kutulariKur(bool yatay) => <Widget>[
       _OzetKutusu(
+        yatay: yatay,
         icon: LucideIcons.building2,
         label: 'Toplam Blok',
         adet: toplam,
         renk: c.ink,
       ),
       _OzetKutusu(
+        yatay: yatay,
         icon: LucideIcons.circleCheck,
         label: 'Tamamlanan',
         adet: grup.completed,
@@ -388,6 +404,7 @@ class _OzetKarti extends StatelessWidget {
         renk: c.ok,
       ),
       _OzetKutusu(
+        yatay: yatay,
         icon: LucideIcons.clock,
         label: 'Devam Eden',
         adet: grup.inProgress,
@@ -395,6 +412,7 @@ class _OzetKarti extends StatelessWidget {
         renk: c.warn,
       ),
       _OzetKutusu(
+        yatay: yatay,
         icon: LucideIcons.circleAlert,
         label: 'Geciken',
         adet: grup.delayed,
@@ -441,6 +459,15 @@ class _OzetKarti extends StatelessWidget {
           LayoutBuilder(
             builder: (context, kisit) {
               final tekSira = kisit.maxWidth >= 520;
+              // Kutunun eni burada biliniyor: tek sirada dort kutu ve
+              // aralarinda 10'ar piksel, iki sirada iki kutu. Genis
+              // kutuda etiket solda sayi sagda duruyor; olcumu kutunun
+              // kendisi yapamiyor, cunku asagidaki IntrinsicHeight
+              // icinde LayoutBuilder calismiyor.
+              final kutuEni = tekSira
+                  ? (kisit.maxWidth - 30) / 4
+                  : (kisit.maxWidth - 10) / 2;
+              final kutular = kutulariKur(kutuEni >= 190);
               if (tekSira) {
                 return IntrinsicHeight(
                   child: Row(
@@ -489,8 +516,13 @@ class _OzetKutusu extends StatelessWidget {
     required this.label,
     required this.adet,
     required this.renk,
+    required this.yatay,
     this.yuzde,
   });
+
+  /// Kutu genisse etiket solda, sayi sagda duruyor. Karari ustteki
+  /// kart veriyor: kutunun eni orada belli.
+  final bool yatay;
 
   final IconData icon;
   final String label;
@@ -511,56 +543,79 @@ class _OzetKutusu extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: c.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: renk),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+      child: Builder(
+        builder: (context) {
+          final etiket = Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: kBody,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: c.sub,
+            ),
+          );
+          final sayi = Text(
+            '$adet',
+            style: TextStyle(
+              fontFamily: kDisplay,
+              fontSize: 26,
+              height: 1.05,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.8,
+              color: renk,
+            ),
+          );
+          final oran = yuzde == null
+              ? null
+              : Text(
+                  '%$yuzde',
                   style: TextStyle(
                     fontFamily: kBody,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: c.sub,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: renk,
                   ),
+                );
+
+          // Telefonda kutu dar: etiket ustte, sayi altinda ortada.
+          // Tarayicida ayni kutu 240 piksele aciliyor ve o duzende
+          // ortada tek bir rakamla kocaman bir bosluk kaliyordu.
+          // Genis kutuda etiket solda, sayi sagda duruyor.
+          if (yatay) {
+            return Row(
+              children: [
+                Icon(icon, size: 14, color: renk),
+                const SizedBox(width: 6),
+                Expanded(child: etiket),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [sayi, ?oran],
                 ),
+              ],
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 14, color: renk),
+                  const SizedBox(width: 6),
+                  Expanded(child: etiket),
+                ],
               ),
+              const SizedBox(height: 7),
+              Center(child: sayi),
+              if (oran != null) Center(child: oran),
             ],
-          ),
-          const SizedBox(height: 7),
-          Center(
-            child: Text(
-              '$adet',
-              style: TextStyle(
-                fontFamily: kDisplay,
-                fontSize: 26,
-                height: 1.05,
-                fontWeight: FontWeight.w700,
-                letterSpacing: -.8,
-                color: renk,
-              ),
-            ),
-          ),
-          if (yuzde != null)
-            Center(
-              child: Text(
-                '%$yuzde',
-                style: TextStyle(
-                  fontFamily: kBody,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: renk,
-                ),
-              ),
-            ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -716,14 +771,11 @@ class _BlokListesi extends StatelessWidget {
           ? const EmptyState(message: 'Bu durumda blok bulunmuyor.')
           : Column(
               children: [
-                for (final blok in gosterilen) ...[
-                  _BlokSatiri(blok: blok, onTap: () => onBlok(blok)),
-                  if (blok != gosterilen.last)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Container(height: 1, color: c.line),
-                    ),
-                ],
+                _Bloklar(
+                  bloklar: gosterilen,
+                  onBlok: onBlok,
+                  cizgi: c.line,
+                ),
                 if (!hepsiAcik && tumu.length > gosterilen.length) ...[
                   const SizedBox(height: 12),
                   Pressable(
@@ -750,6 +802,81 @@ class _BlokListesi extends StatelessWidget {
                 ],
               ],
             ),
+    );
+  }
+}
+
+/// Blok satirlarini ekranin enine gore diziyor.
+///
+/// Bir blok satiri telefonda sayfanin enini hakkiyla dolduruyor.
+/// Tarayicida ayni satir 1000 piksele yayilinca ad ile yuzdesi
+/// ekranin iki ucuna dusuyor, aradaki ilerleme cubugu da saca
+/// benziyordu. Genis ekranda satirlar ikiserli diziliyor: hem yazilar
+/// birbirine yakin kaliyor hem de ayni anda iki kat blok goruluyor.
+class _Bloklar extends StatelessWidget {
+  const _Bloklar({
+    required this.bloklar,
+    required this.onBlok,
+    required this.cizgi,
+  });
+
+  final List<BlockReport> bloklar;
+  final ValueChanged<BlockReport> onBlok;
+  final Color cizgi;
+
+  Widget _ayrac() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Container(height: 1, color: cizgi),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, kisit) {
+        if (kisit.maxWidth < 700) {
+          return Column(
+            children: [
+              for (final blok in bloklar) ...[
+                _BlokSatiri(blok: blok, onTap: () => onBlok(blok)),
+                if (blok != bloklar.last) _ayrac(),
+              ],
+            ],
+          );
+        }
+
+        return Column(
+          children: [
+            for (var i = 0; i < bloklar.length; i += 2) ...[
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _BlokSatiri(
+                        blok: bloklar[i],
+                        onTap: () => onBlok(bloklar[i]),
+                      ),
+                    ),
+                    const SizedBox(width: 24),
+                    Expanded(
+                      // Tek sayida blok kalinca son satirin ikinci
+                      // yeri bos duruyor; kalan blok tam ene
+                      // yayilip digerlerinden farkli gorunmesin.
+                      child: i + 1 < bloklar.length
+                          ? _BlokSatiri(
+                              blok: bloklar[i + 1],
+                              onTap: () => onBlok(bloklar[i + 1]),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
+              ),
+              if (i + 2 < bloklar.length) _ayrac(),
+            ],
+          ],
+        );
+      },
     );
   }
 }
