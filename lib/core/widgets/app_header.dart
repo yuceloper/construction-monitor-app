@@ -620,48 +620,68 @@ class BreadcrumbBar extends StatelessWidget {
 
     // Uzun baslikta yazi kuculuyordu; ayni ekranda kisa baslik 21,
     // uzun baslik 17 punto cikiyor ve menu texti kuculmus gorunuyordu.
-    // Punto artik her ekranda ayni; sigmayan baslik uc noktayla
-    // kesiliyor.
+    // Punto artik her ekranda ayni.
+    //
+    // Dar ekranda ust sayfanin adi yarim kaliyordu: "Gunluk I... - Is
+    // Detayi". Yarim kelime ne okunuyor ne de bir sey anlatiyor, ustelik
+    // geri oku nereye donulecegini zaten soyluyor. Bu yuzden ikisi
+    // birden sigmiyorsa ust sayfanin adi tamamen dusuyor ve bulunulan
+    // yer tam yaziliyor.
+    final ayracStil = stil.copyWith(
+      fontWeight: FontWeight.w400,
+      color: c.muted,
+    );
+
     return _TitleBarShell(
       onBack: onBack,
       trailing: trailing,
-      child: Builder(
-        builder: (context) {
-          final kucuk = stil;
+      child: LayoutBuilder(
+        builder: (context, kisit) {
+          final olcek = MediaQuery.textScalerOf(context);
+          final gereken =
+              _yaziGenisligi(parentLabel, stil, olcek) +
+              _yaziGenisligi(_ayrac, ayracStil, olcek) +
+              _ayracBosluk * 2 +
+              _yaziGenisligi(title, stil, olcek);
 
+          if (gereken > kisit.maxWidth) {
+            return Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: stil,
+            );
+          }
+
+          // Ust sayfanin adi Flexible degil: Row esnek cocuklara alani
+          // flex oraniyla pay ediyor, bu yuzden iki yazi toplamda sigsa
+          // bile ust sayfanin adi kendi payina sigmayip kesiliyordu.
+          // Buraya gelindiginde olcum zaten sigdigini soyluyor, yazi
+          // dogal genisliginde duruyor.
           return Row(
             children: [
-              Flexible(
-                child: Pressable(
-                  onTap: onParentTap,
-                  child: Text(
-                    parentLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: kucuk,
-                  ),
-                ),
+              Pressable(
+                onTap: onParentTap,
+                child: Text(parentLabel, maxLines: 1, style: stil),
               ),
               // Ayrac ok degil: geri okuyla yan yana iki centik olusuyordu.
               // Egik cizgi zeminden 20/255 ayriliyor, ekranda secilmiyordu;
               // tire hem daha belirgin hem de okurken daha sakin.
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 9),
-                child: Text(
-                  '\u2013',
-                  style: kucuk.copyWith(
-                    fontWeight: FontWeight.w400,
-                    color: c.muted,
-                  ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: _ayracBosluk,
                 ),
+                child: Text(_ayrac, style: ayracStil),
               ),
+              // Olcumun yanilma payi icin bulunulan yer esnek kaldi:
+              // beklenmedik bir durumda kesilen bu olur, ust sayfanin
+              // adi degil.
               Flexible(
-                flex: 2,
                 child: Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: kucuk,
+                  style: stil,
                 ),
               ),
             ],
@@ -670,6 +690,21 @@ class BreadcrumbBar extends StatelessWidget {
       ),
     );
   }
+}
+
+const String _ayrac = '\u2013';
+const double _ayracBosluk = 9;
+
+/// Bir yazinin tek satirda kaplayacagi genislik. Sistemin yazi olcegi de
+/// hesaba katiliyor: punto buyudugunde baslik erken kisaliyor.
+double _yaziGenisligi(String yazi, TextStyle stil, TextScaler olcek) {
+  final olcer = TextPainter(
+    text: TextSpan(text: yazi, style: stil),
+    maxLines: 1,
+    textDirection: TextDirection.ltr,
+    textScaler: olcek,
+  )..layout();
+  return olcer.width;
 }
 
 /// Geri oku; rengini temadan kendisi okuyor.
