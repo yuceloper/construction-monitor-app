@@ -79,18 +79,32 @@ class SafetyDocumentService {
     }
   }
 
-  Future<Uint8List> getPdfBytes(int documentId) async {
+  Future<Uint8List> getDocumentBytes(int documentId, {bool expectPdf = false}) async {
     final token = _token();
     try {
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/safety-documents/$documentId/file'),
         headers: {
           'Authorization': 'Bearer $token',
-          'Accept': 'application/pdf',
+          'Accept': expectPdf ? 'application/pdf' : '*/*',
         },
       );
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return response.bodyBytes;
+        final bytes = response.bodyBytes;
+        if (expectPdf) {
+          final validPdf = bytes.length >= 5 &&
+              bytes[0] == 0x25 &&
+              bytes[1] == 0x50 &&
+              bytes[2] == 0x44 &&
+              bytes[3] == 0x46 &&
+              bytes[4] == 0x2D;
+          if (!validPdf) {
+            throw const SafetyDocumentException(
+              'Doküman PDF olarak görüntülenemiyor. Dosya biçimi geçersiz veya bozulmuş olabilir.',
+            );
+          }
+        }
+        return bytes;
       }
       _throwForResponse(
         response.statusCode,
