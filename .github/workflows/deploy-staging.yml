@@ -1,0 +1,85 @@
+name: Deploy Flutter Web (Staging)
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flutter-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.STAGING_ENABLED == 'true' && github.ref == 'refs/heads/develop' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify staging configuration
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_WEB_DIR: ${{ secrets.STAGING_WEB_DIR }}
+          STAGING_API_URL: ${{ vars.STAGING_API_URL }}
+          STAGING_SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          STAGING_SSH_KNOWN_HOSTS: ${{ secrets.STAGING_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_HOST"
+          test -n "$STAGING_USER"
+          test -n "$STAGING_WEB_DIR"
+          test -n "$STAGING_API_URL"
+          test -n "$STAGING_SSH_PRIVATE_KEY"
+          test -n "$STAGING_SSH_KNOWN_HOSTS"
+          test "$STAGING_HOST" != "185.22.187.148"
+          test "$STAGING_WEB_DIR" != "/var/www/sahada-app"
+          case "$STAGING_WEB_DIR" in
+            /*) ;;
+            *) echo "STAGING_WEB_DIR must be an absolute path" >&2; exit 1 ;;
+          esac
+          case "$STAGING_API_URL" in
+            https://*) ;;
+            *) echo "STAGING_API_URL must use HTTPS" >&2; exit 1 ;;
+          esac
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$STAGING_SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$STAGING_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build staging web
+        env:
+          STAGING_API_URL: ${{ vars.STAGING_API_URL }}
+        run: |
+          flutter pub get
+          flutter build web --release --base-href / --dart-define=API_BASE_URL="$STAGING_API_URL"
+
+      - name: Upload staging build
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_WEB_DIR: ${{ secrets.STAGING_WEB_DIR }}
+        run: |
+          set -euo pipefail
+          # Provision the web root and Nginx site on staging before enabling this pipeline.
+          ssh -o BatchMode=yes "$STAGING_USER@$STAGING_HOST" \
+            bash -se -- "$STAGING_WEB_DIR" <<'REMOTE'
+          set -euo pipefail
+          test -d "$1"
+          test -f "$1/index.html"
+          REMOTE
+          rsync -az -e "ssh -o BatchMode=yes" build/web/ "$STAGING_USER@$STAGING_HOST:$STAGING_WEB_DIR/"
+          ssh -o BatchMode=yes "$STAGING_USER@$STAGING_HOST" \
+            bash -se -- "$STAGING_WEB_DIR" <<'REMOTE'
+          set -euo pipefail
+          test -s "$1/index.html"
+          REMOTE
