@@ -32,3 +32,9 @@ jobs:
         run: flutter test
       - name: Compile web
         run: flutter build web --release --base-href / --dart-define=API_BASE_URL=http://127.0.0.1:18080/api/v1
+
+  deploy-staging:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
+    needs: verify
+    uses: ./.github/workflows/deploy-staging.yml
+    secrets: inherit
