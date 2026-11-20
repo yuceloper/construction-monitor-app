@@ -18,6 +18,11 @@ class ApiConfig {
       return kDebugMode ? 'http://localhost:8080/api/v1' : '/api/v1';
     }
 
+    // Store builds use production unless a test API is explicitly supplied.
+    if (kReleaseMode) {
+      return 'https://backend.sahadasurectakip.com/api/v1';
+    }
+
     // Android emulator reaches the host machine through 10.0.2.2.
     // iOS Simulator can reach the host through localhost.
     if (defaultTargetPlatform == TargetPlatform.android) {
